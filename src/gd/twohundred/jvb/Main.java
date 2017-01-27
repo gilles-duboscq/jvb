@@ -1,6 +1,7 @@
 package gd.twohundred.jvb;
 
 import gd.twohundred.jvb.components.CPU;
+import gd.twohundred.jvb.components.CartridgeRAM;
 import gd.twohundred.jvb.components.CartridgeROM;
 import gd.twohundred.jvb.components.VirtualBoy;
 
@@ -16,7 +17,12 @@ public class Main {
     public static void main(String... args) throws IOException {
         Main m = new Main();
         m.cartridgePath = Paths.get(args[0]);
-        m.run();
+        try {
+            m.run();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 
     private void run() throws IOException {
@@ -27,7 +33,7 @@ public class Main {
         System.out.println(" Maker code: " + rom.getMakerCode());
         System.out.println(" Game code: " + rom.getGameCode());
         System.out.println(" Version: 1." + rom.getGameVersion());
-        VirtualBoy virtualBoy = new VirtualBoy(mainWindow.getScreen(), rom);
+        VirtualBoy virtualBoy = new VirtualBoy(mainWindow.getScreen(), rom, new CartridgeRAM());
         virtualBoy.reset();
         long t = System.nanoTime();
         long cycles = 0;
@@ -56,11 +62,6 @@ public class Main {
             cycles += cyclesDone;
             iterations++;
             LockSupport.parkNanos(100000);
-            /*try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                break;
-            }*/
         }
         System.out.println("Bye!");
         System.exit(0);

@@ -15,7 +15,7 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
     public static final int SIZE = 12;
 
     private static final double LARGE_INTERVAL_MICROS_PER_CYCLE = 100.0;
-    private static final double SMALL_INTERVAL_MICROS_PER_CYCLE = 16.66;
+    private static final double SMALL_INTERVAL_MICROS_PER_CYCLE = 16.6;
 
     private static final int MICROS_PER_SECOND = 1_000_000;
     private static final int LARGE_INTERVAL_PERIOD = (int) (CPU.CLOCK_HZ * LARGE_INTERVAL_MICROS_PER_CYCLE / MICROS_PER_SECOND);
@@ -57,7 +57,7 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
         throw new BusError(address, Unmapped);
     }
 
-    private static final boolean DEBUG_TIMER = false;
+    private static final boolean DEBUG_TIMER = true;
 
     @Override
     public void setByte(int address, byte value) {

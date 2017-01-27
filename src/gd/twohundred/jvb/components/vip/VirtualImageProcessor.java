@@ -140,25 +140,25 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             return backgroundSegmentsAndWindowPataremeterTable; // TODO ?
         }
         if (address >= 0x0001E000) {
-            throw new BusError(address, Unimplemented); // TODO CHR RAM Pattern Table 3
+            return chrTable3; // TODO CHR RAM Pattern Table 3
         }
         if (address >= RIGHT_FRAMEBUFFER_1_START) {
             return rightFb1;
         }
         if (address >= 0x00016000) {
-            throw new BusError(address, Unimplemented); // TODO CHR RAM Pattern Table 2
+            return chrTable2; // TODO CHR RAM Pattern Table 2
         }
         if (address >= RIGHT_FRAMEBUFFER_0_START) {
             return rightFb0;
         }
         if (address >= 0x0000E000) {
-            throw new BusError(address, Unimplemented); // TODO CHR RAM Pattern Table 1
+            return chrTable1; // TODO CHR RAM Pattern Table 1
         }
         if (address >= LEFT_FRAMEBUFFER_1_START) {
             return leftFb1;
         }
         if (address >= 0x00006000) {
-            throw new BusError(address, Unimplemented); // TODO CHR RAM Pattern Table 0
+            return chrTable0; // TODO CHR RAM Pattern Table 0
         }
         if (address >= LEFT_FRAMEBUFFER_0_START) {
             return leftFb0;

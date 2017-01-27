@@ -26,6 +26,12 @@ public class ProgramStatusWord {
         psw = (psw | set) & (~affected | set);
     }
 
+    public void setZeroSignOveflow(boolean zero, boolean sign, boolean overflow) {
+        int affected = intBits(Z_POS, S_POS, OV_POS);
+        int set = intBit(Z_POS, zero) | intBit(S_POS, sign) | intBit(OV_POS, overflow);
+        psw = (psw | set) & (~affected | set);
+    }
+
 
     public void setInterruptDisable(boolean set) {
         if (set) {
@@ -37,5 +43,13 @@ public class ProgramStatusWord {
 
     public boolean getCY() {
         return testBit(psw, CY_POS);
+    }
+
+    public boolean getOV() {
+        return testBit(psw, OV_POS);
+    }
+
+    public boolean getS() {
+        return testBit(psw, S_POS);
     }
 }

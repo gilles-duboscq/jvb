@@ -3,12 +3,17 @@ package gd.twohundred.jvb.components;
 import gd.twohundred.jvb.components.interfaces.Emulable;
 import gd.twohundred.jvb.components.interfaces.Resetable;
 
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import java.util.Arrays;
 
+import static gd.twohundred.jvb.Utils.signStr;
+import static gd.twohundred.jvb.Utils.testBit;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BE;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BL;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BNE;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BR;
+import static gd.twohundred.jvb.components.Instructions.BCOND_LT;
 import static gd.twohundred.jvb.components.Instructions.COND_LEN;
 import static gd.twohundred.jvb.components.Instructions.COND_POS;
 import static gd.twohundred.jvb.components.Instructions.DISP26_LEN;
@@ -20,12 +25,16 @@ import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX_POS;
 import static gd.twohundred.jvb.components.Instructions.IMM5_LEN;
 import static gd.twohundred.jvb.components.Instructions.OPCODE_LEN;
 import static gd.twohundred.jvb.components.Instructions.OPCODE_POS;
+import static gd.twohundred.jvb.components.Instructions.OP_ADDI;
 import static gd.twohundred.jvb.components.Instructions.OP_ADD_IMM;
+import static gd.twohundred.jvb.components.Instructions.OP_ADD_REG;
+import static gd.twohundred.jvb.components.Instructions.OP_CLI;
 import static gd.twohundred.jvb.components.Instructions.OP_CMP_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_JAL;
 import static gd.twohundred.jvb.components.Instructions.OP_JMP;
 import static gd.twohundred.jvb.components.Instructions.OP_JR;
 import static gd.twohundred.jvb.components.Instructions.OP_LDB;
+import static gd.twohundred.jvb.components.Instructions.OP_LDH;
 import static gd.twohundred.jvb.components.Instructions.OP_LDSR;
 import static gd.twohundred.jvb.components.Instructions.OP_LDW;
 import static gd.twohundred.jvb.components.Instructions.OP_MOVEA;
@@ -34,8 +43,11 @@ import static gd.twohundred.jvb.components.Instructions.OP_MOV_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_MOV_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_OUTW;
 import static gd.twohundred.jvb.components.Instructions.OP_SEI;
+import static gd.twohundred.jvb.components.Instructions.OP_SHL_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_STB;
+import static gd.twohundred.jvb.components.Instructions.OP_STH;
 import static gd.twohundred.jvb.components.Instructions.OP_STW;
+import static gd.twohundred.jvb.components.Instructions.OP_XOR_REG;
 import static gd.twohundred.jvb.components.Instructions.REG1_LEN;
 import static gd.twohundred.jvb.components.Instructions.REG1_POS;
 import static gd.twohundred.jvb.components.Instructions.REG2_LEN;
@@ -83,6 +95,13 @@ public class CPU implements Emulable, Resetable {
 
     public CPU(Bus bus) {
         this.bus = bus;
+        PrintStream out = System.out;
+        try {
+            out = new PrintStream("trace.txt");
+        } catch (FileNotFoundException e) {
+             e.printStackTrace();
+        }
+        debugInstOut = out;
     }
 
     private void setRegister(int r, int value) {
@@ -125,7 +144,7 @@ public class CPU implements Emulable, Resetable {
         }
     }
 
-    private String setSystemRegisterName(int r) {
+    private String getSystemRegisterName(int r) {
         switch (r) {
             case EIPC_REG:
                 return "EIPC";
@@ -180,6 +199,7 @@ public class CPU implements Emulable, Resetable {
     }
 
     public static final boolean DEBUG_INST = false;
+    public final PrintStream debugInstOut;
     public static final boolean DEBUG_CC = false;
 
     @Override
@@ -195,28 +215,35 @@ public class CPU implements Emulable, Resetable {
                 case BCOND_BR: {
                     branchTaken = true;
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x BR     %s%05X", pc, disp9 > 0 ? '+' : '-', abs(disp9)));
+                        debugInstOut.println(String.format("%08x br     %s0x%x", pc, signStr(disp9), abs(disp9)));
                     }
                     break;
                 }
                 case BCOND_BNE: {
                     branchTaken = !psw.getZ();
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x BNE    %s%05X", pc, disp9 > 0 ? '+' : '-', abs(disp9)));
+                        debugInstOut.println(String.format("%08x bne    %s0x%x", pc, signStr(disp9), abs(disp9)));
                     }
                     break;
                 }
                 case BCOND_BE: {
                     branchTaken = psw.getZ();
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x BE     %s%05X", pc, disp9 > 0 ? '+' : '-', abs(disp9)));
+                        debugInstOut.println(String.format("%08x be     %s0x%x", pc, signStr(disp9), abs(disp9)));
                     }
                     break;
                 }
                 case BCOND_BL: {
                     branchTaken = psw.getCY();
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x BL     %s%05X", pc, disp9 > 0 ? '+' : '-', abs(disp9)));
+                        debugInstOut.println(String.format("%08x bl     %s0x%x", pc, signStr(disp9), abs(disp9)));
+                    }
+                    break;
+                }
+                case BCOND_LT: {
+                    branchTaken = psw.getS() ^ psw.getOV();
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x bl     %s0x%x", pc, signStr(disp9), abs(disp9)));
                     }
                     break;
                 }
@@ -238,7 +265,7 @@ public class CPU implements Emulable, Resetable {
                     nextPC += 2;
                     setRegister(reg2, getRegister(reg1) + signExtend(second, 16));
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x MOVEA  %X, r%d, r%d", pc, second, reg1, reg2));
+                        debugInstOut.println(String.format("%08x movea  0x%04x, r%d, r%d", pc, second, reg1, reg2));
                     }
                     break;
                 }
@@ -247,7 +274,16 @@ public class CPU implements Emulable, Resetable {
                     nextPC += 2;
                     setRegister(reg2, getRegister(reg1) + (second << 16));
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x MOVHI  %X, r%d, r%d", pc, second, reg1, reg2));
+                        debugInstOut.println(String.format("%08x movhi  0x%04x, r%d, r%d", pc, second, reg1, reg2));
+                    }
+                    break;
+                }
+                case OP_ADDI: {
+                    int second = bus.getHalfWord(pc + 2);
+                    nextPC += 2;
+                    setRegister(reg2, add(getRegister(reg1), signExtend(second, 16)));
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x addi   0x%04x, r%d, r%d", pc, second, reg1, reg2));
                     }
                     break;
                 }
@@ -255,7 +291,7 @@ public class CPU implements Emulable, Resetable {
                     cycles = 3;
                     nextPC = getRegister(reg1);
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x JMP    r%d", pc, reg1));
+                        debugInstOut.println(String.format("%08x jmp    r%d", pc, reg1));
                     }
                     break;
                 }
@@ -263,35 +299,49 @@ public class CPU implements Emulable, Resetable {
                     int intValue = add(getRegister(reg2), signExtend(imm5, IMM5_LEN));
                     setRegister(reg2, intValue);
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x ADD    %X, r%d, r%d", pc, imm5, reg2, reg2));
+                        debugInstOut.println(String.format("%08x add    0x%x, r%d, r%d", pc, imm5, reg2, reg2));
+                    }
+                    break;
+                }
+                case OP_ADD_REG: {
+                    setRegister(reg2, add(getRegister(reg2), getRegister(reg1)));
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x add    r%d, r%d, r%d", pc, reg1, reg2, reg2));
                     }
                     break;
                 }
                 case OP_LDSR: {
                     setSystemRegister(imm5, getRegister(reg2));
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x LDSR   r%d, %s", pc, reg2, setSystemRegisterName(imm5)));
+                        debugInstOut.println(String.format("%08x ldsr   r%d, %s", pc, reg2, getSystemRegisterName(imm5)));
                     }
                     break;
                 }
                 case OP_SEI: {
                     psw.setInterruptDisable(true);
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x SEI", pc));
+                        debugInstOut.println(String.format("%08x sei", pc));
+                    }
+                    break;
+                }
+                case OP_CLI: {
+                    psw.setInterruptDisable(false);
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x sei", pc));
                     }
                     break;
                 }
                 case OP_MOV_IMM: {
                     setRegister(reg2, signExtend(imm5, IMM5_LEN));
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x MOV    %X, r%d", pc, imm5, reg2));
+                        debugInstOut.println(String.format("%08x mov    0x%x, r%d", pc, imm5, reg2));
                     }
                     break;
                 }
                 case OP_MOV_REG: {
                     setRegister(reg2, getRegister(reg1));
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x MOV    r%d, r%d", pc, reg1, reg2));
+                        debugInstOut.println(String.format("%08x mov    r%d, r%d", pc, reg1, reg2));
                     }
                     break;
                 }
@@ -302,7 +352,18 @@ public class CPU implements Emulable, Resetable {
                     int disp16 = signExtend(second, 16);
                     bus.setByte(getRegister(reg1) + disp16, (byte) getRegister(reg2));
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x ST.B   %d[r%d], r%d", pc, disp16, reg1, reg2));
+                        debugInstOut.println(String.format("%08x st.b   %d[r%d], r%d", pc, disp16, reg1, reg2));
+                    }
+                    break;
+                }
+                case OP_STH: {
+                    int second = bus.getHalfWord(pc + 2);
+                    nextPC += 2;
+                    cycles = 4;
+                    int disp16 = signExtend(second, 16);
+                    bus.setHalfWord(getRegister(reg1) + disp16, (short) getRegister(reg2));
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x st.h   r%d, %d[r%d]", pc, disp16, reg2, reg1));
                     }
                     break;
                 }
@@ -311,9 +372,9 @@ public class CPU implements Emulable, Resetable {
                     nextPC += 2;
                     cycles = 4;
                     int disp16 = signExtend(second, 16);
-                    bus.setWord(getRegister(reg1) + disp16, (byte) getRegister(reg2));
+                    bus.setWord(getRegister(reg1) + disp16, getRegister(reg2));
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x ST.W   %d[r%d], r%d", pc, disp16, reg1, reg2));
+                        debugInstOut.println(String.format("%08x st.w   r%d, %d[r%d]", pc, disp16, reg2, reg1));
                     }
                     break;
                 }
@@ -322,9 +383,9 @@ public class CPU implements Emulable, Resetable {
                     nextPC += 2;
                     cycles = 4;
                     int disp16 = signExtend(second, 16);
-                    bus.setWord(getRegister(reg1) + disp16, (byte) getRegister(reg2));
+                    bus.setWord(getRegister(reg1) + disp16, getRegister(reg2));
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x OUT.W  %d[r%d], r%d", pc, disp16, reg1, reg2));
+                        debugInstOut.println(String.format("%08x out.w  r%d, %d[r%d]", pc, disp16, reg2, reg1));
                     }
                     break;
                 }
@@ -335,7 +396,18 @@ public class CPU implements Emulable, Resetable {
                     int disp16 = signExtend(second, 16);
                     setRegister(reg2, signExtend(bus.getByte(getRegister(reg1) + disp16), Byte.SIZE));
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x LD.B   %d[r%d], r%d", pc, disp16, reg1, reg2));
+                        debugInstOut.println(String.format("%08x ld.b   %d[r%d], r%d", pc, disp16, reg1, reg2));
+                    }
+                    break;
+                }
+                case OP_LDH: {
+                    int second = bus.getHalfWord(pc + 2);
+                    nextPC += 2;
+                    cycles = 4;
+                    int disp16 = signExtend(second, 16);
+                    setRegister(reg2, signExtend(bus.getHalfWord(getRegister(reg1) + disp16), Short.SIZE));
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x ld.h   %d[r%d], r%d", pc, disp16, reg1, reg2));
                     }
                     break;
                 }
@@ -346,7 +418,7 @@ public class CPU implements Emulable, Resetable {
                     int disp16 = signExtend(second, 16);
                     setRegister(reg2, bus.getWord(getRegister(reg1) + disp16));
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x LD.W   %d[r%d], r%d", pc, disp16, reg1, reg2));
+                        debugInstOut.println(String.format("%08x ld.w   %d[r%d], r%d", pc, disp16, reg1, reg2));
                     }
                     break;
                 }
@@ -357,7 +429,7 @@ public class CPU implements Emulable, Resetable {
                     cycles = 3;
                     setRegister(LINK_REG, pc + 4);
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x JAL    %s%07X", pc, disp26 > 0 ? '+' : '-', abs(disp26)));
+                        debugInstOut.println(String.format("%08x jal    %s0x%x", pc, signStr(disp26), abs(disp26)));
                     }
                     break;
                 }
@@ -367,14 +439,28 @@ public class CPU implements Emulable, Resetable {
                     nextPC = pc + disp26;
                     cycles = 3;
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x JR     %s%07X", pc, disp26 > 0 ? '+' : '-', abs(disp26)));
+                        debugInstOut.println(String.format("%08x jr     %s0x%x", pc, signStr(disp26), abs(disp26)));
                     }
                     break;
                 }
                 case OP_CMP_REG: {
                     sub(getRegister(reg2), getRegister(reg1));
                     if (DEBUG_INST) {
-                        System.out.println(String.format("%08x CMP    r%d, r%d", pc, reg1, reg2));
+                        debugInstOut.println(String.format("%08x cmp    r%d, r%d", pc, reg1, reg2));
+                    }
+                    break;
+                }
+                case OP_XOR_REG: {
+                    setRegister(reg2, xor(getRegister(reg2), getRegister(reg1)));
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x xor    r%d, r%d", pc, reg1, reg2));
+                    }
+                    break;
+                }
+                case OP_SHL_IMM: {
+                    setRegister(reg2, shl(getRegister(reg2), imm5));
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x shl    %d, r%d", pc, imm5, reg2));
                     }
                     break;
                 }
@@ -406,5 +492,22 @@ public class CPU implements Emulable, Resetable {
         boolean overflow = ((a ^ b) & (a ^ intValue)) < 0;
         psw.setZeroSignOveflowCarry(zero, sign, overflow, carry);
         return intValue;
+    }
+
+    private int xor(int a, int b) {
+        int value = a ^ b;
+        boolean zero = value == 0;
+        boolean sign = value < 0;
+        psw.setZeroSignOveflow(zero, sign, false);
+        return value;
+    }
+
+    private int shl(int a, int b) {
+        int value = a << b;
+        boolean zero = value == 0;
+        boolean sign = value < 0;
+        boolean carry = b > 0 && testBit(a, 32 - b);
+        psw.setZeroSignOveflowCarry(zero, sign, false, carry);
+        return value;
     }
 }

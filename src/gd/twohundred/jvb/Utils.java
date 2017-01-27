@@ -14,6 +14,8 @@ public class Utils {
     }
 
     public static int extractU(int v, int pos, int len) {
+        assert pos >= 0 && pos < 32;
+        assert len > 0 && len + pos < 32;
         return (v >> pos) & mask(len);
     }
 
@@ -26,11 +28,13 @@ public class Utils {
     }
 
     public static int signExtend(int v, int bits) {
+        assert bits <= 32 && bits > 0;
         int shift = 32 - bits;
         return ((v << shift) >> shift);
     }
 
     public static boolean testBits(int v, int bits, int pos, int len) {
+        assert pos < 32 && pos >= 0;
         return (v & (mask(len) << pos)) == bits << pos;
     }
 
@@ -64,5 +68,9 @@ public class Utils {
 
     public static String toBinary(long v, int len) {
         return Utils.leftPad(Long.toBinaryString(v), '0', len);
+    }
+
+    public static char signStr(long v) {
+        return v > 0 ? '+' : '-';
     }
 }

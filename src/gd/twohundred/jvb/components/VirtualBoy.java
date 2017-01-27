@@ -11,12 +11,12 @@ public class VirtualBoy implements Emulable {
     private final VirtualImageProcessor vip;
     private final VirtualSoundUnit vsu;
 
-    public VirtualBoy(Screen screen, CartridgeROM rom) {
+    public VirtualBoy(Screen screen, CartridgeROM rom, CartridgeRAM ram) {
         timer = new HardwareTimer();
         vip = new VirtualImageProcessor(screen);
         vsu = new VirtualSoundUnit();
         HardwareControlRegisters controlRegisters = new HardwareControlRegisters(timer);
-        Bus bus = new Bus(rom, null, vip, controlRegisters, vsu);
+        Bus bus = new Bus(rom, ram, vip, controlRegisters, vsu);
         cpu = new CPU(bus);
     }
 

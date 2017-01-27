@@ -1,4 +1,4 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components;
 
 public class CartridgeRAM extends AbstractRAM {
     public static final int MIN_SIZE = 0x400;

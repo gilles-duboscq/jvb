@@ -1,4 +1,4 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components;
 
 public class SystemWRAM extends AbstractRAM {
     public static final int START = 0x05000000;

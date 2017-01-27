@@ -1,11 +1,13 @@
 package gd.twohundred.jvb;
 
+import gd.twohundred.jvb.components.CPU;
+import gd.twohundred.jvb.components.CartridgeROM;
+import gd.twohundred.jvb.components.VirtualBoy;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.locks.LockSupport;
-
-import static gd.twohundred.jvb.Utils.nextPowerOfTwo;
 
 public class Main {
     public static final long NANOS_PER_SECOND = 1_000_000_000L;

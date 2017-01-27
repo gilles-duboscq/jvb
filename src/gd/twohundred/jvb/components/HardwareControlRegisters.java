@@ -1,4 +1,8 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components;
+
+import gd.twohundred.jvb.BusError;
+import gd.twohundred.jvb.components.interfaces.ReadWriteMemory;
+import gd.twohundred.jvb.components.interfaces.Resetable;
 
 import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
 import static gd.twohundred.jvb.BusError.Reason.Unmapped;

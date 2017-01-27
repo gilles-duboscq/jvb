@@ -1,4 +1,13 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components.vip;
+
+import gd.twohundred.jvb.BusError;
+import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
+import gd.twohundred.jvb.components.utils.LinearMemoryMirroring;
+import gd.twohundred.jvb.components.interfaces.MappedMemory;
+import gd.twohundred.jvb.components.utils.MappedModules;
+import gd.twohundred.jvb.RenderedFrame;
+import gd.twohundred.jvb.Screen;
+import gd.twohundred.jvb.components.utils.WarningMemory;
 
 import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
 import static gd.twohundred.jvb.BusError.Reason.Unmapped;

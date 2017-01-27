@@ -1,4 +1,9 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components;
+
+import gd.twohundred.jvb.components.interfaces.Emulable;
+import gd.twohundred.jvb.Screen;
+import gd.twohundred.jvb.components.vip.VirtualImageProcessor;
+import gd.twohundred.jvb.components.vsu.VirtualSoundUnit;
 
 public class VirtualBoy implements Emulable {
     private final CPU cpu;

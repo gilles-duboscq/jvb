@@ -1,4 +1,7 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components;
+
+import gd.twohundred.jvb.components.interfaces.ReadWriteMemory;
+import gd.twohundred.jvb.components.interfaces.Resetable;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

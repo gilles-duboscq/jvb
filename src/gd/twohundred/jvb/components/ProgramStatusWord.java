@@ -1,4 +1,4 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components;
 
 import static gd.twohundred.jvb.Utils.intBit;
 import static gd.twohundred.jvb.Utils.intBits;

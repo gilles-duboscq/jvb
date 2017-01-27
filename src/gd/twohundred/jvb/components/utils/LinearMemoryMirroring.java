@@ -1,4 +1,6 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components.utils;
+
+import gd.twohundred.jvb.components.interfaces.ReadWriteMemory;
 
 public class LinearMemoryMirroring implements ReadWriteMemory {
     private final int start;

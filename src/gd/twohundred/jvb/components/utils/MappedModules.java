@@ -1,7 +1,12 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components.utils;
+
+import gd.twohundred.jvb.BusError;
+import gd.twohundred.jvb.components.interfaces.MappedMemory;
+import gd.twohundred.jvb.components.interfaces.ReadOnlyMemory;
+import gd.twohundred.jvb.components.interfaces.ReadWriteMemory;
+import gd.twohundred.jvb.components.interfaces.WriteOnlyMemory;
 
 import static gd.twohundred.jvb.BusError.Reason.Permission;
-import static gd.twohundred.jvb.BusError.Reason.Unmapped;
 
 public abstract class MappedModules implements ReadWriteMemory {
     @Override

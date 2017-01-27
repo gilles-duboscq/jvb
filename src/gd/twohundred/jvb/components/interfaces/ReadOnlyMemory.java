@@ -1,4 +1,4 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components.interfaces;
 
 public interface ReadOnlyMemory extends MappedMemory {
     int getByte(int address);

@@ -1,4 +1,6 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components.vip;
+
+import gd.twohundred.jvb.components.AbstractRAM;
 
 public class FrameBuffer extends AbstractRAM {
     public static final int WIDTH = 384;

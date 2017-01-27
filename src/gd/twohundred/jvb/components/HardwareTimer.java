@@ -1,4 +1,9 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components;
+
+import gd.twohundred.jvb.BusError;
+import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
+import gd.twohundred.jvb.components.interfaces.InterruptSource;
+import gd.twohundred.jvb.components.interfaces.ReadWriteMemory;
 
 import static gd.twohundred.jvb.BusError.Reason.Unmapped;
 import static gd.twohundred.jvb.Utils.intBit;

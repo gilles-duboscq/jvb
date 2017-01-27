@@ -1,13 +1,15 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components.vsu;
+
+import gd.twohundred.jvb.components.interfaces.WriteOnlyMemory;
 
 import static gd.twohundred.jvb.Utils.mask;
 
-public class PCMWaveTable implements WriteOnlyMemory {
-    public static final int SAMPLE_BIT_WIDTH = 6;
+public class ModulationTable implements WriteOnlyMemory {
+    public static final int SAMPLE_BIT_WIDTH = 8;
     private final int start;
     private final byte[] data = new byte[0x20];
 
-    public PCMWaveTable(int start) {
+    public ModulationTable(int start) {
         this.start = start;
     }
 

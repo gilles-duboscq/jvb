@@ -1,4 +1,6 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components.vsu;
+
+import gd.twohundred.jvb.components.interfaces.WriteOnlyMemory;
 
 public class VSUChannel implements WriteOnlyMemory {
     private final int start;

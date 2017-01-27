@@ -18,7 +18,7 @@ public class RenderedFrame {
         setPixel(row + col * HEIGHT, intensity);
     }
 
-    void setPixel(int addr, byte intensity) {
+    public void setPixel(int addr, byte intensity) {
         data[addr] = intensity;
     }
 }

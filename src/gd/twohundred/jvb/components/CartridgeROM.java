@@ -1,4 +1,6 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components;
+
+import gd.twohundred.jvb.components.interfaces.ReadOnlyMemory;
 
 import java.io.IOException;
 import java.nio.ByteOrder;

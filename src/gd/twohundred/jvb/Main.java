@@ -3,10 +3,12 @@ package gd.twohundred.jvb;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.locks.LockSupport;
 
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static gd.twohundred.jvb.Utils.nextPowerOfTwo;
 
 public class Main {
+    public static final long NANOS_PER_SECOND = 1_000_000_000L;
     private Path cartridgePath;
 
     public static void main(String... args) throws IOException {
@@ -25,22 +27,35 @@ public class Main {
         System.out.println(" Version: 1." + rom.getGameVersion());
         VirtualBoy virtualBoy = new VirtualBoy(mainWindow.getScreen(), rom);
         virtualBoy.reset();
-        long ticks = 0;
-        long tt = ticks;
         long t = System.nanoTime();
+        long cycles = 0;
+        boolean tooSlow = false;
+        long iterations = 0;
         while (!Thread.interrupted() && mainWindow.isOpen()) {
-            virtualBoy.tick();
-            ticks++;
-            if ((ticks & 0xfffffffL) == 0) {
-                long nt = System.nanoTime();
-                long dt = nt - t;
-                long dtt = ticks - tt;
-                System.out.printf("%,d ticks in %,dms: %,dtps%n", dtt, NANOSECONDS.toMillis(dt), 1_000_000_000L * dtt / dt);
-                tt = ticks;
-                t = nt;
+            long newT = System.nanoTime();
+            long dt = newT - t;
+            long dCycles = dt * CPU.CLOCK_HZ / NANOS_PER_SECOND;
+            long missingCycles = dCycles - cycles;
+
+            if (missingCycles > CPU.CLOCK_HZ / Screen.DISPLAY_REFRESH_RATE_HZ) {
+                tooSlow = true;
             }
+            int cyclesDone = virtualBoy.tick((int) missingCycles);
+
+            if (cycles > CPU.CLOCK_HZ) {
+                if (cycles != 0) {
+                    System.out.printf("%,d Hz  %,d CPItr%s%n", cycles * NANOS_PER_SECOND / dt, cycles / iterations, tooSlow ? " SLOW!" : "");
+                }
+                t = System.nanoTime();
+                cycles = 0;
+                iterations = 0;
+                tooSlow = false;
+            }
+            cycles += cyclesDone;
+            iterations++;
+            LockSupport.parkNanos(100000);
             /*try {
-                Thread.sleep(3);
+                Thread.sleep(1);
             } catch (InterruptedException e) {
                 break;
             }*/

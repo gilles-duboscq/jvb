@@ -1,0 +1,38 @@
+package gd.twohundred.jvb;
+
+import static gd.twohundred.jvb.Utils.mask;
+
+public class PCMWaveTable implements WriteOnlyMemory {
+    public static final int SAMPLE_BIT_WIDTH = 6;
+    private final int start;
+    private final byte[] data = new byte[0x20];
+
+    public PCMWaveTable(int start) {
+        this.start = start;
+    }
+
+    @Override
+    public int getStart() {
+        return start;
+    }
+
+    @Override
+    public int getSize() {
+        return 0x80;
+    }
+
+    @Override
+    public void setByte(int address, byte value) {
+        data[address / 4] = (byte) (value & mask(SAMPLE_BIT_WIDTH));
+    }
+
+    @Override
+    public void setHalfWord(int address, short value) {
+        data[address / 4] = (byte) (value & mask(SAMPLE_BIT_WIDTH));
+    }
+
+    @Override
+    public void setWord(int address, int value) {
+        data[address / 4] = (byte) (value & mask(SAMPLE_BIT_WIDTH));
+    }
+}

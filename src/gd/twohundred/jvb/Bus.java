@@ -1,52 +1,62 @@
 package gd.twohundred.jvb;
 
-public class Bus implements ReadWriteMemory {
+import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
+import static gd.twohundred.jvb.BusError.Reason.Unmapped;
+
+public class Bus extends MappedModules {
     public static final int BUS_SIZE = 0x0800_0000;
     private final CartridgeROM rom;
     private final CartridgeRAM ram;
     private final VirtualImageProcessor vip;
+    private final HardwareControlRegisters controlRegisters;
+    private final VirtualSoundUnit vsu;
+    private final SystemWRAM wram;
 
-    public Bus(CartridgeROM rom, CartridgeRAM ram, VirtualImageProcessor vip) {
+    public Bus(CartridgeROM rom, CartridgeRAM ram, VirtualImageProcessor vip, HardwareControlRegisters controlRegisters, VirtualSoundUnit vsu) {
         this.rom = rom;
         this.ram = ram;
         this.vip = vip;
+        this.controlRegisters = controlRegisters;
+        this.vsu = vsu;
+        this.wram = new SystemWRAM();
     }
 
-    @Override
-    public int getByte(int address) {
-        MappedMemory mappedModule = getMappedModule(address);
-        return ((ReadOnlyMemory) mappedModule).getByte(address - mappedModule.getStart());
-    }
-
-    @Override
-    public int getHalfWord(int address) {
-        MappedMemory mappedModule = getMappedModule(address);
-        return ((ReadOnlyMemory) mappedModule).getHalfWord(address - mappedModule.getStart());
-    }
-
-    @Override
-    public int getWord(int address) {
-        MappedMemory mappedModule = getMappedModule(address);
-        return ((ReadOnlyMemory) mappedModule).getWord(address - mappedModule.getStart());
-    }
-
-    @Override
-    public void setByte(int address, byte value) {
-
-    }
-
-    private MappedMemory getMappedModule(int address) {
-        int effectiveAddress = address & (BUS_SIZE - 1);
-        if (effectiveAddress > CartridgeROM.START) {
+    protected MappedMemory getMappedModule(int address) {
+        if (address >= CartridgeROM.START) {
             return rom;
         }
-        if (effectiveAddress > CartridgeRAM.START) {
+        if (address >= CartridgeRAM.START) {
             return ram;
         }
-        if (effectiveAddress < VirtualImageProcessor.MEMORY_MAP_SIZE) {
+        if (address >= SystemWRAM.START) {
+            return wram;
+        }
+        if (address >= 0x04000000) {
+            throw new BusError(address, Unimplemented); // TODO ? Cartridge Expansion
+        }
+        if (address >= HardwareControlRegisters.START + HardwareControlRegisters.MAPPED_SIZE) {
+            throw new BusError(address, Unmapped); // TODO ? unused
+        }
+        if (address >= HardwareControlRegisters.START) {
+            return controlRegisters;
+        }
+        if (address >= VirtualSoundUnit.START) {
+            return vsu;
+        }
+        if (address >= 0) {
             return vip;
         }
-        throw new RuntimeException(String.format("Unmapped address! %08x", effectiveAddress));
+        throw new BusError(address, Unmapped);
+    }
+
+    public static final boolean DEBUG_MEMORY_PERMISSIONS = false;
+
+    @Override
+    protected int handlePermissionException(int address) {
+        if (DEBUG_MEMORY_PERMISSIONS) {
+            System.out.printf("Warning: trying to write at read-only address: %08X%n", address);
+        }
+        return 0xdeadbeef;
     }
 
     @Override

@@ -1,5 +1,5 @@
 package gd.twohundred.jvb;
 
 public interface Emulable extends Resetable {
-    void tick();
+    int tick(int targetCycles);
 }

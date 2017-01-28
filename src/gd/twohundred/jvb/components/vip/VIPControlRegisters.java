@@ -6,9 +6,11 @@ import gd.twohundred.jvb.components.interfaces.Resetable;
 
 import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
 import static gd.twohundred.jvb.Utils.extractU;
+import static gd.twohundred.jvb.Utils.insert;
 import static gd.twohundred.jvb.Utils.intBit;
 import static gd.twohundred.jvb.Utils.intBits;
 import static gd.twohundred.jvb.Utils.mask;
+import static gd.twohundred.jvb.Utils.maskedMerge;
 import static gd.twohundred.jvb.Utils.testBit;
 
 public class VIPControlRegisters implements ReadWriteMemory, Resetable {
@@ -93,14 +95,8 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
     private byte ledBrightness3;
     private byte ledBrightnessIdle;
 
-    private byte backgroundPalette0;
-    private byte backgroundPalette1;
-    private byte backgroundPalette2;
-    private byte backgroundPalette3;
-    private byte objectPalette0;
-    private byte objectPalette1;
-    private byte objectPalette2;
-    private byte objectPalette3;
+    private final byte[] backgroundPalette = new byte[4];
+    private final byte[] objectPalette = new byte[4];
     private byte clearColor;
 
     private short objectGroupIndex0;
@@ -110,6 +106,7 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
 
     private short displayStatus;
     private short drawingStatus;
+    private byte interruptYPosition;
     private short enabledInterrupts;
     private short pendingInterrupts;
     private byte frameRepeat;
@@ -142,21 +139,21 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
             case VERSION_START:
                 return VERSION;
             case BACKGROUND_PALETTE_0_START:
-                return backgroundPalette0 & 0xff;
+                return backgroundPalette[0] & 0xff;
             case BACKGROUND_PALETTE_1_START:
-                return backgroundPalette1 & 0xff;
+                return backgroundPalette[1] & 0xff;
             case BACKGROUND_PALETTE_2_START:
-                return backgroundPalette2 & 0xff;
+                return backgroundPalette[2] & 0xff;
             case BACKGROUND_PALETTE_3_START:
-                return backgroundPalette3 & 0xff;
+                return backgroundPalette[3] & 0xff;
             case OBJECT_PALETTE_0_START:
-                return objectPalette0 & 0xff;
+                return objectPalette[0] & 0xff;
             case OBJECT_PALETTE_1_START:
-                return objectPalette1 & 0xff;
+                return objectPalette[1] & 0xff;
             case OBJECT_PALETTE_2_START:
-                return objectPalette2 & 0xff;
+                return objectPalette[2] & 0xff;
             case OBJECT_PALETTE_3_START:
-                return objectPalette3 & 0xff;
+                return objectPalette[3] & 0xff;
             case CLEAR_COLOR_START:
                 return clearColor & 0xff;
             case OBJECT_GROUP_INDEX_0_START:
@@ -202,28 +199,28 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
                 ledBrightnessIdle = (byte) value;
                 return;
             case BACKGROUND_PALETTE_0_START:
-                backgroundPalette0 = (byte) (value & PALETTE_MASK);
+                backgroundPalette[0] = (byte) (value & PALETTE_MASK);
                 return;
             case BACKGROUND_PALETTE_1_START:
-                backgroundPalette1 = (byte) (value & PALETTE_MASK);
+                backgroundPalette[1] = (byte) (value & PALETTE_MASK);
                 return;
             case BACKGROUND_PALETTE_2_START:
-                backgroundPalette2 = (byte) (value & PALETTE_MASK);
+                backgroundPalette[2] = (byte) (value & PALETTE_MASK);
                 return;
             case BACKGROUND_PALETTE_3_START:
-                backgroundPalette3 = (byte) (value & PALETTE_MASK);
+                backgroundPalette[3] = (byte) (value & PALETTE_MASK);
                 return;
             case OBJECT_PALETTE_0_START:
-                objectPalette0 = (byte) (value & PALETTE_MASK);
+                objectPalette[0] = (byte) (value & PALETTE_MASK);
                 return;
             case OBJECT_PALETTE_1_START:
-                objectPalette1 = (byte) (value & PALETTE_MASK);
+                objectPalette[1] = (byte) (value & PALETTE_MASK);
                 return;
             case OBJECT_PALETTE_2_START:
-                objectPalette2 = (byte) (value & PALETTE_MASK);
+                objectPalette[2] = (byte) (value & PALETTE_MASK);
                 return;
             case OBJECT_PALETTE_3_START:
-                objectPalette3 = (byte) (value & PALETTE_MASK);
+                objectPalette[3] = (byte) (value & PALETTE_MASK);
                 return;
             case CLEAR_COLOR_START:
                 clearColor = (byte) (value & CLEAR_COLOR_MASK);
@@ -270,14 +267,13 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
                 | intBit(DISPLAY_STATUS_MEMORY_REFRESHING_POS, refresh)
                 | intBit(DISPLAY_STATUS_COLUMN_TABLE_ADDR_LOCKED_POS, lockColumnTable)
                 | intBit(DISPLAY_STATUS_DISPLAY_SYNC_ENABLED_POS, displaySync);
-        displayStatus = (short) ((displayStatus | set) & (~affected | set));
+        displayStatus = (short) maskedMerge(set, affected, displayStatus);
     }
 
     private void processDrawingControl(short value) {
         boolean enable = testBit(value, DRAWING_CONTROL_ENABLE_DRAWING_POS);
         boolean reset = testBit(value, DRAWING_CONTROL_RESET_DRAWING_POS);
-        int yPos = extractU(value, DRAWING_CONTROL_Y_POSITION_POS, DRAWING_CONTROL_Y_POSITION_LEN);
-
+        interruptYPosition = (byte) extractU(value, DRAWING_CONTROL_Y_POSITION_POS, DRAWING_CONTROL_Y_POSITION_LEN);
         if (reset) {
             pendingInterrupts &= (short) (~intBits(
                     INT_DRAWING_EXCEEDS_FRAME_PERIOD_POS,
@@ -287,9 +283,9 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
             setDrawingFrameBufferPair(0, true);
         }
 
-        int affected = intBit(DRAWING_STATUS_DRAWING_ENABLED_POS) | mask(DRAWING_CONTROL_Y_POSITION_POS, DRAWING_CONTROL_Y_POSITION_LEN);
-        int set = intBit(DRAWING_STATUS_DRAWING_ENABLED_POS, enable) | (yPos << DRAWING_CONTROL_Y_POSITION_POS);
-        drawingStatus = (short) ((drawingStatus | set) & (~affected | set));
+        int affected = intBit(DRAWING_STATUS_DRAWING_ENABLED_POS);
+        int set = intBit(DRAWING_STATUS_DRAWING_ENABLED_POS, enable);
+        drawingStatus = (short) maskedMerge(set, affected, drawingStatus);
     }
 
     @Override
@@ -323,19 +319,20 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         ledBrightnessIdle = (byte) 0xef;
         pendingInterrupts = (short) 0xdead;
         frameRepeat = 0xde & 0xf;
-        backgroundPalette0 = (byte) (0xde & PALETTE_MASK);
-        backgroundPalette1 = (byte) (0xad & PALETTE_MASK);
-        backgroundPalette2 = (byte) (0xbe & PALETTE_MASK);
-        backgroundPalette3 = (byte) (0xef & PALETTE_MASK);
-        objectPalette0 = (byte) (0xde & PALETTE_MASK);
-        objectPalette1 = (byte) (0xad & PALETTE_MASK);
-        objectPalette2 = (byte) (0xbe & PALETTE_MASK);
-        objectPalette3 = (byte) (0xef & PALETTE_MASK);
+        backgroundPalette[0] = (byte) (0xde & PALETTE_MASK);
+        backgroundPalette[1] = (byte) (0xad & PALETTE_MASK);
+        backgroundPalette[2] = (byte) (0xbe & PALETTE_MASK);
+        backgroundPalette[3] = (byte) (0xef & PALETTE_MASK);
+        objectPalette[0] = (byte) (0xde & PALETTE_MASK);
+        objectPalette[1] = (byte) (0xad & PALETTE_MASK);
+        objectPalette[2] = (byte) (0xbe & PALETTE_MASK);
+        objectPalette[3] = (byte) (0xef & PALETTE_MASK);
         clearColor = (byte) (0xde & CLEAR_COLOR_MASK);
         objectGroupIndex0 = (short) (0xdead & mask(OBJECT_GROUP_LEN));
         objectGroupIndex1 = (short) (0xbeef & mask(OBJECT_GROUP_LEN));
         objectGroupIndex2 = (short) (0xdead & mask(OBJECT_GROUP_LEN));
         objectGroupIndex3 = (short) (0xbeef & mask(OBJECT_GROUP_LEN));
+        interruptYPosition = 0; // ??
 
         // set display ready
         displayStatus |= intBit(DISPLAY_STATUS_DISPLAY_READY_POS);
@@ -353,8 +350,20 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         return ledBrightness3 & 0xff;
     }
 
-    public byte getLedBrightnessIdle() {
-        return ledBrightnessIdle;
+    public int getLedBrightnessIdle() {
+        return ledBrightnessIdle & 0xff;
+    }
+
+    public byte[] getObjectPalette() {
+        return objectPalette;
+    }
+
+    public byte[] getBackgroundPalette() {
+        return backgroundPalette;
+    }
+
+    public int getClearColor() {
+        return clearColor & 0xff;
     }
 
     public byte getFrameRepeat() {
@@ -394,7 +403,7 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         int affected = intBits(DRAWING_STATUS_WRITING_TO_FRAME_BUFFER_0_POS, DRAWING_STATUS_WRITING_TO_FRAME_BUFFER_1_POS);
         int set = intBit(DRAWING_STATUS_WRITING_TO_FRAME_BUFFER_0_POS, drawing && pair == 0)
                 | intBit(DRAWING_STATUS_WRITING_TO_FRAME_BUFFER_1_POS, drawing && pair == 1) ;
-        drawingStatus = (short) ((drawingStatus | set) & (~affected | set));
+        drawingStatus = (short) maskedMerge(set, affected, drawingStatus);
     }
 
     public void setDisplayingFrameBufferPair(int pair, boolean left, boolean disaplaying) {
@@ -406,6 +415,14 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
                 | intBit(DISPLAY_STATUS_LEFT_FB_1_DISPLAYED_POS, pair == 1 && left && disaplaying)
                 | intBit(DISPLAY_STATUS_RIGHT_FB_0_DISPLAYED_POS, pair == 0 && !left && disaplaying)
                 | intBit(DISPLAY_STATUS_RIGHT_FB_1_DISPLAYED_POS, pair == 1 && !left && disaplaying);
-        displayStatus = (short) ((displayStatus | set) & (~affected | set));
+        displayStatus = (short) maskedMerge(set, affected, displayStatus);
+    }
+
+    public void setCurrentYBlock(int i) {
+        drawingStatus = (short) insert(i, DRAWING_STATUS_CURRENT_Y_POSITION_POS, DRAWING_STATUS_CURRENT_Y_POSITION_LEN, drawingStatus);
+    }
+
+    public int getCurrentYBlock() {
+        return extractU(drawingStatus, DRAWING_STATUS_CURRENT_Y_POSITION_POS, DRAWING_STATUS_CURRENT_Y_POSITION_LEN);
     }
 }

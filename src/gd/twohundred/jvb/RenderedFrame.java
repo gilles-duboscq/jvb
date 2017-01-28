@@ -19,6 +19,6 @@ public class RenderedFrame {
     }
 
     public void setPixel(int addr, byte intensity) {
-        data[addr] = intensity;
+        data[addr] = (byte) (intensity << 1); // FIXME: this is a hack, need gamma
     }
 }

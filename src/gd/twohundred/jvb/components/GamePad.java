@@ -15,7 +15,7 @@ public class GamePad implements ExactlyEmulable {
     private byte status;
     private short input;
 
-    private static final boolean DEBUG_GAME_PAD = true;
+    private static final boolean DEBUG_GAME_PAD = false;
 
     public void setControl(byte value) {
         if (DEBUG_GAME_PAD) {

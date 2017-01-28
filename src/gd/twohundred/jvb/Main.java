@@ -44,9 +44,6 @@ public class Main {
             long dCycles = dt * CPU.CLOCK_HZ / Utils.NANOS_PER_SECOND;
             long missingCycles = dCycles - cycles;
 
-            if (missingCycles > CPU.CLOCK_HZ / Screen.DISPLAY_REFRESH_RATE_HZ) {
-                tooSlow = true;
-            }
             int cyclesDone = virtualBoy.tick((int) missingCycles);
 
             if (cycles > CPU.CLOCK_HZ) {

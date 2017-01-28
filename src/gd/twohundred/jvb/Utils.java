@@ -21,8 +21,27 @@ public class Utils {
         return (v >> pos) & mask(len);
     }
 
+    public static int extractNthU(int v, int n, int len) {
+        return extractU(v, n * len, len);
+    }
+
     public static int extractS(int v, int pos, int len) {
         return signExtend(extractU(v, pos, len), len);
+    }
+
+    public static int maskedMerge(int v, int mask, int into) {
+        return ((into | v) & (~mask | v));
+    }
+
+    public static int insertNth(int v, int n, int len, int into) {
+        return insert(v, n * len, len, into);
+    }
+
+    public static int insert(int v, int pos, int len, int into) {
+        assert pos >= 0 && pos < 32;
+        int set = v << pos;
+        int affected = mask(pos, len);
+        return maskedMerge(set, affected, into);
     }
 
     public static int mask(int len) {
@@ -79,5 +98,15 @@ public class Utils {
 
     public static char signStr(long v) {
         return v > 0 ? '+' : '-';
+    }
+
+    public static int repeat(int v, int patternLength, int targetLength) {
+        assert (v & mask(patternLength)) == 0;
+        int shift = 0;
+        int result = 0;
+        for (int i = 0; i < targetLength / patternLength; i++) {
+            result |= v << shift;
+        }
+        return result & mask(targetLength);
     }
 }

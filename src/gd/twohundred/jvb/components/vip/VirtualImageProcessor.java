@@ -259,6 +259,11 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         rightFb0.reset();
         rightFb1.reset();
         controlRegs.reset();
+        characterRAM.reset();
+        backgroundSegmentsAndWindowParameterTable.reset();
+        for (WindowAttributes window : windowAttributes) {
+            window.reset();
+        }
         displayCycles = 0;
         controlRegs.setDrawingFrameBufferPair(0, false);
         frameCounter = 0;

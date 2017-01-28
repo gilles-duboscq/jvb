@@ -43,4 +43,6 @@ public abstract class WindowMode {
         FrameBuffer frameBuffer = vip.getCurrentFrameBuffer(left);
         frameBuffer.setPixel(x, y, color);
     }
+
+    public abstract int getId();
 }

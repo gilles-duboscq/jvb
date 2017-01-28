@@ -6,6 +6,7 @@ import gd.twohundred.jvb.components.interfaces.Resetable;
 
 import static gd.twohundred.jvb.Utils.extractU;
 import static gd.twohundred.jvb.Utils.insert;
+import static gd.twohundred.jvb.Utils.intBit;
 import static gd.twohundred.jvb.Utils.testBit;
 import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.WINDOW_ATTRIBUTES_START;
 
@@ -127,8 +128,48 @@ public class WindowAttributes implements ReadWriteMemory, Resetable {
         drawLeft = testBit(value, FLAGS_LEFT_POS);
     }
 
+    private int getFlags() {
+        return (baseSegmentIndex << FLAGS_BASE_SEGMENT_POS)
+                | intBit(FLAGS_STOP_POS, isStop)
+                | intBit(FLAGS_USE_OOB_CHARACTER_POS, useOutOfBoundsCharacter)
+                | (Integer.numberOfTrailingZeros(backgroundHeightSegments) << FLAGS_BACKGROUND_HEIGHT_POS)
+                | (Integer.numberOfTrailingZeros(backgroundWidthSegments) << FLAGS_BACKGROUND_WIDTH_POS)
+                | mode.getId() << FLAGS_MODE_POS
+                | intBit(FLAGS_RIGHT_POS, drawRight)
+                | intBit(FLAGS_LEFT_POS, drawLeft)
+                ;
+    }
+
     @Override
     public int getHalfWord(int address) {
+        if (address >= SCRATCH_START) {
+            System.out.printf("Warning: reading from Window scratch @ 0x%08x%n", address);
+            return 0xdead;
+        }
+        switch (address) {
+            case FLAGS_START:
+                return getFlags();
+            case X_START:
+                return x;
+            case Y_START:
+                return y;
+            case BACKGROUND_X_START:
+                return backgroundX;
+            case BACKGROUND_Y_START:
+                return backgroundY;
+            case PARALLAX_START:
+                return parallax;
+            case BACKGROUND_PARALLAX_START:
+                return backgroundParallax;
+            case WIDTH_START:
+                return width;
+            case HEIGHT_START:
+                return height;
+            case PARAMETER_INDEX_START:
+                return parameterIndex;
+            case OOB_CHARACTER_START:
+                return outOfBoundsCharacter;
+        }
         throw new BusError(address, BusError.Reason.Unimplemented);
     }
 
@@ -151,7 +192,24 @@ public class WindowAttributes implements ReadWriteMemory, Resetable {
 
     @Override
     public void reset() {
-
+        baseSegmentIndex = 5;
+        isStop = true;
+        useOutOfBoundsCharacter = false;
+        backgroundHeightSegments = 1;
+        backgroundWidthSegments = 2;
+        mode = WindowMode.get(0);
+        drawLeft = false;
+        drawRight = true;
+        x = (short) 0xdead;
+        y = (short) 0xbeef;
+        backgroundX = (short) 0xbeef;
+        backgroundY = (short) 0xdead;
+        height = (short) 0xdead;
+        width = (short) 0xbeef;
+        parameterIndex = (short) 0xdead;
+        outOfBoundsCharacter = (short) 0xdead;
+        parallax = (short) 0xdead;
+        backgroundParallax = (short) 0xbeef;
     }
 
     public boolean isStop() {

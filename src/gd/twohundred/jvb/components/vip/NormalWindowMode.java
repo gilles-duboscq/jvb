@@ -8,4 +8,9 @@ public class NormalWindowMode extends BackgroundedWindowMode {
     public void draw(WindowAttributes window, VirtualImageProcessor vip, boolean left) {
         drawBackground(window, vip, left);
     }
+
+    @Override
+    public int getId() {
+        return ID;
+    }
 }

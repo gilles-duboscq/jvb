@@ -8,12 +8,20 @@ import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
 import static gd.twohundred.jvb.BusError.Reason.Unmapped;
 import static gd.twohundred.jvb.Utils.intBits;
 import static gd.twohundred.jvb.Utils.testBit;
+import static gd.twohundred.jvb.Utils.toBinary;
 
 public class HardwareControlRegisters implements Resetable, ReadWriteMemory {
-    private static final int WAIT_CONTROL_REGISTER = 0x24;
+    private static final int LINK_CONTROL_REGISTER = 0x0;
+    private static final int LINK_AUX_REGISTER = 0x4;
+    private static final int LINK_TX_REGISTER = 0x8;
+    private static final int LINK_RX_REGISTER = 0xc;
+    private static final int GAME_PAD_LOW_REGISTER = 0x10;
+    private static final int GAME_PAD_HIGH_REGISTER = 0x14;
     private static final int TIMER_LOW_REGISTER = 0x18;
     private static final int TIMER_HIGH_REGISTER = 0x1c;
     private static final int TIMER_CONTROL_REGISTER = 0x20;
+    private static final int WAIT_CONTROL_REGISTER = 0x24;
+    private static final int GAME_PAD_CONTROL_REGISTER = 0x28;
     private static final int WAIT_ROM_POS = 0;
     private static final int WAIT_EXTENSION_POS = 1;
     public static final int START = 0x02000000;
@@ -21,9 +29,11 @@ public class HardwareControlRegisters implements Resetable, ReadWriteMemory {
 
     private byte waitControl;
     private final HardwareTimer timer;
+    private final GamePad gamePad;
 
-    public HardwareControlRegisters(HardwareTimer timer) {
+    public HardwareControlRegisters(HardwareTimer timer, GamePad gamePad) {
         this.timer = timer;
+        this.gamePad = gamePad;
     }
 
     @Override
@@ -47,11 +57,18 @@ public class HardwareControlRegisters implements Resetable, ReadWriteMemory {
         switch (address) {
             case WAIT_CONTROL_REGISTER:
                 return waitControl;
+            case GAME_PAD_CONTROL_REGISTER:
+                return gamePad.getControl();
+            case GAME_PAD_HIGH_REGISTER:
+                return gamePad.getInputHigh();
+            case GAME_PAD_LOW_REGISTER:
+                return gamePad.getInputLow();
         }
         throw new BusError(address, Unimplemented);
     }
 
-    private static final boolean DEBUG_WAIT_CONTROL = false;
+    private static final boolean DEBUG_WAIT_CONTROL = true;
+    private static final boolean DEBUG_LINK_CONTROL = true;
 
     @Override
     public void setByte(int address, byte value) {
@@ -68,6 +85,17 @@ public class HardwareControlRegisters implements Resetable, ReadWriteMemory {
                 case TIMER_CONTROL_REGISTER:
                     timer.setByte(address - timer.getStart(), value);
                     return;
+                case LINK_CONTROL_REGISTER:
+                case LINK_AUX_REGISTER:
+                case LINK_TX_REGISTER:
+                    if (DEBUG_LINK_CONTROL) {
+                        System.out.printf("Ignoring link control registers: 0b%s @ 0x%08x%n", toBinary(value & 0xff, Byte.SIZE), address);
+                    }
+                    return;
+                case GAME_PAD_CONTROL_REGISTER:
+                    gamePad.setControl(value);
+                    return;
+
             }
         } catch (BusError be) {
             throw new BusError(address, Unmapped, be);

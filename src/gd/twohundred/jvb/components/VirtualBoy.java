@@ -10,12 +10,14 @@ public class VirtualBoy implements Emulable {
     private final HardwareTimer timer;
     private final VirtualImageProcessor vip;
     private final VirtualSoundUnit vsu;
+    private final GamePad gamePad;
 
     public VirtualBoy(Screen screen, CartridgeROM rom, CartridgeRAM ram) {
         timer = new HardwareTimer();
         vip = new VirtualImageProcessor(screen);
         vsu = new VirtualSoundUnit();
-        HardwareControlRegisters controlRegisters = new HardwareControlRegisters(timer);
+        gamePad = new GamePad();
+        HardwareControlRegisters controlRegisters = new HardwareControlRegisters(timer, gamePad);
         Bus bus = new Bus(rom, ram, vip, controlRegisters, vsu);
         cpu = new CPU(bus);
     }
@@ -28,6 +30,7 @@ public class VirtualBoy implements Emulable {
             timer.tickExact(actualCycles);
             vip.tickExact(actualCycles);
             vsu.tickExact(actualCycles);
+            gamePad.tickExact(actualCycles);
             cycles += actualCycles;
         }
         return cycles;
@@ -39,5 +42,6 @@ public class VirtualBoy implements Emulable {
         timer.reset();
         vip.reset();
         vsu.reset();
+        gamePad.reset();
     }
 }

@@ -24,7 +24,12 @@ public class Utils {
     }
 
     public static int mask(int len) {
+        assert len <= 32 && len > 0;
         return (1 << len) - 1;
+    }
+
+    public static int mask(int pos, int len) {
+        return mask(len) << pos;
     }
 
     public static int signExtend(int v, int bits) {
@@ -35,7 +40,7 @@ public class Utils {
 
     public static boolean testBits(int v, int bits, int pos, int len) {
         assert pos < 32 && pos >= 0;
-        return (v & (mask(len) << pos)) == bits << pos;
+        return (v & mask(pos, len)) == bits << pos;
     }
 
     public static boolean testBit(int v, int pos) {

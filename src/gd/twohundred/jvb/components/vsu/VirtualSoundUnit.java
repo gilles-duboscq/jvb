@@ -22,11 +22,19 @@ public class VirtualSoundUnit implements ExactlyEmulable, WriteOnlyMemory {
     public static final int WAVE_TABLE_4_START = 0x200;
     public static final int MODULATION_TABLE_START = 0x280;
 
-    private final VSUChannel channel1 = new VSUChannel(0x400);
-    private final VSUChannel channel2 = new VSUChannel(0x440);
-    private final VSUChannel channel3 = new VSUChannel(0x480);
-    private final VSUChannel channel4 = new VSUChannel(0x4c0);
-    private final VSUChannel channel5 = new VSUChannel(0x500);
+    public static final int CHANNEL_1_START = 0x400;
+    public static final int CHANNEL_2_START = 0x440;
+    public static final int CHANNEL_3_START = 0x480;
+    public static final int CHANNEL_4_START = 0x4C0;
+    public static final int CHANNEL_5_START = 0x500;
+    public static final int NOISE_CHANNEL_START = 0x540;
+
+    private final VSUPCMChannel channel1 = new VSUPCMChannel(CHANNEL_1_START);
+    private final VSUPCMChannel channel2 = new VSUPCMChannel(CHANNEL_2_START);
+    private final VSUPCMChannel channel3 = new VSUPCMChannel(CHANNEL_3_START);
+    private final VSUPCMChannel channel4 = new VSUPCMChannel(CHANNEL_4_START);
+    private final VSUPCMChannel channel5 = new VSUPCMChannel(CHANNEL_5_START);
+    private final VSUNoiseChannel noiseChannel = new VSUNoiseChannel(NOISE_CHANNEL_START);
 
     private final PCMWaveTable waveTable0 = new PCMWaveTable(WAVE_TABLE_0_START);
     private final PCMWaveTable waveTable1 = new PCMWaveTable(WAVE_TABLE_1_START);
@@ -54,38 +62,69 @@ public class VirtualSoundUnit implements ExactlyEmulable, WriteOnlyMemory {
 
     @Override
     public void setByte(int address, byte value) {
-        if (address < 0x300) {
-            if (address >= MODULATION_TABLE_START) {
-                modulationTable.setByte(address - MODULATION_TABLE_START, value);
-                return;
-            }
-            if (address >= WAVE_TABLE_4_START) {
-                waveTable4.setByte(address - WAVE_TABLE_4_START, value);
-                return;
-            }
-            if (address >= WAVE_TABLE_3_START) {
-                waveTable3.setByte(address - WAVE_TABLE_3_START, value);
-                return;
-            }
-            if (address >= WAVE_TABLE_2_START) {
-                waveTable2.setByte(address - WAVE_TABLE_2_START, value);
-                return;
-            }
-            if (address >= WAVE_TABLE_1_START) {
-                waveTable1.setByte(address - WAVE_TABLE_1_START, value);
-                return;
-            }
-            if (address >= WAVE_TABLE_0_START) {
-                waveTable0.setByte(address - WAVE_TABLE_0_START, value);
-                return;
-            }
+        if (address > SOUND_DISABLE_ADDR) {
             throw new BusError(address, Unmapped);
         }
         if (address == SOUND_DISABLE_ADDR) {
             soundEnabled = !testBit(value, SOUND_DISABLE_POS);
             return;
         }
-        throw new BusError(address, Unimplemented);
+        if (address >= NOISE_CHANNEL_START) {
+            noiseChannel.setByte(address - NOISE_CHANNEL_START, value);
+            return;
+        }
+        if (address >= CHANNEL_5_START) {
+            channel1.setByte(address - CHANNEL_5_START, value);
+            return;
+        }
+        if (address >= CHANNEL_4_START) {
+            channel1.setByte(address - CHANNEL_4_START, value);
+            return;
+        }
+        if (address >= CHANNEL_3_START) {
+            channel1.setByte(address - CHANNEL_3_START, value);
+            return;
+        }
+        if (address >= CHANNEL_2_START) {
+            channel1.setByte(address - CHANNEL_2_START, value);
+            return;
+        }
+        if (address >= CHANNEL_1_START) {
+            channel1.setByte(address - CHANNEL_1_START, value);
+            return;
+        }
+        if (address >= CHANNEL_1_START) {
+            channel1.setByte(address - CHANNEL_1_START, value);
+            return;
+        }
+        if (address >= 0x300) {
+            throw new BusError(address, Unimplemented);
+        }
+        if (address >= MODULATION_TABLE_START) {
+            modulationTable.setByte(address - MODULATION_TABLE_START, value);
+            return;
+        }
+        if (address >= WAVE_TABLE_4_START) {
+            waveTable4.setByte(address - WAVE_TABLE_4_START, value);
+            return;
+        }
+        if (address >= WAVE_TABLE_3_START) {
+            waveTable3.setByte(address - WAVE_TABLE_3_START, value);
+            return;
+        }
+        if (address >= WAVE_TABLE_2_START) {
+            waveTable2.setByte(address - WAVE_TABLE_2_START, value);
+            return;
+        }
+        if (address >= WAVE_TABLE_1_START) {
+            waveTable1.setByte(address - WAVE_TABLE_1_START, value);
+            return;
+        }
+        if (address >= WAVE_TABLE_0_START) {
+            waveTable0.setByte(address - WAVE_TABLE_0_START, value);
+            return;
+        }
+        throw new BusError(address, Unmapped);
     }
 
     @Override

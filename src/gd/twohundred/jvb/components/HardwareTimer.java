@@ -109,6 +109,8 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
     @Override
     public void reset() {
         status = 0x04;
+        counter = (short) 0xffff;
+        reloadValue = 0x0000;
     }
 
     @Override
@@ -120,12 +122,13 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
                 int remaining = period - cycleCouter;
                 if (cyclesToConsume >= remaining) {
                     cycleCouter = 0;
-                    counter++;
+                    counter--;
                     if (counter == 0) {
                         status |= intBit(ZERO_POS);
                         if (isInterruptEnabled()) {
                             interruptRaised = true;
                         }
+                        counter = reloadValue;
                     }
                     cyclesToConsume -= remaining;
                 } else {

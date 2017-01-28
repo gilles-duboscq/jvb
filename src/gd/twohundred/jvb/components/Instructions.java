@@ -38,14 +38,22 @@ public class Instructions {
     public static final int OP_JAL = 0b101011;
     public static final int OP_JR = 0b101010;
     public static final int OP_CMP_REG = 0b000011;
+    public static final int OP_CMP_IMM = 0b010011;
     public static final int OP_XOR_REG = 0b001110;
     public static final int OP_SHL_IMM = 0b010100;
+    public static final int OP_SHR_IMM = 0b010101;
+    public static final int OP_SAR_IMM = 0b010111;
     public static final int OP_ADD_REG = 0b000001;
     public static final int OP_ADDI = 0b101001;
+    public static final int OP_AND_IMM = 0b101101;
+    public static final int OP_AND_REG = 0b001101;
+    public static final int OP_OR_IMM = 0b101100;
+    public static final int OP_OR_REG = 0b001100;
 
     public static final int BCOND_BNE = 0b1010;
     public static final int BCOND_BL = 0b0001;
     public static final int BCOND_BE = 0b0010;
     public static final int BCOND_BR = 0b0101;
-    public static final int BCOND_LT = 0b0110;
+    public static final int BCOND_BLT = 0b0110;
+    public static final int BCOND_BGE = 0b1110;
 }

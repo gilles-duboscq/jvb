@@ -13,6 +13,7 @@ import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
 import static gd.twohundred.jvb.BusError.Reason.Unmapped;
 import static gd.twohundred.jvb.Screen.HEIGHT;
 import static gd.twohundred.jvb.Screen.WIDTH;
+import static gd.twohundred.jvb.Utils.intBits;
 import static java.lang.Math.min;
 
 public class VirtualImageProcessor extends MappedModules implements ExactlyEmulable {
@@ -22,14 +23,14 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     public static final int RIGHT_FRAMEBUFFER_0_START = 0x0001_0000;
     public static final int LEFT_FRAMEBUFFER_0_START = 0x0000_0000;
     public static final int LEFT_FRAMEBUFFER_1_START = 0x0000_8000;
+
+
     private final Screen screen;
     private final FrameBuffer leftFb0 = new FrameBuffer(LEFT_FRAMEBUFFER_0_START);
     private final FrameBuffer leftFb1 = new FrameBuffer(LEFT_FRAMEBUFFER_1_START);
     private final FrameBuffer rightFb0 = new FrameBuffer(RIGHT_FRAMEBUFFER_0_START);
     private final FrameBuffer rightFb1 = new FrameBuffer(RIGHT_FRAMEBUFFER_1_START);
-    private byte ledBrightness1 = 20;
-    private byte ledBrightness2 = 60;
-    private byte ledBrightness3 = 100;
+    private final VIPControlRegisters controlRegs = new VIPControlRegisters(this);
 
     private final WarningMemory backgroundSegmentsAndWindowPataremeterTable =
             new WarningMemory("Background Segments and Window Parameter Table", 0x00020000, 0x1d800);
@@ -67,9 +68,9 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         int imageAddr = 0;
         byte[] intensities = new byte[]{
                 0,
-                ledBrightness1,
-                ledBrightness2,
-                (byte) min(255, (ledBrightness1 & 0xff) + (ledBrightness2 & 0xff) + (ledBrightness3 & 0xff))
+                (byte) controlRegs.getLedBrightness1(),
+                (byte) controlRegs.getLedBrightness2(),
+                (byte) min(255, (controlRegs.getLedBrightness1() & 0xff) + (controlRegs.getLedBrightness2() & 0xff) + (controlRegs.getLedBrightness3() & 0xff))
         };
         for (int col = 0; col < WIDTH; col++) {
             for (int row = 0; row < HEIGHT / FrameBuffer.PIXEL_PER_BYTE; row++) {
@@ -92,12 +93,17 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         }
     }
 
+    public void softReset() {
+        System.out.println("Ignoring VIP soft reset");
+    }
+
     @Override
     public void reset() {
         leftFb0.reset();
         leftFb1.reset();
         rightFb0.reset();
         rightFb1.reset();
+        controlRegs.reset();
     }
 
     @Override
@@ -124,8 +130,11 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         if (address >= 0x00078000) {
             return chrTable0Mirror;
         }
+        if (address >= 0x00060000) {
+            throw new BusError(address, Unimplemented); // not used ?
+        }
         if (address >= 0x00040000) {
-            throw new BusError(address, Unimplemented); // TODO control regs and above
+            return controlRegs;
         }
         if (address >= 0x0003E000) {
             return oam; // TODO

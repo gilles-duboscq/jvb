@@ -14,11 +14,10 @@ import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
 import static gd.twohundred.jvb.BusError.Reason.Unmapped;
 import static gd.twohundred.jvb.Screen.HEIGHT;
 import static gd.twohundred.jvb.Screen.WIDTH;
-import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DisplayState.Drawing;
+import static gd.twohundred.jvb.Utils.NANOS_PER_SECOND;
+import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DisplayState.LeftFrameBuffer;
+import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DisplayState.RightFrameBuffer;
 import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DisplayState.Waiting;
-import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DrawingState.Finished;
-import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DrawingState.Start;
-import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DrawingState.Windows;
 import static java.lang.Math.min;
 
 public class VirtualImageProcessor extends MappedModules implements ExactlyEmulable {
@@ -91,73 +90,71 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private static final int RIGH_DISPLAY_CYCLE = FRAME_PERIOD - 10;
     private static final int LEFT_DISPLAY_CYCLE = RIGH_DISPLAY_CYCLE - 10;
 
-    boolean softResetIdle = false;
+    private static final int MAX_COLUMN_TIME = 0xfe;
+    private static final long FOUR_COLUMN_UNIT_TIME_NS = 200;
+    private static final long COLUMN_UNIT_TIME_NS = FOUR_COLUMN_UNIT_TIME_NS / 4;
+    private static final long MAX_FRAME_BUFFER_DISPLAY_TIME_NS = COLUMN_UNIT_TIME_NS * Screen.WIDTH;
+    private static final int MAX_FRAME_BUFFER_DISPLAY_CYCLES = (int) (CPU.CLOCK_HZ * MAX_FRAME_BUFFER_DISPLAY_TIME_NS / NANOS_PER_SECOND);
+    private static final int RIGH_DISPLAY_START_CYCLE = FRAME_PERIOD - (10 + MAX_FRAME_BUFFER_DISPLAY_CYCLES);
+    private static final int LEFT_DISPLAY_START_CYCLE = RIGH_DISPLAY_START_CYCLE - (10 + MAX_FRAME_BUFFER_DISPLAY_CYCLES);
+
     private final RenderedFrame leftRendered = new RenderedFrame();
     private final RenderedFrame rightRendered = new RenderedFrame();
     private int displayCycles;
+    private long frameCounter;
     private DrawingState drawingState;
-    private DisplayState displaytate;
+    private DisplayState displayState;
 
     private FrameBuffer currentRight = rightFb1;
     private FrameBuffer currentLeft = leftFb1;
 
     protected enum DisplayState {
-        Drawing,
         Waiting,
+        LeftFrameBuffer,
+        RightFrameBuffer,
+        Finished
     }
 
     protected enum DrawingState {
-        Start,
-        Windows,
+        Drawing,
         Finished
     }
 
     @Override
     public void tickExact(int cycles) {
         int cyclesToConsume = cycles;
-        if (softResetIdle) {
+        if (displayState == DisplayState.Finished) {
             int idleCycles = min(cyclesToConsume, FRAME_PERIOD - displayCycles);
             cyclesToConsume -= idleCycles;
             displayCycles += idleCycles;
-            if (displayCycles >= FRAME_PERIOD) {
-                softResetIdle = false;
-            }
         }
         if (!controlRegs.isDisplayEnabled()) {
             return;
         }
         while (cyclesToConsume > 0) {
             if (displayCycles >= FRAME_PERIOD) {
-                if (drawingState != Finished) {
-                    controlRegs.setDrawingExceedsFramePeriod();
-                    // TODO: interrupt?
-                }
                 displayCycles = 0;
-                controlRegs.setDisplayProcStart();
-                displaytate = Drawing;
-                drawingState = Start;
-                controlRegs.setDisplayingFrameBufferPair(0, true, false);
-                // TODO: interrupt: Start of Frame Processing and/or Start of Drawing
+                startDisplay();
+            } else if (displayCycles == LEFT_DISPLAY_START_CYCLE) {
+                displayState = LeftFrameBuffer;
+                controlRegs.setDisplayingFrameBufferPair(currentFbPair(), true, true);
+                renderFrameBuffer(currentLeft, leftRendered);
+            } else if (displayCycles == LEFT_DISPLAY_START_CYCLE + MAX_FRAME_BUFFER_DISPLAY_CYCLES) {
+                screen.update(leftRendered, rightRendered);
+                controlRegs.setDisplayingFrameBufferPair(currentFbPair(), true, false);
+                // TODO: interrupt Left Display Finished
+            } else if (displayCycles == RIGH_DISPLAY_START_CYCLE) {
+                displayState = RightFrameBuffer;
+                controlRegs.setDisplayingFrameBufferPair(currentFbPair(), false, true);
+                renderFrameBuffer(currentLeft, leftRendered);
+            } else if (displayCycles == RIGH_DISPLAY_START_CYCLE + MAX_FRAME_BUFFER_DISPLAY_CYCLES) {
+                screen.update(leftRendered, rightRendered);
+                controlRegs.setDisplayingFrameBufferPair(currentFbPair(), false, false);
+                // TODO: interrupt Right Display Finished
+                displayState = DisplayState.Finished;
             }
-            if (displaytate == Drawing) {
-                if (drawingState == Finished) {
-                    displaytate = Waiting;
-                    // TODO interrupt: Drawing Finished
-                } else {
-                    tickDrawing();
-                }
-            }
-            if (displaytate == Waiting) {
-                if (displayCycles == RIGH_DISPLAY_CYCLE) {
-                    controlRegs.setDisplayingFrameBufferPair(currentFbPair(), false, true);
-                    renderFrameBuffer(currentRight, rightRendered);
-                    // TODO: interrupt Right Display Finished
-                    screen.update(leftRendered, rightRendered);
-                } else if (displayCycles == LEFT_DISPLAY_CYCLE) {
-                    controlRegs.setDisplayingFrameBufferPair(currentFbPair(), true, true);
-                    renderFrameBuffer(currentLeft, leftRendered);
-                    // TODO: interrupt Left Display Finished
-                }
+            if (drawingState == DrawingState.Drawing) {
+                tickDrawing();
             }
             cyclesToConsume--;
             displayCycles++;
@@ -169,42 +166,58 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     }
 
     private void tickDrawing() {
-        if (drawingState == Start) {
-            // swap buffers
-            if (currentRight == rightFb0) {
-                currentRight = rightFb1;
-                currentLeft = leftFb1;
-                controlRegs.setDrawingFrameBufferPair(1, true);
-            } else {
-                currentRight = rightFb0;
-                currentLeft = leftFb0;
-                controlRegs.setDrawingFrameBufferPair(0, true);
-            }
-            drawingState = Windows;
-        }
         if (displayCycles >= 100) {
             controlRegs.setDrawingFrameBufferPair(0, false);
-            drawingState = Finished;
+            drawingState = DrawingState.Finished;
+        }
+    }
+
+    private void startDisplay() {
+        if (drawingState != DrawingState.Finished) {
+            controlRegs.setDrawingExceedsFramePeriod();
+            // TODO: interrupt?
+        }
+        controlRegs.setDisplayProcStart();
+        displayState = Waiting;
+        controlRegs.setDisplayingFrameBufferPair(0, true, false);
+        // TODO: interrupt: Start of Frame Processing and/or Start of Drawing
+        if (frameCounter % (controlRegs.getFrameRepeat() + 1) == 0) {
+            startDrawing();
+        }
+        frameCounter++;
+    }
+
+    private void startDrawing() {
+        drawingState = DrawingState.Drawing;
+        // swap buffers
+        if (currentRight == rightFb0) {
+            currentRight = rightFb1;
+            currentLeft = leftFb1;
+            controlRegs.setDrawingFrameBufferPair(1, true);
+        } else {
+            currentRight = rightFb0;
+            currentLeft = leftFb0;
+            controlRegs.setDrawingFrameBufferPair(0, true);
         }
     }
 
     public void softReset() {
-        softResetIdle = true;
+        drawingState = DrawingState.Finished;
         controlRegs.setDisplayingFrameBufferPair(0, true, false); // ?
     }
 
     @Override
     public void reset() {
-        drawingState = Finished;
-        displaytate = Drawing;
+        drawingState = DrawingState.Finished;
+        displayState = DisplayState.Finished;
         leftFb0.reset();
         leftFb1.reset();
         rightFb0.reset();
         rightFb1.reset();
         controlRegs.reset();
         displayCycles = 0;
-        softResetIdle = false;
         controlRegs.setDrawingFrameBufferPair(0, false);
+        frameCounter = 0;
     }
 
     @Override

@@ -11,7 +11,6 @@ import java.nio.file.Paths;
 import java.util.concurrent.locks.LockSupport;
 
 public class Main {
-    public static final long NANOS_PER_SECOND = 1_000_000_000L;
     private Path cartridgePath;
 
     public static void main(String... args) throws IOException {
@@ -42,7 +41,7 @@ public class Main {
         while (!Thread.interrupted() && mainWindow.isOpen()) {
             long newT = System.nanoTime();
             long dt = newT - t;
-            long dCycles = dt * CPU.CLOCK_HZ / NANOS_PER_SECOND;
+            long dCycles = dt * CPU.CLOCK_HZ / Utils.NANOS_PER_SECOND;
             long missingCycles = dCycles - cycles;
 
             if (missingCycles > CPU.CLOCK_HZ / Screen.DISPLAY_REFRESH_RATE_HZ) {
@@ -52,7 +51,7 @@ public class Main {
 
             if (cycles > CPU.CLOCK_HZ) {
                 if (cycles != 0) {
-                    System.out.printf("%,d Hz  %,d CPItr%s%n", cycles * NANOS_PER_SECOND / dt, cycles / iterations, tooSlow ? " SLOW!" : "");
+                    System.out.printf("%,d Hz  %,d CPItr%s%n", cycles * Utils.NANOS_PER_SECOND / dt, cycles / iterations, tooSlow ? " SLOW!" : "");
                 }
                 t = System.nanoTime();
                 cycles = 0;

@@ -1,6 +1,8 @@
 package gd.twohundred.jvb;
 
 public class Utils {
+    public static final long NANOS_PER_SECOND = 1_000_000_000L;
+
     public static String leftPad(String s, char c, int length) {
         if (s.length() < length) {
             StringBuilder sb = new StringBuilder();

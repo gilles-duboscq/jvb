@@ -284,12 +284,12 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
                     INT_DRAWING_FINISHED_POS,
                     INT_DISPLAY_NOT_READY_POS));
             vip.softReset();
-            displayStatus += intBit(DRAWING_STATUS_WRITING_TO_FRAME_BUFFER_0_POS);
+            setDrawingFrameBufferPair(0, true);
         }
 
         int affected = intBit(DRAWING_STATUS_DRAWING_ENABLED_POS) | mask(DRAWING_CONTROL_Y_POSITION_POS, DRAWING_CONTROL_Y_POSITION_LEN);
         int set = intBit(DRAWING_STATUS_DRAWING_ENABLED_POS, enable) | (yPos << DRAWING_CONTROL_Y_POSITION_POS);
-        displayStatus = (short) ((displayStatus | set) & (~affected | set));
+        drawingStatus = (short) ((drawingStatus | set) & (~affected | set));
     }
 
     @Override
@@ -376,5 +376,36 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         if (DEBUG_VIP_CTRL_AS_BYTE) {
             System.out.printf("Warning: accessing VIP Control register as byte @ 0x%08x%n", address);
         }
+    }
+
+    public boolean isDisplayEnabled() {
+        return testBit(displayStatus, DISPLAY_STATUS_DISPLAY_ENABLED_POS);
+    }
+
+    public void setDrawingExceedsFramePeriod() {
+        drawingStatus |= intBit(DRAWING_STATUS_DRAWING_EXCEEDS_FRAME_PERIOD_POS);
+    }
+
+    public void setDisplayProcStart() {
+        displayStatus |= intBit(DISPLAY_STATUS_DISPLAY_PROC_BEGINING_POS);
+    }
+
+    public void setDrawingFrameBufferPair(int pair, boolean drawing) {
+        int affected = intBits(DRAWING_STATUS_WRITING_TO_FRAME_BUFFER_0_POS, DRAWING_STATUS_WRITING_TO_FRAME_BUFFER_1_POS);
+        int set = intBit(DRAWING_STATUS_WRITING_TO_FRAME_BUFFER_0_POS, drawing && pair == 0)
+                | intBit(DRAWING_STATUS_WRITING_TO_FRAME_BUFFER_1_POS, drawing && pair == 1) ;
+        drawingStatus = (short) ((drawingStatus | set) & (~affected | set));
+    }
+
+    public void setDisplayingFrameBufferPair(int pair, boolean left, boolean disaplaying) {
+        int affected = intBits(DISPLAY_STATUS_LEFT_FB_0_DISPLAYED_POS,
+                DISPLAY_STATUS_LEFT_FB_1_DISPLAYED_POS,
+                DISPLAY_STATUS_RIGHT_FB_0_DISPLAYED_POS,
+                DISPLAY_STATUS_RIGHT_FB_1_DISPLAYED_POS);
+        int set = intBit(DISPLAY_STATUS_LEFT_FB_0_DISPLAYED_POS, pair == 0 && left && disaplaying)
+                | intBit(DISPLAY_STATUS_LEFT_FB_1_DISPLAYED_POS, pair == 1 && left && disaplaying)
+                | intBit(DISPLAY_STATUS_RIGHT_FB_0_DISPLAYED_POS, pair == 0 && !left && disaplaying)
+                | intBit(DISPLAY_STATUS_RIGHT_FB_1_DISPLAYED_POS, pair == 1 && !left && disaplaying);
+        displayStatus = (short) ((displayStatus | set) & (~affected | set));
     }
 }

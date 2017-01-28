@@ -11,8 +11,11 @@ import static gd.twohundred.jvb.Utils.signStr;
 import static gd.twohundred.jvb.Utils.testBit;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BE;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BGE;
+import static gd.twohundred.jvb.components.Instructions.BCOND_BGT;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BL;
+import static gd.twohundred.jvb.components.Instructions.BCOND_BLE;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BNE;
+import static gd.twohundred.jvb.components.Instructions.BCOND_BNH;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BR;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BLT;
 import static gd.twohundred.jvb.components.Instructions.COND_LEN;
@@ -34,6 +37,7 @@ import static gd.twohundred.jvb.components.Instructions.OP_AND_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_CLI;
 import static gd.twohundred.jvb.components.Instructions.OP_CMP_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_CMP_REG;
+import static gd.twohundred.jvb.components.Instructions.OP_DIV;
 import static gd.twohundred.jvb.components.Instructions.OP_JAL;
 import static gd.twohundred.jvb.components.Instructions.OP_JMP;
 import static gd.twohundred.jvb.components.Instructions.OP_JR;
@@ -45,16 +49,19 @@ import static gd.twohundred.jvb.components.Instructions.OP_MOVEA;
 import static gd.twohundred.jvb.components.Instructions.OP_MOVHI;
 import static gd.twohundred.jvb.components.Instructions.OP_MOV_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_MOV_REG;
+import static gd.twohundred.jvb.components.Instructions.OP_MUL;
 import static gd.twohundred.jvb.components.Instructions.OP_OR_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_OR_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_OUTW;
 import static gd.twohundred.jvb.components.Instructions.OP_SAR_IMM;
+import static gd.twohundred.jvb.components.Instructions.OP_SAR_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_SEI;
 import static gd.twohundred.jvb.components.Instructions.OP_SHL_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_SHR_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_STB;
 import static gd.twohundred.jvb.components.Instructions.OP_STH;
 import static gd.twohundred.jvb.components.Instructions.OP_STW;
+import static gd.twohundred.jvb.components.Instructions.OP_SUB;
 import static gd.twohundred.jvb.components.Instructions.OP_XOR_REG;
 import static gd.twohundred.jvb.components.Instructions.REG1_LEN;
 import static gd.twohundred.jvb.components.Instructions.REG1_POS;
@@ -206,7 +213,7 @@ public class CPU implements Emulable, Resetable {
         chcw = 0xdeadbeef;
     }
 
-    public static final boolean DEBUG_INST = true;
+    public static final boolean DEBUG_INST = false;
     public final PrintStream debugInstOut;
     public static final boolean DEBUG_CC = false;
 
@@ -241,6 +248,13 @@ public class CPU implements Emulable, Resetable {
                     }
                     break;
                 }
+                case BCOND_BNH: {
+                    branchTaken = psw.getZ() || psw.getCY();
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x bnh    %s0x%x", pc, signStr(disp9), abs(disp9)));
+                    }
+                    break;
+                }
                 case BCOND_BL: {
                     branchTaken = psw.getCY();
                     if (DEBUG_INST) {
@@ -251,7 +265,21 @@ public class CPU implements Emulable, Resetable {
                 case BCOND_BLT: {
                     branchTaken = psw.getS() ^ psw.getOV();
                     if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x bl     %s0x%x", pc, signStr(disp9), abs(disp9)));
+                        debugInstOut.println(String.format("%08x blt    %s0x%x", pc, signStr(disp9), abs(disp9)));
+                    }
+                    break;
+                }
+                case BCOND_BLE: {
+                    branchTaken = (psw.getS() ^ psw.getOV()) || psw.getZ();
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x ble    %s0x%x", pc, signStr(disp9), abs(disp9)));
+                    }
+                    break;
+                }
+                case BCOND_BGT: {
+                    branchTaken = !((psw.getS() ^ psw.getOV()) || psw.getZ());
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x bgt    %s0x%x", pc, signStr(disp9), abs(disp9)));
                     }
                     break;
                 }
@@ -497,6 +525,13 @@ public class CPU implements Emulable, Resetable {
                     }
                     break;
                 }
+                case OP_SUB: {
+                    setRegister(reg2, sub(getRegister(reg2), getRegister(reg1)));
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x sub    r%d, r%d", pc, reg1, reg2));
+                    }
+                    break;
+                }
                 case OP_XOR_REG: {
                     setRegister(reg2, xor(getRegister(reg2), getRegister(reg1)));
                     if (DEBUG_INST) {
@@ -529,6 +564,37 @@ public class CPU implements Emulable, Resetable {
                     setRegister(reg2, sar(getRegister(reg2), imm5));
                     if (DEBUG_INST) {
                         debugInstOut.println(String.format("%08x sar    %d, r%d", pc, imm5, reg2));
+                    }
+                    break;
+                }
+                case OP_SAR_REG: {
+                    setRegister(reg2, sar(getRegister(reg2), getRegister(reg1) & 0x1f));
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x sar    %d, r%d", pc, imm5, reg2));
+                    }
+                    break;
+                }
+                case OP_MUL: {
+                    cycles = 13;
+                    long full = mul(getRegister(reg2), getRegister(reg1));
+                    setRegister(30, (int) (full >> 32));
+                    setRegister(reg2, (int) full);
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x mul    %d, r%d", pc, imm5, reg2));
+                    }
+                    break;
+                }
+                case OP_DIV: {
+                    cycles = 38;
+                    int divisor = getRegister(reg1);
+                    if (divisor == 0) {
+                        throw new RuntimeException("Impl Zero Division exception");
+                    }
+                    int dividend = getRegister(reg2);
+                    setRegister(30, dividend % divisor); // mod or rem?
+                    setRegister(reg2, div(dividend, divisor));
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x div    %d, r%d", pc, imm5, reg2));
                     }
                     break;
                 }
@@ -617,6 +683,22 @@ public class CPU implements Emulable, Resetable {
         boolean sign = value < 0;
         boolean carry = b > 0 && testBit(a, b - 1);
         psw.setZeroSignOveflowCarry(zero, sign, false, carry);
+        return value;
+    }
+
+    private long mul(int a, int b) {
+        long value = a * b;
+        boolean zero = (int) value == 0;
+        boolean sign = (int) value < 0;
+        psw.setZeroSignOveflow(zero, sign, (int) value != value);
+        return value;
+    }
+
+    private int div(int a, int b) {
+        int value = a * b;
+        boolean zero = value == 0;
+        boolean sign = value < 0;
+        psw.setZeroSignOveflow(zero, sign, a == Integer.MIN_VALUE && b == -1);
         return value;
     }
 }

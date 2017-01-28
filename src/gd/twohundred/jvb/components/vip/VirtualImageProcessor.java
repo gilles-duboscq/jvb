@@ -1,19 +1,24 @@
 package gd.twohundred.jvb.components.vip;
 
 import gd.twohundred.jvb.BusError;
-import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
-import gd.twohundred.jvb.components.utils.LinearMemoryMirroring;
-import gd.twohundred.jvb.components.interfaces.MappedMemory;
-import gd.twohundred.jvb.components.utils.MappedModules;
 import gd.twohundred.jvb.RenderedFrame;
 import gd.twohundred.jvb.Screen;
+import gd.twohundred.jvb.components.CPU;
+import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
+import gd.twohundred.jvb.components.interfaces.MappedMemory;
+import gd.twohundred.jvb.components.utils.LinearMemoryMirroring;
+import gd.twohundred.jvb.components.utils.MappedModules;
 import gd.twohundred.jvb.components.utils.WarningMemory;
 
 import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
 import static gd.twohundred.jvb.BusError.Reason.Unmapped;
 import static gd.twohundred.jvb.Screen.HEIGHT;
 import static gd.twohundred.jvb.Screen.WIDTH;
-import static gd.twohundred.jvb.Utils.intBits;
+import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DisplayState.Drawing;
+import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DisplayState.Waiting;
+import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DrawingState.Finished;
+import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DrawingState.Start;
+import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DrawingState.Windows;
 import static java.lang.Math.min;
 
 public class VirtualImageProcessor extends MappedModules implements ExactlyEmulable {
@@ -57,13 +62,11 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private final LinearMemoryMirroring chrTable3Mirror = new LinearMemoryMirroring(0x0007E000, chrTable3);
 
 
-
     public VirtualImageProcessor(Screen screen) {
         this.screen = screen;
     }
 
-    private RenderedFrame renderFrameBuffer(FrameBuffer fb) {
-        RenderedFrame frame = new RenderedFrame();
+    private RenderedFrame renderFrameBuffer(FrameBuffer fb, RenderedFrame frame) {
         int fbAddr = 0;
         int imageAddr = 0;
         byte[] intensities = new byte[]{
@@ -84,26 +87,124 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         return frame;
     }
 
+    private static final int FRAME_PERIOD = (int) (CPU.CLOCK_HZ / Screen.DISPLAY_REFRESH_RATE_HZ);
+    private static final int RIGH_DISPLAY_CYCLE = FRAME_PERIOD - 10;
+    private static final int LEFT_DISPLAY_CYCLE = RIGH_DISPLAY_CYCLE - 10;
+
+    boolean softResetIdle = false;
+    private final RenderedFrame leftRendered = new RenderedFrame();
+    private final RenderedFrame rightRendered = new RenderedFrame();
+    private int displayCycles;
+    private DrawingState drawingState;
+    private DisplayState displaytate;
+
+    private FrameBuffer currentRight = rightFb1;
+    private FrameBuffer currentLeft = leftFb1;
+
+    protected enum DisplayState {
+        Drawing,
+        Waiting,
+    }
+
+    protected enum DrawingState {
+        Start,
+        Windows,
+        Finished
+    }
+
     @Override
     public void tickExact(int cycles) {
-        if (false) {
-            RenderedFrame left = renderFrameBuffer(leftFb0);
-            RenderedFrame right = renderFrameBuffer(rightFb0);
-            screen.update(left, right);
+        int cyclesToConsume = cycles;
+        if (softResetIdle) {
+            int idleCycles = min(cyclesToConsume, FRAME_PERIOD - displayCycles);
+            cyclesToConsume -= idleCycles;
+            displayCycles += idleCycles;
+            if (displayCycles >= FRAME_PERIOD) {
+                softResetIdle = false;
+            }
+        }
+        if (!controlRegs.isDisplayEnabled()) {
+            return;
+        }
+        while (cyclesToConsume > 0) {
+            if (displayCycles >= FRAME_PERIOD) {
+                if (drawingState != Finished) {
+                    controlRegs.setDrawingExceedsFramePeriod();
+                    // TODO: interrupt?
+                }
+                displayCycles = 0;
+                controlRegs.setDisplayProcStart();
+                displaytate = Drawing;
+                drawingState = Start;
+                controlRegs.setDisplayingFrameBufferPair(0, true, false);
+                // TODO: interrupt: Start of Frame Processing and/or Start of Drawing
+            }
+            if (displaytate == Drawing) {
+                if (drawingState == Finished) {
+                    displaytate = Waiting;
+                    // TODO interrupt: Drawing Finished
+                } else {
+                    tickDrawing();
+                }
+            }
+            if (displaytate == Waiting) {
+                if (displayCycles == RIGH_DISPLAY_CYCLE) {
+                    controlRegs.setDisplayingFrameBufferPair(currentFbPair(), false, true);
+                    renderFrameBuffer(currentRight, rightRendered);
+                    // TODO: interrupt Right Display Finished
+                    screen.update(leftRendered, rightRendered);
+                } else if (displayCycles == LEFT_DISPLAY_CYCLE) {
+                    controlRegs.setDisplayingFrameBufferPair(currentFbPair(), true, true);
+                    renderFrameBuffer(currentLeft, leftRendered);
+                    // TODO: interrupt Left Display Finished
+                }
+            }
+            cyclesToConsume--;
+            displayCycles++;
+        }
+    }
+
+    private int currentFbPair() {
+        return rightFb0 == currentRight ? 0 : 1;
+    }
+
+    private void tickDrawing() {
+        if (drawingState == Start) {
+            // swap buffers
+            if (currentRight == rightFb0) {
+                currentRight = rightFb1;
+                currentLeft = leftFb1;
+                controlRegs.setDrawingFrameBufferPair(1, true);
+            } else {
+                currentRight = rightFb0;
+                currentLeft = leftFb0;
+                controlRegs.setDrawingFrameBufferPair(0, true);
+            }
+            drawingState = Windows;
+        }
+        if (displayCycles >= 100) {
+            controlRegs.setDrawingFrameBufferPair(0, false);
+            drawingState = Finished;
         }
     }
 
     public void softReset() {
-        System.out.println("Ignoring VIP soft reset");
+        softResetIdle = true;
+        controlRegs.setDisplayingFrameBufferPair(0, true, false); // ?
     }
 
     @Override
     public void reset() {
+        drawingState = Finished;
+        displaytate = Drawing;
         leftFb0.reset();
         leftFb1.reset();
         rightFb0.reset();
         rightFb1.reset();
         controlRegs.reset();
+        displayCycles = 0;
+        softResetIdle = false;
+        controlRegs.setDrawingFrameBufferPair(0, false);
     }
 
     @Override

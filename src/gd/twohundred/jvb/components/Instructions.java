@@ -43,12 +43,16 @@ public class Instructions {
     public static final int OP_SHL_IMM = 0b010100;
     public static final int OP_SHR_IMM = 0b010101;
     public static final int OP_SAR_IMM = 0b010111;
+    public static final int OP_SAR_REG = 0b000111;
     public static final int OP_ADD_REG = 0b000001;
     public static final int OP_ADDI = 0b101001;
     public static final int OP_AND_IMM = 0b101101;
     public static final int OP_AND_REG = 0b001101;
     public static final int OP_OR_IMM = 0b101100;
     public static final int OP_OR_REG = 0b001100;
+    public static final int OP_MUL = 0b001000;
+    public static final int OP_DIV = 0b001001;
+    public static final int OP_SUB = 0b000010;
 
     public static final int BCOND_BNE = 0b1010;
     public static final int BCOND_BL = 0b0001;
@@ -56,4 +60,7 @@ public class Instructions {
     public static final int BCOND_BR = 0b0101;
     public static final int BCOND_BLT = 0b0110;
     public static final int BCOND_BGE = 0b1110;
+    public static final int BCOND_BLE = 0b0111;
+    public static final int BCOND_BGT = 0b1111;
+    public static final int BCOND_BNH = 0b0011;
 }

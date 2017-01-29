@@ -63,4 +63,6 @@ public class Instructions {
     public static final int BCOND_BLE = 0b0111;
     public static final int BCOND_BGT = 0b1111;
     public static final int BCOND_BNH = 0b0011;
+    public static final int BCOND_NOP = 0b1101;
+    public static final int BCOND_BN = 0b0100;
 }

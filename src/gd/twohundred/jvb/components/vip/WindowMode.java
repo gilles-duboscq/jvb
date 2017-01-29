@@ -24,6 +24,10 @@ public abstract class WindowMode {
 
     public abstract void draw(WindowAttributes window, VirtualImageProcessor vip, boolean left);
 
+    public void onFinished(WindowAttributes window, VirtualImageProcessor vip) {
+
+    }
+
     public void drawCharacterPixel(int x, int y, int characterX, int characterY, int cell, byte[] palettes, VirtualImageProcessor vip, boolean left) {
         int characterIndex = extractU(cell, CELL_CHARACTER_POS, CELL_CHARACTER_LEN);
         int paletteId = extractU(cell, CELL_PALETTE_INDEX_POS, CELL_PALETTE_INDEX_LEN);

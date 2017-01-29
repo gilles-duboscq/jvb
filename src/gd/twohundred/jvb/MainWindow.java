@@ -1,5 +1,7 @@
 package gd.twohundred.jvb;
 
+import gd.twohundred.jvb.components.interfaces.Screen;
+
 import javax.swing.*;
 import java.awt.event.WindowEvent;
 

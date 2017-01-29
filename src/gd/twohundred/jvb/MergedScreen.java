@@ -1,5 +1,7 @@
 package gd.twohundred.jvb;
 
+import gd.twohundred.jvb.components.interfaces.Screen;
+
 import java.awt.*;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
@@ -22,6 +24,7 @@ public class MergedScreen extends Canvas implements Screen {
 
     @Override
     public void update(RenderedFrame left, RenderedFrame right) {
+        this.requestFocusInWindow();
         BufferStrategy bufferStrategy = getBufferStrategy();
         if (bufferStrategy == null) {
             createBufferStrategy(2);

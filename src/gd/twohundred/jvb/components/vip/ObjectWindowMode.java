@@ -40,8 +40,11 @@ public class ObjectWindowMode extends WindowMode {
             boolean drawRight = testBit(parallaxLR, ObjectAttributesMemory.PARALLAX_LR_RIGHT_POS);
 
             if ((left & !drawLeft) || (!left && !drawRight)) {
+                objectIndex--;
                 continue;
             }
+
+            int parallaxX = left ? -parallax : parallax;
 
             int x = oam.getHalfWord(objectAddr + ObjectAttributesMemory.ATTRIBUTES_X_START);
             int y = oam.getHalfWord(objectAddr + ObjectAttributesMemory.ATTRIBUTES_Y_START);
@@ -53,14 +56,17 @@ public class ObjectWindowMode extends WindowMode {
                     continue;
                 }
                 for (int characterX = 0; characterX < CharacterRAM.CHARACTER_WIDTH_PX; characterX++) {
-                    drawCharacterPixel(x + characterX, y + characterY, characterX, characterY, cell, objectPalettes, vip, left);
+                    drawCharacterPixel(x + characterX + parallaxX, y + characterY, characterX, characterY, cell, objectPalettes, vip, left);
                 }
             }
-
             objectIndex--;
         }
+    }
 
-        vip.setCurrentObjectGroup(objGroup - 1);
+    @Override
+    public void onFinished(WindowAttributes window, VirtualImageProcessor vip) {
+        super.onFinished(window, vip);
+        vip.setCurrentObjectGroup(vip.getCurrentObjectGroup() - 1);
     }
 
     @Override

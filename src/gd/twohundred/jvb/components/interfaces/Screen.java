@@ -1,4 +1,6 @@
-package gd.twohundred.jvb;
+package gd.twohundred.jvb.components.interfaces;
+
+import gd.twohundred.jvb.RenderedFrame;
 
 public interface Screen {
     int WIDTH = 384;

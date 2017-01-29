@@ -1,7 +1,7 @@
 package gd.twohundred.jvb;
 
-import static gd.twohundred.jvb.Screen.HEIGHT;
-import static gd.twohundred.jvb.Screen.WIDTH;
+import static gd.twohundred.jvb.components.interfaces.Screen.HEIGHT;
+import static gd.twohundred.jvb.components.interfaces.Screen.WIDTH;
 
 public class RenderedFrame {
     private final byte[] data;

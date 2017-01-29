@@ -5,6 +5,7 @@ import gd.twohundred.jvb.components.CartridgeRAM;
 import gd.twohundred.jvb.components.CartridgeROM;
 import gd.twohundred.jvb.components.VirtualBoy;
 
+import java.awt.*;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,7 +33,11 @@ public class Main {
         System.out.println(" Maker code: " + rom.getMakerCode());
         System.out.println(" Game code: " + rom.getGameCode());
         System.out.println(" Version: 1." + rom.getGameVersion());
-        VirtualBoy virtualBoy = new VirtualBoy(mainWindow.getScreen(), rom, new CartridgeRAM());
+        DefaultSwingInputProvider inputProvider = new DefaultSwingInputProvider();
+        mainWindow.setFocusable(true);
+        mainWindow.addKeyListener(inputProvider);
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(inputProvider);
+        VirtualBoy virtualBoy = new VirtualBoy(mainWindow.getScreen(), inputProvider, rom, new CartridgeRAM());
         virtualBoy.reset();
         long t = System.nanoTime();
         long cycles = 0;

@@ -14,10 +14,12 @@ import static gd.twohundred.jvb.components.Instructions.BCOND_BGE;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BGT;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BL;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BLE;
+import static gd.twohundred.jvb.components.Instructions.BCOND_BN;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BNE;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BNH;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BR;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BLT;
+import static gd.twohundred.jvb.components.Instructions.BCOND_NOP;
 import static gd.twohundred.jvb.components.Instructions.COND_LEN;
 import static gd.twohundred.jvb.components.Instructions.COND_POS;
 import static gd.twohundred.jvb.components.Instructions.DISP26_LEN;
@@ -287,6 +289,20 @@ public class CPU implements Emulable, Resetable {
                     branchTaken = !(psw.getS() ^ psw.getOV());
                     if (DEBUG_INST) {
                         debugInstOut.println(String.format("%08x bge    %s0x%x", pc, signStr(disp9), abs(disp9)));
+                    }
+                    break;
+                }
+                case BCOND_NOP: {
+                    branchTaken = false;
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x nop", pc));
+                    }
+                    break;
+                }
+                case BCOND_BN: {
+                    branchTaken = psw.getS();
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x nop", pc));
                     }
                     break;
                 }
@@ -669,7 +685,7 @@ public class CPU implements Emulable, Resetable {
     }
 
     private int shr(int a, int b) {
-        int value = a >> b;
+        int value = a >>> b;
         boolean zero = value == 0;
         boolean sign = value < 0;
         boolean carry = b > 0 && testBit(a, b - 1);
@@ -678,7 +694,7 @@ public class CPU implements Emulable, Resetable {
     }
 
     private int sar(int a, int b) {
-        int value = a >>> b;
+        int value = a >> b;
         boolean zero = value == 0;
         boolean sign = value < 0;
         boolean carry = b > 0 && testBit(a, b - 1);

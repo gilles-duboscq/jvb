@@ -37,6 +37,10 @@ public class Utils {
         return insert(v, n * len, len, into);
     }
 
+    public static int insert(boolean v, int pos, int into) {
+        return insert(v ? 1 : 0, pos, 1, into);
+    }
+
     public static int insert(int v, int pos, int len, int into) {
         assert pos >= 0 && pos < 32;
         int set = v << pos;

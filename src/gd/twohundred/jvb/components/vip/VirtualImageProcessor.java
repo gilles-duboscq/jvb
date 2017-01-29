@@ -2,7 +2,7 @@ package gd.twohundred.jvb.components.vip;
 
 import gd.twohundred.jvb.BusError;
 import gd.twohundred.jvb.RenderedFrame;
-import gd.twohundred.jvb.Screen;
+import gd.twohundred.jvb.components.interfaces.Screen;
 import gd.twohundred.jvb.components.CPU;
 import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
 import gd.twohundred.jvb.components.interfaces.MappedMemory;
@@ -12,8 +12,8 @@ import gd.twohundred.jvb.components.utils.WarningMemory;
 
 import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
 import static gd.twohundred.jvb.BusError.Reason.Unmapped;
-import static gd.twohundred.jvb.Screen.HEIGHT;
-import static gd.twohundred.jvb.Screen.WIDTH;
+import static gd.twohundred.jvb.components.interfaces.Screen.HEIGHT;
+import static gd.twohundred.jvb.components.interfaces.Screen.WIDTH;
 import static gd.twohundred.jvb.Utils.NANOS_PER_SECOND;
 import static gd.twohundred.jvb.Utils.repeat;
 import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DisplayState.LeftFrameBuffer;
@@ -131,6 +131,15 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             displayCycles += idleCycles;
         }
         if (!controlRegs.isDisplayEnabled()) {
+            displayCycles += cycles;
+            if (displayCycles >= FRAME_PERIOD) {
+                currentLeft.clear();
+                currentRight.clear();
+                renderFrameBuffer(currentLeft, leftRendered);
+                renderFrameBuffer(currentRight, rightRendered);
+                screen.update(leftRendered, rightRendered);
+                displayCycles = 0;
+            }
             return;
         }
         while (cyclesToConsume > 0) {
@@ -195,16 +204,11 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             controlRegs.setDrawingFrameBufferPair(0, true);
         }
         controlRegs.setCurrentYBlock(0);
-        currentObjectGroup = 3;
         currentWindowId = DRAWING_WINDOW_COUNT - 1;
     }
 
     private void tickDrawing() {
         int currentYBlock = controlRegs.getCurrentYBlock();
-        if (currentWindowId == DRAWING_WINDOW_COUNT - 1) {
-            clearCurrentBlock();
-            latchedClearColor = controlRegs.getClearColor();
-        }
         if (currentWindowId < 0 || getCurrentWindow().isStop()) {
             int nextBlock = currentYBlock + 1;
             if (nextBlock >= DRAWING_BLOCK_COUNT) {
@@ -216,6 +220,11 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
                 currentWindowId = DRAWING_WINDOW_COUNT - 1;
             }
         }
+        if (currentWindowId == DRAWING_WINDOW_COUNT - 1) {
+            clearCurrentBlock();
+            latchedClearColor = controlRegs.getClearColor();
+            currentObjectGroup = 3;
+        }
         WindowAttributes window = getCurrentWindow();
         if (window.isDrawLeft()) {
             window.getMode().draw(window, this, true);
@@ -223,6 +232,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         if (window.isDrawRight()) {
             window.getMode().draw(window, this, false);
         }
+        window.getMode().onFinished(window, this);
         currentWindowId--;
     }
 
@@ -251,10 +261,12 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     }
 
     private void clearCurrentBlock() {
-        int clearWord = repeat(latchedClearColor, FrameBuffer.BITS_PER_PIXEL, Integer.SIZE);
-        for (int addr = 0; addr < FrameBuffer.SIZE; addr += Integer.BYTES) {
-            currentLeft.setWord(addr, clearWord);
-            currentRight.setWord(addr, clearWord);
+        short clearHalfWord = (short) repeat(latchedClearColor, FrameBuffer.BITS_PER_PIXEL, Short.SIZE);
+        int currentYBlock = controlRegs.getCurrentYBlock();
+        for (int col = 0; col < FrameBuffer.WIDTH; col++) {
+            int addr = col * FrameBuffer.HEIGHT / FrameBuffer.PIXEL_PER_BYTE + currentYBlock * DRAWING_BLOCK_HEIGHT / FrameBuffer.PIXEL_PER_BYTE;
+            currentLeft.setHalfWord(addr, clearHalfWord);
+            currentRight.setHalfWord(addr, clearHalfWord);
         }
     }
 

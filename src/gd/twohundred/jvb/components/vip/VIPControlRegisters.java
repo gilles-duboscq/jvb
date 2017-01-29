@@ -168,6 +168,10 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
     @Override
     public void setHalfWord(int address, short value) {
         switch (address) {
+            case DISPLAY_STATUS_START:
+            case DRAWING_STATUS_START:
+                System.out.println("Ignore write to Display/Drawing Status");
+                return;
             case DISPLAY_CONTROL_START:
                 processDisplayControl(value);
                 return;

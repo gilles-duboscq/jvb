@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.Arrays;
 
+import static gd.twohundred.jvb.Utils.insert;
 import static gd.twohundred.jvb.Utils.signStr;
 import static gd.twohundred.jvb.Utils.testBit;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BE;
@@ -55,6 +56,7 @@ import static gd.twohundred.jvb.components.Instructions.OP_MUL;
 import static gd.twohundred.jvb.components.Instructions.OP_OR_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_OR_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_OUTW;
+import static gd.twohundred.jvb.components.Instructions.OP_RETI;
 import static gd.twohundred.jvb.components.Instructions.OP_SAR_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_SAR_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_SEI;
@@ -92,6 +94,12 @@ public class CPU implements Emulable, Resetable {
     private static final int ADTRE_REG = 25;
 
     private static final int LINK_REG = 31;
+
+
+    private static final int ECR_EICC_POS = 0;
+    private static final int ECR_EICC_LEN = 16;
+    private static final int ECR_FECC_POS = 16;
+    private static final int ECR_FECC_LEN = 16;
 
 
     private static final int REGISTER_COUNT = 32;
@@ -614,6 +622,20 @@ public class CPU implements Emulable, Resetable {
                     }
                     break;
                 }
+                case OP_RETI: {
+                    cycles = 10;
+                    if (psw.getNP()) {
+                        nextPC = fepc;
+                        psw.set(fepsw);
+                    } else {
+                        nextPC = eipc;
+                        psw.set(eipsw);
+                    }
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x reti", pc));
+                    }
+                    break;
+                }
                 default:
                     throw new RuntimeException(String.format("Unknown opcode: 0b%s @ %08X", toBinary(opcode, OPCODE_LEN), pc));
             }
@@ -716,5 +738,45 @@ public class CPU implements Emulable, Resetable {
         boolean sign = value < 0;
         psw.setZeroSignOveflow(zero, sign, a == Integer.MIN_VALUE && b == -1);
         return value;
+    }
+
+    Bus getBus() {
+        return bus;
+    }
+
+    int getPc() {
+        return pc;
+    }
+
+    ProgramStatusWord getPsw() {
+        return psw;
+    }
+
+    public void setFepc(int fepc) {
+        this.fepc = fepc;
+    }
+
+    public void setFepsw(int fepsw) {
+        this.fepsw = fepsw;
+    }
+
+    public void setFecc(short fecc) {
+        this.ecr = insert(fecc, ECR_FECC_POS, ECR_FECC_LEN, ecr);
+    }
+
+    public void setPc(int pc) {
+        this.pc = pc;
+    }
+
+    public void setEipc(int eipc) {
+        this.eipc = eipc;
+    }
+
+    public void setEipsw(int eipsw) {
+        this.eipsw = eipsw;
+    }
+
+    public void setEicc(short eicc) {
+        this.ecr = insert(eicc, ECR_EICC_POS, ECR_EICC_LEN, ecr);
     }
 }

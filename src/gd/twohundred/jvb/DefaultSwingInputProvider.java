@@ -10,11 +10,11 @@ import static gd.twohundred.jvb.Utils.intBit;
 import static gd.twohundred.jvb.Utils.testBit;
 
 public class DefaultSwingInputProvider implements InputProvider, KeyListener, KeyEventPostProcessor {
-    private volatile int status = intBit(Inputs.One.ordinal());
+    private volatile int status = intBit(Inputs.One.offset());
 
     @Override
     public boolean read(Inputs inputs) {
-        return testBit(status, inputs.ordinal());
+        return testBit(status, inputs.offset());
     }
 
     @Override
@@ -28,7 +28,7 @@ public class DefaultSwingInputProvider implements InputProvider, KeyListener, Ke
         Inputs input = keyCodeToInput(e.getKeyCode());
         if (input != null) {
             System.out.println("Key pressed: " + input);
-            status |= intBit(input.ordinal());
+            status |= intBit(input.offset());
         }
     }
 
@@ -37,7 +37,7 @@ public class DefaultSwingInputProvider implements InputProvider, KeyListener, Ke
         Inputs input = keyCodeToInput(e.getKeyCode());
         if (input != null) {
             System.out.println("Key released: " + input);
-            status &= ~intBit(input.ordinal());
+            status &= ~intBit(input.offset());
         }
 
     }
@@ -92,11 +92,11 @@ public class DefaultSwingInputProvider implements InputProvider, KeyListener, Ke
         }
         if (e.getID() == KeyEvent.KEY_PRESSED) {
             System.out.println("Key pressed: " + input);
-            status |= intBit(input.ordinal());
+            status |= intBit(input.offset());
             return true;
         } else if (e.getID() == KeyEvent.KEY_RELEASED) {
             System.out.println("Key released: " + input);
-            status &= ~intBit(input.ordinal());
+            status &= ~intBit(input.offset());
             return true;
         }
         return false;

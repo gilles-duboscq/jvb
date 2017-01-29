@@ -2,6 +2,7 @@ package gd.twohundred.jvb.components;
 
 import gd.twohundred.jvb.BusError;
 import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
+import gd.twohundred.jvb.components.interfaces.Interrupt;
 import gd.twohundred.jvb.components.interfaces.InterruptSource;
 import gd.twohundred.jvb.components.interfaces.ReadWriteMemory;
 
@@ -111,6 +112,7 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
         status = 0x04;
         counter = (short) 0xffff;
         reloadValue = 0x0000;
+        interruptRaised = false;
     }
 
     @Override
@@ -140,22 +142,12 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
     }
 
     @Override
-    public boolean raised() {
-        return interruptRaised;
-    }
-
-    @Override
-    public void clear() {
-        interruptRaised = false;
-    }
-
-    @Override
-    public short exceptionCode() {
-        return (short) 0xfe10;
-    }
-
-    @Override
-    public int handlerAddress() {
-        return 0xFFFFFE10;
+    public Interrupt raised() {
+        if (interruptRaised) {
+            interruptRaised = false;
+            System.out.print('.');
+            return new SimpleInterrupt(Interrupt.InterruptType.TimerZero);
+        }
+        return null;
     }
 }

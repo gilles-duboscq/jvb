@@ -148,7 +148,7 @@ public class WindowAttributes implements ReadWriteMemory, Resetable {
     @Override
     public int getHalfWord(int address) {
         if (address >= SCRATCH_START) {
-            System.out.printf("Warning: reading from Window scratch @ 0x%08x%n", address);
+            //System.out.printf("Warning: reading from Window scratch @ 0x%08x%n", address);
             return 0xdead;
         }
         switch (address) {

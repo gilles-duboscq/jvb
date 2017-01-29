@@ -19,6 +19,14 @@ public interface InputProvider {
         Start,
         Select,
         RightDPadLeft,
-        RightDPadDown
+        RightDPadDown;
+
+        public int offset() {
+            return this.ordinal();
+        }
+
+        public static Inputs get(int offset) {
+            return values()[offset];
+        }
     }
 }

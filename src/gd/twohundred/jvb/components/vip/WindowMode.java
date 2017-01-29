@@ -12,22 +12,22 @@ public abstract class WindowMode {
     private static final int CELL_PALETTE_INDEX_POS = 14;
     private static final int CELL_PALETTE_INDEX_LEN = 2;
 
-    public static WindowMode get(int i) {
-        switch (i) {
+    public static WindowMode get(int id) {
+        switch (id) {
             case NormalWindowMode.ID:
                 return NormalWindowMode.INSTANCE;
+            case ObjectWindowMode.ID:
+                return ObjectWindowMode.INSTANCE;
         }
-        throw new RuntimeException("NYI: " + i);
+        throw new RuntimeException("NYI: " + id);
     }
 
     public abstract void draw(WindowAttributes window, VirtualImageProcessor vip, boolean left);
 
-    public void drawCharacter(int x, int y, int characterX, int characterY, int cellAddr, VirtualImageProcessor vip, boolean left) {
-        BackgroundSegmentsAndParametersRAM backgroundSegments = vip.getBackgroundSegmentsAndWindowParameterTable();
-        int cell = backgroundSegments.getHalfWord(cellAddr);
+    public void drawCharacterPixel(int x, int y, int characterX, int characterY, int cell, byte[] palettes, VirtualImageProcessor vip, boolean left) {
         int characterIndex = extractU(cell, CELL_CHARACTER_POS, CELL_CHARACTER_LEN);
         int paletteId = extractU(cell, CELL_PALETTE_INDEX_POS, CELL_PALETTE_INDEX_LEN);
-        int palette = vip.getControlRegisters().getBackgroundPalette()[paletteId] & 0b11_11_11_00;
+        int palette = palettes[paletteId] & 0b11_11_11_00;
         int effectiveCharacterX = characterX;
         int effectiveCharacterY = characterY;
         if (testBit(cell, CELL_HORIZONTAL_FLIP_POS)) {

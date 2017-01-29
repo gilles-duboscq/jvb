@@ -44,8 +44,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             new BackgroundSegmentsAndParametersRAM();
     private final WarningMemory columnTable =
             new WarningMemory("Column Table", 0x0003DC00, 0x400);
-    private final WarningMemory oam =
-            new WarningMemory("Object Attribute Memory", 0x0003E000, 0x2000);
+    private final ObjectAttributesMemory oam = new ObjectAttributesMemory();
 
     private final CharacterRAM characterRAM = new CharacterRAM();
 
@@ -106,6 +105,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
 
     private int currentWindowId;
     private int latchedClearColor;
+    private int currentObjectGroup;
 
     private FrameBuffer currentRight = rightFb1;
     private FrameBuffer currentLeft = leftFb1;
@@ -195,6 +195,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             controlRegs.setDrawingFrameBufferPair(0, true);
         }
         controlRegs.setCurrentYBlock(0);
+        currentObjectGroup = 3;
         currentWindowId = DRAWING_WINDOW_COUNT - 1;
     }
 
@@ -235,6 +236,18 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
 
     VIPControlRegisters getControlRegisters() {
         return controlRegs;
+    }
+
+    int getCurrentObjectGroup() {
+        return currentObjectGroup;
+    }
+
+    void setCurrentObjectGroup(int currentObjectGroup) {
+        this.currentObjectGroup = currentObjectGroup;
+    }
+
+    ObjectAttributesMemory getObjectAttributesMemory() {
+        return oam;
     }
 
     private void clearCurrentBlock() {
@@ -300,8 +313,8 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         if (address >= 0x00040000) {
             return controlRegs; // mirroring?
         }
-        if (address >= 0x0003E000) {
-            return oam; // TODO
+        if (address >= ObjectAttributesMemory.START) {
+            return oam;
         }
         if (address >= 0x0003DC00) {
             return columnTable; // TODO Column Table
@@ -312,28 +325,28 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             return windowAttributes[windowId];
         }
         if (address >= BackgroundSegmentsAndParametersRAM.START) {
-            return backgroundSegmentsAndWindowParameterTable; // TODO ?
+            return backgroundSegmentsAndWindowParameterTable;
         }
         if (address >= 0x0001E000) {
-            return chrTable3Mirror; // TODO CHR RAM Pattern Table 3
+            return chrTable3Mirror;
         }
         if (address >= RIGHT_FRAMEBUFFER_1_START) {
             return rightFb1;
         }
         if (address >= 0x00016000) {
-            return chrTable2Mirror; // TODO CHR RAM Pattern Table 2
+            return chrTable2Mirror;
         }
         if (address >= RIGHT_FRAMEBUFFER_0_START) {
             return rightFb0;
         }
         if (address >= 0x0000E000) {
-            return chrTable1Mirror; // TODO CHR RAM Pattern Table 1
+            return chrTable1Mirror;
         }
         if (address >= LEFT_FRAMEBUFFER_1_START) {
             return leftFb1;
         }
         if (address >= 0x00006000) {
-            return chrTable0Mirror; // TODO CHR RAM Pattern Table 0
+            return chrTable0Mirror;
         }
         if (address >= LEFT_FRAMEBUFFER_0_START) {
             return leftFb0;

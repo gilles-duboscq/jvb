@@ -99,10 +99,7 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
     private final byte[] objectPalette = new byte[4];
     private byte clearColor;
 
-    private short objectGroupIndex0;
-    private short objectGroupIndex1;
-    private short objectGroupIndex2;
-    private short objectGroupIndex3;
+    private final short[] objectGroupIndexes = new short[4];
 
     private short displayStatus;
     private short drawingStatus;
@@ -157,13 +154,13 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
             case CLEAR_COLOR_START:
                 return clearColor & 0xff;
             case OBJECT_GROUP_INDEX_0_START:
-                return objectGroupIndex0 & 0xffff;
+                return objectGroupIndexes[0] & 0xffff;
             case OBJECT_GROUP_INDEX_1_START:
-                return objectGroupIndex1 & 0xffff;
+                return objectGroupIndexes[1] & 0xffff;
             case OBJECT_GROUP_INDEX_2_START:
-                return objectGroupIndex2 & 0xffff;
+                return objectGroupIndexes[2] & 0xffff;
             case OBJECT_GROUP_INDEX_3_START:
-                return objectGroupIndex3 & 0xffff;
+                return objectGroupIndexes[3] & 0xffff;
         }
         throw new BusError(address, Unimplemented);
     }
@@ -226,16 +223,16 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
                 clearColor = (byte) (value & CLEAR_COLOR_MASK);
                 return;
             case OBJECT_GROUP_INDEX_0_START:
-                objectGroupIndex0 = (byte) (value & mask(OBJECT_GROUP_LEN));
+                objectGroupIndexes[0] = (byte) (value & mask(OBJECT_GROUP_LEN));
                 return;
             case OBJECT_GROUP_INDEX_1_START:
-                objectGroupIndex1 = (byte) (value & mask(OBJECT_GROUP_LEN));
+                objectGroupIndexes[1] = (byte) (value & mask(OBJECT_GROUP_LEN));
                 return;
             case OBJECT_GROUP_INDEX_2_START:
-                objectGroupIndex2 = (byte) (value & mask(OBJECT_GROUP_LEN));
+                objectGroupIndexes[2] = (byte) (value & mask(OBJECT_GROUP_LEN));
                 return;
             case OBJECT_GROUP_INDEX_3_START:
-                objectGroupIndex3 = (byte) (value & mask(OBJECT_GROUP_LEN));
+                objectGroupIndexes[3] = (byte) (value & mask(OBJECT_GROUP_LEN));
                 return;
         }
         throw new BusError(address, Unimplemented);
@@ -328,10 +325,10 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         objectPalette[2] = (byte) (0xbe & PALETTE_MASK);
         objectPalette[3] = (byte) (0xef & PALETTE_MASK);
         clearColor = (byte) (0xde & CLEAR_COLOR_MASK);
-        objectGroupIndex0 = (short) (0xdead & mask(OBJECT_GROUP_LEN));
-        objectGroupIndex1 = (short) (0xbeef & mask(OBJECT_GROUP_LEN));
-        objectGroupIndex2 = (short) (0xdead & mask(OBJECT_GROUP_LEN));
-        objectGroupIndex3 = (short) (0xbeef & mask(OBJECT_GROUP_LEN));
+        objectGroupIndexes[0] = (short) (0xdead & mask(OBJECT_GROUP_LEN));
+        objectGroupIndexes[1] = (short) (0xbeef & mask(OBJECT_GROUP_LEN));
+        objectGroupIndexes[2] = (short) (0xdead & mask(OBJECT_GROUP_LEN));
+        objectGroupIndexes[3] = (short) (0xbeef & mask(OBJECT_GROUP_LEN));
         interruptYPosition = 0; // ??
 
         // set display ready
@@ -354,12 +351,16 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         return ledBrightnessIdle & 0xff;
     }
 
-    public byte[] getObjectPalette() {
+    public byte[] getObjectPalettes() {
         return objectPalette;
     }
 
-    public byte[] getBackgroundPalette() {
+    public byte[] getBackgroundPalettes() {
         return backgroundPalette;
+    }
+
+    public short[] getObjectGroupIndexes() {
+        return objectGroupIndexes;
     }
 
     public int getClearColor() {

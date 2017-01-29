@@ -74,9 +74,14 @@ public class WindowAttributes implements ReadWriteMemory, Resetable {
         return SIZE;
     }
 
+    public final static boolean IGNORE_SCRATCH_WRITES = true;
+
     @Override
     public void setHalfWord(int address, short value) {
         if (address >= SCRATCH_START) {
+            if (IGNORE_SCRATCH_WRITES) {
+                return;
+            }
             throw new BusError(address, BusError.Reason.Permission);
         }
         switch (address) {

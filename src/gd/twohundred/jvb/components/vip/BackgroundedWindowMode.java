@@ -9,6 +9,8 @@ public abstract class BackgroundedWindowMode extends WindowMode {
     protected void drawBackground(WindowAttributes window, VirtualImageProcessor vip, boolean left) {
         int widthSegments = window.getBackgroundWidthSegments();
         int heightSegments = window.getBackgroundHeightSegments();
+        byte[] backgroundPalettes = vip.getControlRegisters().getBackgroundPalettes();
+        BackgroundSegmentsAndParametersRAM backgroundSegments = vip.getBackgroundSegmentsAndWindowParameterTable();
 
         assert Integer.bitCount(widthSegments) == 1;
         assert Integer.bitCount(heightSegments) == 1;
@@ -26,6 +28,7 @@ public abstract class BackgroundedWindowMode extends WindowMode {
         int backgroundWidth = widthSegments * BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_WIDTH_PX;
         int backgroundHeight = heightSegments * BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_HEIGHT_PX;
 
+        // TODO: just find the portion of segment/char to draw and use drawChar rather than drawCharPixel
         for (int windowY = startWindowY; windowY < endWindowY; windowY++) {
             int y = windowY + window.getY();
             int backgroundY = windowY + window.getBackgroundY();
@@ -55,7 +58,8 @@ public abstract class BackgroundedWindowMode extends WindowMode {
                 }
                 int characterX = backgroundX % CharacterRAM.CHARACTER_HEIGHT_PX;
                 int characterY = backgroundY % CharacterRAM.CHARACTER_WIDTH_PX;
-                drawCharacter(x, y, characterX, characterY, cellAddr, vip, left);
+                int cell = backgroundSegments.getHalfWord(cellAddr);
+                drawCharacterPixel(x, y, characterX, characterY, cell, backgroundPalettes, vip, left);
             }
         }
     }

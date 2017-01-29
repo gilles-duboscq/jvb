@@ -3,6 +3,7 @@ package gd.twohundred.jvb.components;
 import gd.twohundred.jvb.BusError;
 import gd.twohundred.jvb.components.interfaces.MappedMemory;
 import gd.twohundred.jvb.components.utils.MappedModules;
+import gd.twohundred.jvb.components.utils.WarningMemory;
 import gd.twohundred.jvb.components.vip.VirtualImageProcessor;
 import gd.twohundred.jvb.components.vsu.VirtualSoundUnit;
 
@@ -17,6 +18,7 @@ public class Bus extends MappedModules {
     private final HardwareControlRegisters controlRegisters;
     private final VirtualSoundUnit vsu;
     private final SystemWRAM wram;
+    private final WarningMemory cartridgeExtension = new WarningMemory("Cartridge Expansion", 0x04000000, 0x01000000);
 
     public Bus(CartridgeROM rom, CartridgeRAM ram, VirtualImageProcessor vip, HardwareControlRegisters controlRegisters, VirtualSoundUnit vsu) {
         this.rom = rom;
@@ -38,7 +40,7 @@ public class Bus extends MappedModules {
             return wram;
         }
         if (address >= 0x04000000) {
-            throw new BusError(address, Unimplemented); // TODO ? Cartridge Expansion
+            return cartridgeExtension; // TODO ? Cartridge Expansion
         }
         if (address >= HardwareControlRegisters.START + HardwareControlRegisters.MAPPED_SIZE) {
             throw new BusError(address, Unmapped); // TODO ? unused

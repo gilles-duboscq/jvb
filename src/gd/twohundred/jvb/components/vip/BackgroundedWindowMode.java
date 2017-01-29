@@ -1,5 +1,7 @@
 package gd.twohundred.jvb.components.vip;
 
+import gd.twohundred.jvb.components.interfaces.Screen;
+
 import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DRAWING_BLOCK_HEIGHT;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -34,6 +36,9 @@ public abstract class BackgroundedWindowMode extends WindowMode {
             int backgroundY = windowY + window.getBackgroundY();
             for (int windowX = 0; windowX < window.getWidth(); windowX++) {
                 int x = windowX + window.getX() + parallax;
+                if (x >= Screen.WIDTH || x < 0) {
+                    continue;
+                }
                 int backgroundX = windowX + window.getBackgroundX() + backgroundParallax;
                 int cellAddr;
                 if (window.isUseOutOfBoundsCharacter() && (backgroundX >= backgroundWidth || backgroundY >= backgroundHeight)) {

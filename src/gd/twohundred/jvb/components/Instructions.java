@@ -52,6 +52,7 @@ public class Instructions {
     public static final int OP_OR_REG = 0b001100;
     public static final int OP_MUL = 0b001000;
     public static final int OP_DIV = 0b001001;
+    public static final int OP_DIVU = 0b001011;
     public static final int OP_SUB = 0b000010;
     public static final int OP_RETI = 0b011001;
 
@@ -66,4 +67,5 @@ public class Instructions {
     public static final int BCOND_BNH = 0b0011;
     public static final int BCOND_NOP = 0b1101;
     public static final int BCOND_BN = 0b0100;
+    public static final int BCOND_BP = 0b1100;
 }

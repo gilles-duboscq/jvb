@@ -43,9 +43,11 @@ public abstract class WindowMode {
         int charPixelIndex = effectiveCharacterX + effectiveCharacterY * CharacterRAM.CHARACTER_WIDTH_PX;
         int charPixelByteAddr = characterIndex * CharacterRAM.CHARACTER_SIZE + charPixelIndex / FrameBuffer.PIXEL_PER_BYTE;
         int pixel = extractNthU(vip.getCharacterRam().getByte(charPixelByteAddr), charPixelIndex % FrameBuffer.PIXEL_PER_BYTE, FrameBuffer.BITS_PER_PIXEL);
-        int color = extractNthU(palette, pixel, FrameBuffer.BITS_PER_PIXEL);
-        FrameBuffer frameBuffer = vip.getCurrentFrameBuffer(left);
-        frameBuffer.setPixel(x, y, color);
+        if (pixel > 0) {
+            int color = extractNthU(palette, pixel, FrameBuffer.BITS_PER_PIXEL);
+            FrameBuffer frameBuffer = vip.getCurrentFrameBuffer(left);
+            frameBuffer.setPixel(x, y, color);
+        }
     }
 
     public abstract int getId();

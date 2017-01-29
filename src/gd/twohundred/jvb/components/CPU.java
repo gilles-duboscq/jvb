@@ -18,6 +18,7 @@ import static gd.twohundred.jvb.components.Instructions.BCOND_BLE;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BN;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BNE;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BNH;
+import static gd.twohundred.jvb.components.Instructions.BCOND_BP;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BR;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BLT;
 import static gd.twohundred.jvb.components.Instructions.BCOND_NOP;
@@ -41,6 +42,7 @@ import static gd.twohundred.jvb.components.Instructions.OP_CLI;
 import static gd.twohundred.jvb.components.Instructions.OP_CMP_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_CMP_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_DIV;
+import static gd.twohundred.jvb.components.Instructions.OP_DIVU;
 import static gd.twohundred.jvb.components.Instructions.OP_JAL;
 import static gd.twohundred.jvb.components.Instructions.OP_JMP;
 import static gd.twohundred.jvb.components.Instructions.OP_JR;
@@ -310,7 +312,14 @@ public class CPU implements Emulable, Resetable {
                 case BCOND_BN: {
                     branchTaken = psw.getS();
                     if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x nop", pc));
+                        debugInstOut.println(String.format("%08x bn     %s0x%x", pc, signStr(disp9), abs(disp9)));
+                    }
+                    break;
+                }
+                case BCOND_BP: {
+                    branchTaken = !psw.getS();
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x bp     %s0x%x", pc, signStr(disp9), abs(disp9)));
                     }
                     break;
                 }
@@ -608,6 +617,20 @@ public class CPU implements Emulable, Resetable {
                     }
                     break;
                 }
+                case OP_DIVU: {
+                    cycles = 36;
+                    long divisor = getRegister(reg1) & 0xffff_ffffL;
+                    if (divisor == 0) {
+                        throw new RuntimeException("Impl Zero Division exception");
+                    }
+                    long dividend = getRegister(reg2) & 0xffff_ffffL;
+                    setRegister(30, (int) (dividend % divisor)); // mod or rem?
+                    setRegister(reg2, divu(dividend, divisor));
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x divu   %d, r%d", pc, imm5, reg2));
+                    }
+                    break;
+                }
                 case OP_DIV: {
                     cycles = 38;
                     int divisor = getRegister(reg1);
@@ -737,6 +760,14 @@ public class CPU implements Emulable, Resetable {
         boolean zero = value == 0;
         boolean sign = value < 0;
         psw.setZeroSignOveflow(zero, sign, a == Integer.MIN_VALUE && b == -1);
+        return value;
+    }
+
+    private int divu(long a, long b) {
+        int value = (int) (a * b);
+        boolean zero = value == 0;
+        boolean sign = value < 0;
+        psw.setZeroSignOveflow(zero, sign, false);
         return value;
     }
 

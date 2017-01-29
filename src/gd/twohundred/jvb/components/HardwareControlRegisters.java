@@ -63,6 +63,11 @@ public class HardwareControlRegisters implements Resetable, ReadWriteMemory {
                 return gamePad.getInputHigh();
             case GAME_PAD_LOW_REGISTER:
                 return gamePad.getInputLow();
+            case LINK_CONTROL_REGISTER:
+                if (DEBUG_LINK_CONTROL) {
+                    System.out.printf("Ignoring link control registers read @ 0x%08x%n", address);
+                }
+                return 0;
         }
         throw new BusError(address, Unimplemented);
     }

@@ -25,7 +25,7 @@ public abstract class MappedModules implements ReadWriteMemory {
     @Override
     public int getHalfWord(int address) {
         try {
-            int effectiveAddress = address & (getSize() - 1);
+            int effectiveAddress = (address & ~0b1) & (getSize() - 1);
             MappedMemory mappedModule = getMappedModule(effectiveAddress);
             return ((ReadOnlyMemory) mappedModule).getHalfWord(effectiveAddress - mappedModule.getStart());
         } catch (BusError be) {
@@ -38,7 +38,7 @@ public abstract class MappedModules implements ReadWriteMemory {
     @Override
     public int getWord(int address) {
         try {
-            int effectiveAddress = address & (getSize() - 1);
+            int effectiveAddress = (address & ~0b11) & (getSize() - 1);
             MappedMemory mappedModule = getMappedModule(effectiveAddress);
             return ((ReadOnlyMemory) mappedModule).getWord(effectiveAddress - mappedModule.getStart());
         } catch (BusError be) {
@@ -64,7 +64,7 @@ public abstract class MappedModules implements ReadWriteMemory {
     @Override
     public void setHalfWord(int address, short value) {
         try {
-            int effectiveAddress = address & (getSize() - 1);
+            int effectiveAddress = (address & ~0b1) & (getSize() - 1);
             MappedMemory mappedModule = getMappedModule(effectiveAddress);
             ((WriteOnlyMemory) mappedModule).setHalfWord(effectiveAddress - mappedModule.getStart(), value);
         } catch (BusError be) {
@@ -77,7 +77,7 @@ public abstract class MappedModules implements ReadWriteMemory {
     @Override
     public void setWord(int address, int value) {
         try {
-            int effectiveAddress = address & (getSize() - 1);
+            int effectiveAddress = (address & ~0b11) & (getSize() - 1);
             MappedMemory mappedModule = getMappedModule(effectiveAddress);
             ((WriteOnlyMemory) mappedModule).setWord(effectiveAddress - mappedModule.getStart(), value);
         } catch (BusError be) {

@@ -101,7 +101,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
 
     static final int DRAWING_WINDOW_COUNT = 32;
     static final int DRAWING_BLOCK_HEIGHT = 8;
-    private static final int DRAWING_BLOCK_COUNT = Screen.HEIGHT / DRAWING_BLOCK_HEIGHT;
+    static final int DRAWING_BLOCK_COUNT = Screen.HEIGHT / DRAWING_BLOCK_HEIGHT;
 
     private final RenderedFrame leftRendered = new RenderedFrame();
     private final RenderedFrame rightRendered = new RenderedFrame();

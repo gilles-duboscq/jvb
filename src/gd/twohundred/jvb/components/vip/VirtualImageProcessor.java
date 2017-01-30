@@ -2,26 +2,30 @@ package gd.twohundred.jvb.components.vip;
 
 import gd.twohundred.jvb.BusError;
 import gd.twohundred.jvb.RenderedFrame;
-import gd.twohundred.jvb.components.interfaces.Screen;
 import gd.twohundred.jvb.components.CPU;
+import gd.twohundred.jvb.components.SimpleInterrupt;
 import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
+import gd.twohundred.jvb.components.interfaces.Interrupt;
+import gd.twohundred.jvb.components.interfaces.InterruptSource;
 import gd.twohundred.jvb.components.interfaces.MappedMemory;
+import gd.twohundred.jvb.components.interfaces.Screen;
 import gd.twohundred.jvb.components.utils.LinearMemoryMirroring;
 import gd.twohundred.jvb.components.utils.MappedModules;
 import gd.twohundred.jvb.components.utils.WarningMemory;
+import gd.twohundred.jvb.components.vip.VIPControlRegisters.VIPInterruptType;
 
 import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
 import static gd.twohundred.jvb.BusError.Reason.Unmapped;
-import static gd.twohundred.jvb.components.interfaces.Screen.HEIGHT;
-import static gd.twohundred.jvb.components.interfaces.Screen.WIDTH;
 import static gd.twohundred.jvb.Utils.NANOS_PER_SECOND;
 import static gd.twohundred.jvb.Utils.repeat;
+import static gd.twohundred.jvb.components.interfaces.Screen.HEIGHT;
+import static gd.twohundred.jvb.components.interfaces.Screen.WIDTH;
 import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DisplayState.LeftFrameBuffer;
 import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DisplayState.RightFrameBuffer;
 import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DisplayState.Waiting;
 import static java.lang.Math.min;
 
-public class VirtualImageProcessor extends MappedModules implements ExactlyEmulable {
+public class VirtualImageProcessor extends MappedModules implements ExactlyEmulable, InterruptSource {
     public static final int MAPPED_SIZE = 0x0100_0000;
     public static final int SIZE = 0x0008_0000;
     public static final int RIGHT_FRAMEBUFFER_1_START = 0x0018_0000;
@@ -56,7 +60,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
 
     public VirtualImageProcessor(Screen screen) {
         this.screen = screen;
-        for (int i = 0 ; i < WINDOW_ATTRIBUTE_COUNT; i++) {
+        for (int i = 0; i < WINDOW_ATTRIBUTE_COUNT; i++) {
             windowAttributes[i] = new WindowAttributes(i);
         }
     }
@@ -82,7 +86,10 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         return frame;
     }
 
-    private static final int FRAME_PERIOD = (int) (CPU.CLOCK_HZ / Screen.DISPLAY_REFRESH_RATE_HZ);
+    static final int FRAME_PERIOD = (int) (CPU.CLOCK_HZ / Screen.DISPLAY_REFRESH_RATE_HZ);
+
+    // Fake value
+    static final int DRAWING_INIT_CYCLES = 300;
 
     private static final int MAX_COLUMN_TIME = 0xfe;
     private static final long FOUR_COLUMN_UNIT_TIME_NS = 200;
@@ -92,13 +99,14 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private static final int RIGH_DISPLAY_START_CYCLE = FRAME_PERIOD - (10 + MAX_FRAME_BUFFER_DISPLAY_CYCLES);
     private static final int LEFT_DISPLAY_START_CYCLE = RIGH_DISPLAY_START_CYCLE - (10 + MAX_FRAME_BUFFER_DISPLAY_CYCLES);
 
-    private static final int DRAWING_WINDOW_COUNT = 32;
+    static final int DRAWING_WINDOW_COUNT = 32;
     static final int DRAWING_BLOCK_HEIGHT = 8;
     private static final int DRAWING_BLOCK_COUNT = Screen.HEIGHT / DRAWING_BLOCK_HEIGHT;
 
     private final RenderedFrame leftRendered = new RenderedFrame();
     private final RenderedFrame rightRendered = new RenderedFrame();
     private int displayCycles;
+    private int nextWindowCycles;
     private long frameCounter;
     private DrawingState drawingState;
     private DisplayState displayState;
@@ -109,6 +117,8 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
 
     private FrameBuffer currentRight = rightFb1;
     private FrameBuffer currentLeft = leftFb1;
+
+    private boolean interruptRaised;
 
     protected enum DisplayState {
         Waiting,
@@ -133,10 +143,8 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         if (!controlRegs.isDisplayEnabled()) {
             displayCycles += cycles;
             if (displayCycles >= FRAME_PERIOD) {
-                currentLeft.clear();
-                currentRight.clear();
-                renderFrameBuffer(currentLeft, leftRendered);
-                renderFrameBuffer(currentRight, rightRendered);
+                leftRendered.clear();
+                rightRendered.clear();
                 screen.update(leftRendered, rightRendered);
                 displayCycles = 0;
             }
@@ -153,7 +161,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             } else if (displayCycles == LEFT_DISPLAY_START_CYCLE + MAX_FRAME_BUFFER_DISPLAY_CYCLES) {
                 screen.update(leftRendered, rightRendered);
                 controlRegs.setDisplayingFrameBufferPair(currentFbPair(), true, false);
-                // TODO: interrupt Left Display Finished
+                interrupt(VIPInterruptType.LeftDisplayFinished);
             } else if (displayCycles == RIGH_DISPLAY_START_CYCLE) {
                 displayState = RightFrameBuffer;
                 controlRegs.setDisplayingFrameBufferPair(currentFbPair(), false, true);
@@ -161,14 +169,21 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             } else if (displayCycles == RIGH_DISPLAY_START_CYCLE + MAX_FRAME_BUFFER_DISPLAY_CYCLES) {
                 screen.update(leftRendered, rightRendered);
                 controlRegs.setDisplayingFrameBufferPair(currentFbPair(), false, false);
-                // TODO: interrupt Right Display Finished
+                interrupt(VIPInterruptType.RightDisplayFinished);
                 displayState = DisplayState.Finished;
             }
-            if (drawingState == DrawingState.Drawing) {
+            if (drawingState != DrawingState.Finished) {
                 tickDrawing();
             }
             cyclesToConsume--;
             displayCycles++;
+        }
+    }
+
+    private void interrupt(VIPInterruptType type) {
+        if (controlRegs.isInterruptEnabled(type)) {
+            interruptRaised = true;
+            controlRegs.addPendingInterrupt(type);
         }
     }
 
@@ -179,20 +194,22 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private void startDisplay() {
         if (drawingState != DrawingState.Finished) {
             controlRegs.setDrawingExceedsFramePeriod();
-            // TODO: interrupt?
+            interrupt(VIPInterruptType.DrawingExceedsFramePeriod);
         }
         controlRegs.setDisplayProcStart();
         displayState = Waiting;
         controlRegs.setDisplayingFrameBufferPair(0, true, false);
-        // TODO: interrupt: Start of Frame Processing and/or Start of Drawing
-        if (frameCounter % (controlRegs.getFrameRepeat() + 1) == 0) {
+        interrupt(VIPInterruptType.StartFrameProcessing);
+        if (controlRegs.isDrawingEnabled() && frameCounter % (controlRegs.getFrameRepeat() + 1) == 0) {
             startDrawing();
         }
         frameCounter++;
     }
 
     private void startDrawing() {
+        interrupt(VIPInterruptType.StartDrawing);
         drawingState = DrawingState.Drawing;
+        nextWindowCycles = DRAWING_INIT_CYCLES;
         // swap buffers
         if (currentRight == rightFb0) {
             currentRight = rightFb1;
@@ -203,20 +220,29 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             currentLeft = leftFb0;
             controlRegs.setDrawingFrameBufferPair(0, true);
         }
-        controlRegs.setCurrentYBlock(0);
+        setCurrentYBlock(0);
         currentWindowId = DRAWING_WINDOW_COUNT - 1;
     }
 
+    private void setCurrentYBlock(int block) {
+        controlRegs.setCurrentYBlock(block);
+        if (block == controlRegs.getInterruptYPosition()) {
+            interrupt(VIPInterruptType.DrawingYPositionMatch);
+        }
+    }
+
     private void tickDrawing() {
+        if (displayCycles < nextWindowCycles) {
+            return;
+        }
         int currentYBlock = controlRegs.getCurrentYBlock();
         if (currentWindowId < 0 || getCurrentWindow().isStop()) {
             int nextBlock = currentYBlock + 1;
             if (nextBlock >= DRAWING_BLOCK_COUNT) {
-                drawingState = DrawingState.Finished;
-                // TODO: interrupt?
+                endDrawing();
                 return;
             } else {
-                controlRegs.setCurrentYBlock(nextBlock);
+                setCurrentYBlock(nextBlock);
                 currentWindowId = DRAWING_WINDOW_COUNT - 1;
             }
         }
@@ -234,6 +260,13 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         }
         window.getMode().onFinished(window, this);
         currentWindowId--;
+        nextWindowCycles += window.getMode().cycles();
+    }
+
+    private void endDrawing() {
+        controlRegs.setDrawingFrameBufferPair(0, false);
+        drawingState = DrawingState.Finished;
+        interrupt(VIPInterruptType.DrawingFinished);
     }
 
     private WindowAttributes getCurrentWindow() {
@@ -294,6 +327,8 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         frameCounter = 0;
         currentWindowId = -1;
         latchedClearColor = 0;
+        leftRendered.clear();
+        rightRendered.clear();
     }
 
     public BackgroundSegmentsAndParametersRAM getBackgroundSegmentsAndWindowParameterTable() {
@@ -302,6 +337,14 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
 
     public CharacterRAM getCharacterRam() {
         return characterRAM;
+    }
+
+    @Override
+    public Interrupt raised() {
+        if (interruptRaised) {
+            return new SimpleInterrupt(Interrupt.InterruptType.VIP);
+        }
+        return null;
     }
 
     @Override

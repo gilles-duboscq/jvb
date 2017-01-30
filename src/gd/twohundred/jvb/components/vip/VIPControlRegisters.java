@@ -88,6 +88,25 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
     private static final int CLEAR_COLOR_MASK = 0b11;
     private static final int OBJECT_GROUP_LEN = 10;
 
+    public enum VIPInterruptType {
+        DrawingExceedsFramePeriod(INT_DRAWING_EXCEEDS_FRAME_PERIOD_POS),
+        DrawingFinished(INT_DRAWING_FINISHED_POS),
+        DrawingYPositionMatch(INT_DRAWING_Y_POSITION_MATCH_POS),
+        StartFrameProcessing(INT_START_OF_FRAME_PROCESSING_POS),
+        StartDrawing(INT_START_OF_DRAWING_POS),
+        RightDisplayFinished(INT_RIGHT_DISPLAY_FINISHED_POS),
+        LeftDisplayFinished(INT_LEFT_DISPLAY_FINISHED_POS);
+        private final int bit;
+
+        VIPInterruptType(int bit) {
+            this.bit = bit;
+        }
+
+        private int getBit() {
+            return bit;
+        }
+    }
+
     private final VirtualImageProcessor vip;
 
     private byte ledBrightness1;
@@ -165,6 +184,8 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         throw new BusError(address, Unimplemented);
     }
 
+    public static final boolean DEBUG_VIP_INTERRUPTS = true;
+
     @Override
     public void setHalfWord(int address, short value) {
         switch (address) {
@@ -177,6 +198,15 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
                 return;
             case INTERRUPT_ENABLE_START:
                 enabledInterrupts = value;
+                if (DEBUG_VIP_INTERRUPTS) {
+                    String msg = "Enabling VIP interrupts:";
+                    for (VIPInterruptType t : VIPInterruptType.values()) {
+                        if (isInterruptEnabled(t)) {
+                            msg += " " + t;
+                        }
+                    }
+                    System.out.println(msg);
+                }
                 return;
             case INTERRUPT_CLEAR_START:
                 pendingInterrupts &= ~value;
@@ -260,12 +290,11 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
             vip.softReset();
         }
         if (refresh) {
-            System.out.println("Setting refresh forever...");
+            System.out.println("Ignoring VIP refresh...");
         }
 
         int affected = intBits(DISPLAY_STATUS_DISPLAY_ENABLED_POS, DISPLAY_STATUS_MEMORY_REFRESHING_POS, DISPLAY_STATUS_COLUMN_TABLE_ADDR_LOCKED_POS);
         int set = intBit(DISPLAY_STATUS_DISPLAY_ENABLED_POS, enable)
-                | intBit(DISPLAY_STATUS_MEMORY_REFRESHING_POS, refresh)
                 | intBit(DISPLAY_STATUS_COLUMN_TABLE_ADDR_LOCKED_POS, lockColumnTable)
                 | intBit(DISPLAY_STATUS_DISPLAY_SYNC_ENABLED_POS, displaySync);
         displayStatus = (short) maskedMerge(set, affected, displayStatus);
@@ -371,9 +400,18 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         return clearColor & 0xff;
     }
 
-    public byte getFrameRepeat() {
+    public int getFrameRepeat() {
         return frameRepeat;
     }
+
+    public int getEnabledInterrupts() {
+        return enabledInterrupts & 0xffff;
+    }
+
+    public int getInterruptYPosition() {
+        return interruptYPosition & 0xff;
+    }
+
 
     public static final boolean DEBUG_VIP_CTRL_AS_BYTE = false;
 
@@ -394,6 +432,10 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
 
     public boolean isDisplayEnabled() {
         return testBit(displayStatus, DISPLAY_STATUS_DISPLAY_ENABLED_POS);
+    }
+
+    public boolean isDrawingEnabled() {
+        return testBit(drawingStatus, DRAWING_STATUS_DRAWING_ENABLED_POS);
     }
 
     public void setDrawingExceedsFramePeriod() {
@@ -429,5 +471,13 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
 
     public int getCurrentYBlock() {
         return extractU(drawingStatus, DRAWING_STATUS_CURRENT_Y_POSITION_POS, DRAWING_STATUS_CURRENT_Y_POSITION_LEN);
+    }
+
+    public boolean isInterruptEnabled(VIPInterruptType type) {
+        return testBit(enabledInterrupts, type.getBit());
+    }
+
+    public void addPendingInterrupt(VIPInterruptType type) {
+        pendingInterrupts |= intBit(type.getBit());
     }
 }

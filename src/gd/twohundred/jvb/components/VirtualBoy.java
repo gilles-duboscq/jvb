@@ -79,6 +79,7 @@ public class VirtualBoy implements Emulable {
     private Interrupt collectInterrupts() {
         InterruptChain chain = new InterruptChain();
         collectInterrupts(timer, chain);
+        collectInterrupts(vip, chain);
         collectInterrupts(gamePad, chain);
         return chain.head;
     }

@@ -13,6 +13,7 @@ import static gd.twohundred.jvb.Utils.testBit;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BE;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BGE;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BGT;
+import static gd.twohundred.jvb.components.Instructions.BCOND_BH;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BL;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BLE;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BN;
@@ -55,6 +56,7 @@ import static gd.twohundred.jvb.components.Instructions.OP_MOVHI;
 import static gd.twohundred.jvb.components.Instructions.OP_MOV_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_MOV_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_MUL;
+import static gd.twohundred.jvb.components.Instructions.OP_NOT;
 import static gd.twohundred.jvb.components.Instructions.OP_OR_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_OR_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_OUTW;
@@ -63,6 +65,7 @@ import static gd.twohundred.jvb.components.Instructions.OP_SAR_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_SAR_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_SEI;
 import static gd.twohundred.jvb.components.Instructions.OP_SHL_IMM;
+import static gd.twohundred.jvb.components.Instructions.OP_SHL_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_SHR_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_STB;
 import static gd.twohundred.jvb.components.Instructions.OP_STH;
@@ -264,6 +267,13 @@ public class CPU implements Emulable, Resetable {
                     branchTaken = psw.getZ() || psw.getCY();
                     if (DEBUG_INST) {
                         debugInstOut.println(String.format("%08x bnh    %s0x%x", pc, signStr(disp9), abs(disp9)));
+                    }
+                    break;
+                }
+                case BCOND_BH: {
+                    branchTaken = !(psw.getZ() || psw.getCY());
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x bh     %s0x%x", pc, signStr(disp9), abs(disp9)));
                     }
                     break;
                 }
@@ -586,6 +596,13 @@ public class CPU implements Emulable, Resetable {
                     }
                     break;
                 }
+                case OP_SHL_REG: {
+                    setRegister(reg2, shl(getRegister(reg2), getRegister(reg1) & 0x1f));
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x shl    r%d, r%d", pc, reg1, reg2));
+                    }
+                    break;
+                }
                 case OP_SHR_IMM: {
                     setRegister(reg2, shr(getRegister(reg2), imm5));
                     if (DEBUG_INST) {
@@ -603,7 +620,14 @@ public class CPU implements Emulable, Resetable {
                 case OP_SAR_REG: {
                     setRegister(reg2, sar(getRegister(reg2), getRegister(reg1) & 0x1f));
                     if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x sar    %d, r%d", pc, imm5, reg2));
+                        debugInstOut.println(String.format("%08x sar    r%d, r%d", pc, reg1, reg2));
+                    }
+                    break;
+                }
+                case OP_NOT: {
+                    setRegister(reg2, not(getRegister(reg1)));
+                    if (DEBUG_INST) {
+                        debugInstOut.println(String.format("%08x not    r%d, r%d", pc, reg1, reg2));
                     }
                     break;
                 }
@@ -613,7 +637,7 @@ public class CPU implements Emulable, Resetable {
                     setRegister(30, (int) (full >> 32));
                     setRegister(reg2, (int) full);
                     if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x mul    %d, r%d", pc, imm5, reg2));
+                        debugInstOut.println(String.format("%08x mul    r%d, r%d", pc, reg1, reg2));
                     }
                     break;
                 }
@@ -627,7 +651,7 @@ public class CPU implements Emulable, Resetable {
                     setRegister(30, (int) (dividend % divisor)); // mod or rem?
                     setRegister(reg2, divu(dividend, divisor));
                     if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x divu   %d, r%d", pc, imm5, reg2));
+                        debugInstOut.println(String.format("%08x divu   r%d, r%d", pc, reg1, reg2));
                     }
                     break;
                 }
@@ -641,7 +665,7 @@ public class CPU implements Emulable, Resetable {
                     setRegister(30, dividend % divisor); // mod or rem?
                     setRegister(reg2, div(dividend, divisor));
                     if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x div    %d, r%d", pc, imm5, reg2));
+                        debugInstOut.println(String.format("%08x div    r%d, r%d", pc, reg1, reg2));
                     }
                     break;
                 }
@@ -670,7 +694,7 @@ public class CPU implements Emulable, Resetable {
     private int add(int a, int b) {
         long value = a + b;
         int intValue = (int) value;
-        boolean carry = (value & 0xffff_ffffL) != 0;
+        boolean carry = (value >>> 32) != 0;
         boolean zero = intValue == 0;
         boolean sign = intValue < 0;
         boolean overflow = ((a ^ intValue) & (b ^ intValue)) < 0;
@@ -681,7 +705,7 @@ public class CPU implements Emulable, Resetable {
     private int sub(int a, int b) {
         long value = a - b;
         int intValue = (int) value;
-        boolean carry = (value & 0xffff_ffffL) != 0;
+        boolean carry = (value >>> 32) != 0;
         boolean zero = intValue == 0;
         boolean sign = intValue < 0;
         boolean overflow = ((a ^ b) & (a ^ intValue)) < 0;
@@ -744,6 +768,14 @@ public class CPU implements Emulable, Resetable {
         boolean sign = value < 0;
         boolean carry = b > 0 && testBit(a, b - 1);
         psw.setZeroSignOveflowCarry(zero, sign, false, carry);
+        return value;
+    }
+
+    private int not(int a) {
+        int value = ~a;
+        boolean zero = value == 0;
+        boolean sign = value < 0;
+        psw.setZeroSignOveflow(zero, sign, false);
         return value;
     }
 

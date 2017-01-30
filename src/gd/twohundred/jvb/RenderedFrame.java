@@ -1,5 +1,7 @@
 package gd.twohundred.jvb;
 
+import java.util.Arrays;
+
 import static gd.twohundred.jvb.components.interfaces.Screen.HEIGHT;
 import static gd.twohundred.jvb.components.interfaces.Screen.WIDTH;
 
@@ -19,6 +21,10 @@ public class RenderedFrame {
     }
 
     public void setPixel(int addr, byte intensity) {
-        data[addr] = (byte) (intensity << 1); // FIXME: this is a hack, need gamma
+        data[addr] = intensity;
+    }
+
+    public void clear() {
+        Arrays.fill(data, (byte) 0);
     }
 }

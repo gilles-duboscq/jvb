@@ -25,7 +25,7 @@ public class DefaultSwingInputProvider implements InputProvider, KeyListener, Ke
     @Override
     public void keyPressed(KeyEvent e) {
         System.out.println("Key pressed: " + e);
-        Inputs input = keyCodeToInput(e.getKeyCode());
+        Inputs input = keyCodeToInput(e.getKeyCode(), e.getKeyLocation());
         if (input != null) {
             System.out.println("Key pressed: " + input);
             status |= intBit(input.offset());
@@ -34,7 +34,7 @@ public class DefaultSwingInputProvider implements InputProvider, KeyListener, Ke
 
     @Override
     public void keyReleased(KeyEvent e) {
-        Inputs input = keyCodeToInput(e.getKeyCode());
+        Inputs input = keyCodeToInput(e.getKeyCode(), e.getKeyLocation());
         if (input != null) {
             System.out.println("Key released: " + input);
             status &= ~intBit(input.offset());
@@ -42,7 +42,7 @@ public class DefaultSwingInputProvider implements InputProvider, KeyListener, Ke
 
     }
 
-    private Inputs keyCodeToInput(int keyCode) {
+    private Inputs keyCodeToInput(int keyCode, int keyLocation) {
         switch (keyCode) {
             case KeyEvent.VK_UP:
                 return Inputs.RightDPadUp;
@@ -80,13 +80,19 @@ public class DefaultSwingInputProvider implements InputProvider, KeyListener, Ke
                 return Inputs.L;
             case KeyEvent.VK_U:
                 return Inputs.R;
+            case KeyEvent.VK_CONTROL:
+                if (keyLocation == KeyEvent.KEY_LOCATION_RIGHT) {
+                    return Inputs.A;
+                }
+            case KeyEvent.VK_NUMPAD0:
+                return Inputs.B;
         }
         return null;
     }
 
     @Override
     public boolean postProcessKeyEvent(KeyEvent e) {
-        Inputs input = keyCodeToInput(e.getKeyCode());
+        Inputs input = keyCodeToInput(e.getKeyCode(), e.getKeyLocation());
         if (input == null) {
             return false;
         }

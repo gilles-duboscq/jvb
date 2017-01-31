@@ -145,7 +145,6 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
     public Interrupt raised() {
         if (interruptRaised) {
             interruptRaised = false;
-            System.out.print('.');
             return new SimpleInterrupt(Interrupt.InterruptType.TimerZero);
         }
         return null;

@@ -24,6 +24,7 @@ public class Instructions {
     public static final int OP_JMP = 0b000110;
     public static final int OP_ADD_IMM = 0b010001;
     public static final int OP_LDSR = 0b011100;
+    public static final int OP_STSR = 0b011101;
     public static final int OP_SEI = 0b011110;
     public static final int OP_CLI = 0b010110;
     public static final int OP_MOV_IMM = 0b010000;
@@ -31,7 +32,12 @@ public class Instructions {
     public static final int OP_STB = 0b110100;
     public static final int OP_STH = 0b110101;
     public static final int OP_STW = 0b110111;
+    public static final int OP_OUTB = 0b111100;
+    public static final int OP_OUTH = 0b111101;
     public static final int OP_OUTW = 0b111111;
+    public static final int OP_INB = 0b111000;
+    public static final int OP_INH = 0b111001;
+    public static final int OP_INW = 0b111011;
     public static final int OP_LDB = 0b110000;
     public static final int OP_LDH = 0b110001;
     public static final int OP_LDW = 0b110011;
@@ -40,6 +46,7 @@ public class Instructions {
     public static final int OP_CMP_REG = 0b000011;
     public static final int OP_CMP_IMM = 0b010011;
     public static final int OP_XOR_REG = 0b001110;
+    public static final int OP_XOR_IMM = 0b101110;
     public static final int OP_SHL_IMM = 0b010100;
     public static final int OP_SHL_REG = 0b000100;
     public static final int OP_SHR_IMM = 0b010101;
@@ -52,14 +59,17 @@ public class Instructions {
     public static final int OP_OR_IMM = 0b101100;
     public static final int OP_OR_REG = 0b001100;
     public static final int OP_MUL = 0b001000;
+    public static final int OP_MULU = 0b001010;
     public static final int OP_DIV = 0b001001;
     public static final int OP_DIVU = 0b001011;
     public static final int OP_SUB = 0b000010;
     public static final int OP_RETI = 0b011001;
     public static final int OP_NOT = 0b001111;
+    public static final int OP_ILL_1 = 0b110010;
 
     public static final int BCOND_BNE = 0b1010;
     public static final int BCOND_BL = 0b0001;
+    public static final int BCOND_BNL = 0b1001;
     public static final int BCOND_BE = 0b0010;
     public static final int BCOND_BR = 0b0101;
     public static final int BCOND_BLT = 0b0110;

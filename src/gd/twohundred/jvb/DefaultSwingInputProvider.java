@@ -84,6 +84,7 @@ public class DefaultSwingInputProvider implements InputProvider, KeyListener, Ke
                 if (keyLocation == KeyEvent.KEY_LOCATION_RIGHT) {
                     return Inputs.A;
                 }
+                break;
             case KeyEvent.VK_NUMPAD0:
                 return Inputs.B;
         }

@@ -78,6 +78,7 @@ public class VirtualBoy implements Emulable {
 
     private Interrupt collectInterrupts() {
         InterruptChain chain = new InterruptChain();
+        collectInterrupts(cpu, chain);
         collectInterrupts(timer, chain);
         collectInterrupts(vip, chain);
         collectInterrupts(gamePad, chain);
@@ -105,6 +106,7 @@ public class VirtualBoy implements Emulable {
     }
 
     private boolean processInterrupt(Interrupt interrupt) {
+        // FIXME: sort interrupts properly!
         if (interrupt.getType().isMaskable()) {
             if (executionMode != ExecutionMode.Normal) {
                 return false;

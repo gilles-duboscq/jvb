@@ -63,6 +63,11 @@ public class Utils {
         return ((v << shift) >> shift);
     }
 
+    public static int zeroExtend(int v, int bits) {
+        assert bits <= 32 && bits > 0;
+        return v & mask(bits, bits - 1);
+    }
+
     public static boolean testBits(int v, int bits, int pos, int len) {
         assert pos < 32 && pos >= 0;
         return (v & mask(pos, len)) == bits << pos;

@@ -15,7 +15,7 @@ import static gd.twohundred.jvb.Utils.testBit;
 
 public class VIPControlRegisters implements ReadWriteMemory, Resetable {
     public static final int START = 0x0005F800;
-    public static final int SIZE = 0x74;
+    public static final int SIZE = 0x80;
     public static final int VERSION = 2;
 
     private static final int INTERRUPT_PENDING_START = 0x00;
@@ -28,6 +28,7 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
     private static final int LED_BRIGHTNESS_3_START = 0x28;
     private static final int LED_BRIGHTNESS_IDLE_START = 0x2a;
     private static final int FRAME_REPEAT_START = 0x2e;
+    private static final int COLUMN_TABLE_ADDRESS_START = 0x30;
     private static final int DRAWING_STATUS_START = 0x40;
     private static final int DRAWING_CONTROL_START = 0x42;
     private static final int VERSION_START = 0x44;
@@ -180,8 +181,65 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
                 return objectGroupIndexes[2] & 0xffff;
             case OBJECT_GROUP_INDEX_3_START:
                 return objectGroupIndexes[3] & 0xffff;
+            case LED_BRIGHTNESS_1_START:
+                return ledBrightness1 & 0xff;
+            case LED_BRIGHTNESS_2_START:
+                return ledBrightness2 & 0xff;
+            case LED_BRIGHTNESS_3_START:
+                return ledBrightness3 & 0xff;
+            case LED_BRIGHTNESS_IDLE_START:
+                return ledBrightnessIdle & 0xff;
+            case FRAME_REPEAT_START:
+                return frameRepeat & 0xf;
+            case COLUMN_TABLE_ADDRESS_START:
+                System.out.println("Warning: returning dummy value for Column Table Address");
+                return 0x00_00;
+            case INTERRUPT_CLEAR_START:
+            case DISPLAY_CONTROL_START:
+            case DRAWING_CONTROL_START:
+                return 0xdead; // write=only
+            case 0x06:
+            case 0x08:
+            case 0x0a:
+            case 0x0c:
+            case 0x0e:
+            case 0x10:
+            case 0x12:
+            case 0x14:
+            case 0x16:
+            case 0x18:
+            case 0x1a:
+            case 0x1c:
+            case 0x1e:
+            case 0x2c:
+            case 0x32:
+            case 0x34:
+            case 0x36:
+            case 0x38:
+            case 0x3a:
+            case 0x3c:
+            case 0x3e:
+            case 0x46:
+            case 0x50:
+            case 0x52:
+            case 0x54:
+            case 0x56:
+            case 0x58:
+            case 0x5a:
+            case 0x5c:
+            case 0x5e:
+            case 0x72:
+            case 0x74:
+            case 0x76:
+            case 0x78:
+            case 0x7a:
+            case 0x7c:
+            case 0x7e:
+                return 0xbeef; // not mapped to anything
         }
-        throw new BusError(address, Unimplemented);
+        // ignore other read? mirroring?
+        System.out.printf("Warning: reading out of range into VIP control regs @ 0x%02x%n", address);
+        return 0xcafe;
     }
 
     public static final boolean DEBUG_VIP_INTERRUPTS = true;
@@ -189,10 +247,6 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
     @Override
     public void setHalfWord(int address, short value) {
         switch (address) {
-            case DISPLAY_STATUS_START:
-            case DRAWING_STATUS_START:
-                System.out.println("Ignore write to Display/Drawing Status");
-                return;
             case DISPLAY_CONTROL_START:
                 processDisplayControl(value);
                 return;
@@ -257,19 +311,64 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
                 clearColor = (byte) (value & CLEAR_COLOR_MASK);
                 return;
             case OBJECT_GROUP_INDEX_0_START:
-                objectGroupIndexes[0] = (byte) (value & mask(OBJECT_GROUP_LEN));
+                objectGroupIndexes[0] = (short) (value & mask(OBJECT_GROUP_LEN));
                 return;
             case OBJECT_GROUP_INDEX_1_START:
-                objectGroupIndexes[1] = (byte) (value & mask(OBJECT_GROUP_LEN));
+                objectGroupIndexes[1] = (short) (value & mask(OBJECT_GROUP_LEN));
                 return;
             case OBJECT_GROUP_INDEX_2_START:
-                objectGroupIndexes[2] = (byte) (value & mask(OBJECT_GROUP_LEN));
+                objectGroupIndexes[2] = (short) (value & mask(OBJECT_GROUP_LEN));
                 return;
             case OBJECT_GROUP_INDEX_3_START:
-                objectGroupIndexes[3] = (byte) (value & mask(OBJECT_GROUP_LEN));
+                objectGroupIndexes[3] = (short) (value & mask(OBJECT_GROUP_LEN));
                 return;
+            case 0x06:
+            case 0x08:
+            case 0x0a:
+            case 0x0c:
+            case 0x0e:
+            case 0x10:
+            case 0x12:
+            case 0x14:
+            case 0x16:
+            case 0x18:
+            case 0x1a:
+            case 0x1c:
+            case 0x1e:
+            case 0x2c:
+            case 0x32:
+            case 0x34:
+            case 0x36:
+            case 0x38:
+            case 0x3a:
+            case 0x3c:
+            case 0x3e:
+            case 0x46:
+            case 0x50:
+            case 0x52:
+            case 0x54:
+            case 0x56:
+            case 0x58:
+            case 0x5a:
+            case 0x5c:
+            case 0x5e:
+            case 0x72:
+            case 0x74:
+            case 0x76:
+            case 0x78:
+            case 0x7a:
+            case 0x7c:
+            case 0x7e:
+                return; // not mapped to anything
+            case VERSION_START:
+            case COLUMN_TABLE_ADDRESS_START:
+            case INTERRUPT_PENDING_START:
+            case DISPLAY_STATUS_START:
+            case DRAWING_STATUS_START:
+                return; // read-only
         }
-        throw new BusError(address, Unimplemented);
+        // ignore other writes? mirroring?
+        System.out.printf("Warning: writing out of range into VIP control regs @ 0x%02x%n", address);
     }
 
     private void processDisplayControl(short value) {

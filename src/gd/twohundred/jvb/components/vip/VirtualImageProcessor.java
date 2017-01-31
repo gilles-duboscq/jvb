@@ -42,6 +42,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private final FrameBuffer rightFb0 = new FrameBuffer(RIGHT_FRAMEBUFFER_0_START);
     private final FrameBuffer rightFb1 = new FrameBuffer(RIGHT_FRAMEBUFFER_1_START);
     private final VIPControlRegisters controlRegs = new VIPControlRegisters(this);
+    private final LinearMemoryMirroring controlRegsMirror = new LinearMemoryMirroring(controlRegs, 0x00040000, 0, 0x80);
     private final WindowAttributes[] windowAttributes = new WindowAttributes[WINDOW_ATTRIBUTE_COUNT];
 
     private final BackgroundSegmentsAndParametersRAM backgroundSegmentsAndWindowParameterTable =
@@ -365,8 +366,11 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         if (address >= 0x00060000) {
             throw new BusError(address, Unimplemented); // not used ?
         }
+        if (address >= VIPControlRegisters.START) {
+            return controlRegs;
+        }
         if (address >= 0x00040000) {
-            return controlRegs; // mirroring?
+            return controlRegsMirror; // mirroring?
         }
         if (address >= ObjectAttributesMemory.START) {
             return oam;

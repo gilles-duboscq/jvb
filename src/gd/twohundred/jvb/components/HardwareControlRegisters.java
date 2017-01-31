@@ -54,6 +54,10 @@ public class HardwareControlRegisters implements Resetable, ReadWriteMemory {
 
     @Override
     public int getByte(int address) {
+        if ((address & 0b11) != 0) {
+            // the regs are all 4 bytes aligned and 8 bit wide.
+            return 0x00; // ignore reads to other addresses.
+        }
         switch (address) {
             case WAIT_CONTROL_REGISTER:
                 return waitControl;
@@ -63,11 +67,17 @@ public class HardwareControlRegisters implements Resetable, ReadWriteMemory {
                 return gamePad.getInputHigh();
             case GAME_PAD_LOW_REGISTER:
                 return gamePad.getInputLow();
+            case LINK_RX_REGISTER:
             case LINK_CONTROL_REGISTER:
+            case LINK_AUX_REGISTER:
                 if (DEBUG_LINK_CONTROL) {
                     System.out.printf("Ignoring link control registers read @ 0x%08x%n", address);
                 }
                 return 0;
+            case TIMER_LOW_REGISTER:
+            case TIMER_HIGH_REGISTER:
+            case TIMER_CONTROL_REGISTER:
+                return timer.getByte(address - timer.getStart());
         }
         throw new BusError(address, Unimplemented);
     }
@@ -77,6 +87,10 @@ public class HardwareControlRegisters implements Resetable, ReadWriteMemory {
 
     @Override
     public void setByte(int address, byte value) {
+        if ((address & 0b11) != 0) {
+            // the regs are all 4 bytes aligned and 8 bit wide.
+            return; // ignore writes to other addresses.
+        }
         try {
             switch (address) {
                 case WAIT_CONTROL_REGISTER:
@@ -90,6 +104,10 @@ public class HardwareControlRegisters implements Resetable, ReadWriteMemory {
                 case TIMER_CONTROL_REGISTER:
                     timer.setByte(address - timer.getStart(), value);
                     return;
+                case LINK_RX_REGISTER:
+                case GAME_PAD_LOW_REGISTER:
+                case GAME_PAD_HIGH_REGISTER:
+                    return; // read-only
                 case LINK_CONTROL_REGISTER:
                 case LINK_AUX_REGISTER:
                 case LINK_TX_REGISTER:

@@ -1,6 +1,7 @@
 TODO:
 * VIP fixes with vb_test_2
 * FPU
+* VSU
 
 
 | Title | Notes

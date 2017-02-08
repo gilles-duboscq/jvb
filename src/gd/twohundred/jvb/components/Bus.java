@@ -7,7 +7,6 @@ import gd.twohundred.jvb.components.utils.WarningMemory;
 import gd.twohundred.jvb.components.vip.VirtualImageProcessor;
 import gd.twohundred.jvb.components.vsu.VirtualSoundUnit;
 
-import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
 import static gd.twohundred.jvb.BusError.Reason.Unmapped;
 
 public class Bus extends MappedModules {
@@ -29,7 +28,12 @@ public class Bus extends MappedModules {
         this.wram = new SystemWRAM();
     }
 
+    public static final boolean TRACE_BUS = false;
+
     protected MappedMemory getMappedModule(int address) {
+        if (TRACE_BUS) {
+            CPU.debugInstOut.printf("access 0x%08x%n", address);
+        }
         if (address >= CartridgeROM.START) {
             return rom;
         }

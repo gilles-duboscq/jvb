@@ -118,4 +118,11 @@ public class Utils {
         }
         return result & mask(targetLength);
     }
+
+    public static int ceilDiv(int x, int y){
+        if (x < 0 != y < 0) {
+            return x / y;
+        }
+        return 1 + (x - 1) / y;
+    }
 }

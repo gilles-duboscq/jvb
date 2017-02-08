@@ -2,13 +2,16 @@ package gd.twohundred.jvb.components.vip;
 
 import gd.twohundred.jvb.components.interfaces.Screen;
 
+import java.awt.*;
+
+import static gd.twohundred.jvb.Utils.ceilDiv;
 import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DRAWING_BLOCK_HEIGHT;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 public abstract class BackgroundedWindowMode extends WindowMode {
 
-    protected void drawBackground(WindowAttributes window, VirtualImageProcessor vip, boolean left) {
+    public void draw(WindowAttributes window, VirtualImageProcessor vip, boolean left) {
         if (!validateBackground(window)) {
             return;
         }
@@ -44,21 +47,23 @@ public abstract class BackgroundedWindowMode extends WindowMode {
                 }
                 int backgroundX = windowX + window.getBackgroundX() + backgroundParallax;
                 int cellAddr;
-                if (window.isUseOutOfBoundsCharacter() && (backgroundX >= backgroundWidth || backgroundY >= backgroundHeight)) {
+                if (window.isUseOutOfBoundsCharacter() && (backgroundX < 0 || backgroundX >= backgroundWidth || backgroundY < 0 || backgroundY >= backgroundHeight)) {
                     // oob char
                     int segmentIndex = window.getBaseSegmentIndex();
                     int segmentAddr = segmentIndex * BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_SIZE;
                     cellAddr = segmentAddr + window.getOutOfBoundsCharacter() * BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_CELL_SIZE;
                 } else {
                     // tile
-                    int xSegment = (backgroundX / BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_WIDTH_PX) & (widthSegments - 1);
-                    int ySegment = (backgroundY / BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_HEIGHT_PX) & (heightSegments - 1);
+                    backgroundY = backgroundY & (widthSegments * BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_HEIGHT_PX - 1);
+                    backgroundX = backgroundX & (heightSegments * BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_WIDTH_PX - 1);
+                    int xSegment = backgroundX / BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_WIDTH_PX;
+                    int ySegment = backgroundY / BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_HEIGHT_PX;
                     int segmentIndex = window.getBaseSegmentIndex() + xSegment + ySegment * widthSegments;
 
                     int segmentAddr = segmentIndex * BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_SIZE;
 
-                    int segmentX = (backgroundX % BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_WIDTH_PX) & (BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_WIDTH_PX - 1);
-                    int segmentY = (backgroundY % BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_HEIGHT_PX) & (BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_WIDTH_PX - 1);
+                    int segmentX = backgroundX & (BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_WIDTH_PX - 1);
+                    int segmentY = backgroundY & (BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_WIDTH_PX - 1);
                     int segmentXCell = segmentX / CharacterRAM.CHARACTER_WIDTH_PX;
                     int segmentYCell = segmentY / CharacterRAM.CHARACTER_HEIGHT_PX;
                     int cellIndex = segmentXCell + segmentYCell * BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_WIDTH_CELLS;
@@ -83,5 +88,26 @@ public abstract class BackgroundedWindowMode extends WindowMode {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public void drawDebug(WindowAttributes window, VirtualImageProcessor vip, Graphics g, int scale) {
+        super.drawDebug(window, vip, g, scale);
+        g.setColor(Color.red);
+        g.drawString("BG.x:" + window.getBackgroundX() + " BG.y:" + window.getBackgroundY()
+                + " BG.sw:" + window.getBackgroundWidthSegments()+ " BG.sh:" + window.getBackgroundHeightSegments()
+                + " BG.oob:" + (window.isUseOutOfBoundsCharacter() ? "char" : "tile")
+                , 2 +window.getX() * scale, window.getY() * scale + g.getFontMetrics().getHeight() * 2);
+        int widthChars = ceilDiv(window.getWidth(), CharacterRAM.CHARACTER_WIDTH_PX);
+        int heightChars = ceilDiv(window.getHeight(), CharacterRAM.CHARACTER_HEIGHT_PX);
+        int bgDx = window.getBackgroundX() % CharacterRAM.CHARACTER_WIDTH_PX;
+        int bgDy = window.getBackgroundY() % CharacterRAM.CHARACTER_HEIGHT_PX;
+        for (int cx = 0; cx < widthChars; cx++) {
+            for (int cy = 0; cy < heightChars; cy++) {
+                g.drawRect((window.getX() - bgDx + cx * CharacterRAM.CHARACTER_WIDTH_PX + window.getParallax() + window.getBackgroundParallax()) * scale,
+                        (window.getY() - bgDy + cy * CharacterRAM.CHARACTER_HEIGHT_PX) * scale,
+                        CharacterRAM.CHARACTER_WIDTH_PX * scale, CharacterRAM.CHARACTER_HEIGHT_PX * scale);
+            }
+        }
     }
 }

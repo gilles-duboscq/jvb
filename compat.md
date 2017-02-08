@@ -26,7 +26,7 @@ TODO:
 | Jack Bros (J) | VSU
 | Jack Bros (U) | VSU
 | Mario Clash (JU) | Nothing happens?
-| Mario Flying Demo by Frostgiant (PD) | Visual glitches (reading the wrong char?)
+| Mario Flying Demo by Frostgiant (PD) | ✓ (Seems to use uninitialized memory as a "black" char)
 | Mario's Tennis (JU) [a1] | Graphic glitch (top bar) and nothing happens
 | Mario's Tennis (JU) | illegal instruction?
 | Matrix, The by Cooler (PD) | Glitchy, wait too fast
@@ -52,7 +52,7 @@ TODO:
 | Tic Tac Toe by Pat Daderko (PD) | Link
 | Tron VB by Pat Daderko (PD) | Link
 | VB Rocks! Demo by KR155E (PD) | Displays dead data from fb
-| vb_test_2 | Display truncates number to 0xf even if the right value seems to be used. Problems with >1 segment height/width. Problems in "negative y" tiles. OOB char switches window mode? FPU for obj mode. Affine & Line shift modes.
+| vb_test_2 | Display truncates number to 0xf even if the right value seems to be used. OOB char switches window mode? FPU for obj mode. Affine & Line shift modes.
 | VeeBee Cursor Demo by David Williamson (PD) | Displays dead data from fb
 | Vertical Force (J) | VSU
 | Vertical Force (U) | VSU

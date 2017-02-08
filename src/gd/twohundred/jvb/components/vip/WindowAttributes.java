@@ -288,4 +288,8 @@ public class WindowAttributes implements ReadWriteMemory, Resetable {
     public short getBackgroundParallax() {
         return backgroundParallax;
     }
+
+    int getId() {
+        return id;
+    }
 }

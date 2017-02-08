@@ -23,7 +23,7 @@ public class MergedScreen extends Canvas implements Screen {
     }
 
     @Override
-    public void update(RenderedFrame left, RenderedFrame right) {
+    public void update(RenderedFrame left, RenderedFrame right, DebugDrawer debugDrawer) {
         this.requestFocusInWindow();
         BufferStrategy bufferStrategy = getBufferStrategy();
         if (bufferStrategy == null) {
@@ -37,6 +37,9 @@ public class MergedScreen extends Canvas implements Screen {
         }
         Graphics g = bufferStrategy.getDrawGraphics();
         g.drawImage(bufferedImage, 0, 0, Screen.WIDTH * SCALE, Screen.HEIGHT * SCALE, null);
+        if (debugDrawer != null) {
+            debugDrawer.drawDebug(g, SCALE);
+        }
         g.dispose();
         bufferStrategy.show();
     }

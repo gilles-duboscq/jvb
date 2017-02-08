@@ -5,11 +5,6 @@ public class NormalWindowMode extends BackgroundedWindowMode {
     public static final NormalWindowMode INSTANCE = new NormalWindowMode();
 
     @Override
-    public void draw(WindowAttributes window, VirtualImageProcessor vip, boolean left) {
-        drawBackground(window, vip, left);
-    }
-
-    @Override
     public int getId() {
         return ID;
     }

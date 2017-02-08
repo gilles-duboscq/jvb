@@ -1,5 +1,7 @@
 package gd.twohundred.jvb.components.vip;
 
+import java.awt.*;
+
 import static gd.twohundred.jvb.Utils.extractNthU;
 import static gd.twohundred.jvb.Utils.extractU;
 import static gd.twohundred.jvb.Utils.testBit;
@@ -18,11 +20,20 @@ public abstract class WindowMode {
                 return NormalWindowMode.INSTANCE;
             case ObjectWindowMode.ID:
                 return ObjectWindowMode.INSTANCE;
+            case LineShiftWindowMode.ID:
+                return LineShiftWindowMode.INSTANCE;
         }
         throw new RuntimeException("NYI: " + id);
     }
 
     public abstract void draw(WindowAttributes window, VirtualImageProcessor vip, boolean left);
+
+    public void drawDebug(WindowAttributes window, VirtualImageProcessor vip, Graphics g, int scale) {
+        g.setColor(Color.green);
+        g.drawRect(window.getX() * scale, window.getY() * scale, window.getWidth() * scale, window.getHeight() * scale);
+        g.drawString("W" + window.getId() + " W.w:" + window.getWidth() + " W.h:" + window.getHeight(),
+                2 +window.getX() * scale, window.getY() * scale + g.getFontMetrics().getHeight());
+    }
 
     public void onFinished(WindowAttributes window, VirtualImageProcessor vip) {
 

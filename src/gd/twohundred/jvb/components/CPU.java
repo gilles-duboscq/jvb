@@ -139,11 +139,14 @@ public class CPU implements Emulable, Resetable, InterruptSource {
 
     public CPU(Bus bus) {
         this.bus = bus;
+    }
+
+    static {
         PrintStream out = System.out;
         try {
             out = new PrintStream("trace.txt");
         } catch (FileNotFoundException e) {
-             e.printStackTrace();
+            e.printStackTrace();
         }
         debugInstOut = out;
     }
@@ -270,7 +273,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
     }
 
     public static final boolean DEBUG_INST = false;
-    public final PrintStream debugInstOut;
+    public static final PrintStream debugInstOut;
     public static final boolean DEBUG_CC = false;
 
     @Override

@@ -14,6 +14,8 @@ import gd.twohundred.jvb.components.utils.MappedModules;
 import gd.twohundred.jvb.components.utils.WarningMemory;
 import gd.twohundred.jvb.components.vip.VIPControlRegisters.VIPInterruptType;
 
+import java.awt.*;
+
 import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
 import static gd.twohundred.jvb.BusError.Reason.Unmapped;
 import static gd.twohundred.jvb.Utils.NANOS_PER_SECOND;
@@ -58,11 +60,15 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private final LinearMemoryMirroring chrTable2Mirror = new LinearMemoryMirroring(characterRAM, 0x00016000, 0x4000, 0x2000);
     private final LinearMemoryMirroring chrTable3Mirror = new LinearMemoryMirroring(characterRAM, 0x0001E000, 0x6000, 0x2000);
 
+    public static final boolean DEBUG_GRAPHICS = true;
 
     public VirtualImageProcessor(Screen screen) {
         this.screen = screen;
         for (int i = 0; i < WINDOW_ATTRIBUTE_COUNT; i++) {
             windowAttributes[i] = new WindowAttributes(i);
+        }
+        if (DEBUG_GRAPHICS) {
+            debugDrawer = this::drawDebug;
         }
     }
 
@@ -111,6 +117,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private long frameCounter;
     private DrawingState drawingState;
     private DisplayState displayState;
+    private Screen.DebugDrawer debugDrawer;
 
     private int currentWindowId;
     private int latchedClearColor;
@@ -146,7 +153,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             if (displayCycles >= FRAME_PERIOD) {
                 leftRendered.clear();
                 rightRendered.clear();
-                screen.update(leftRendered, rightRendered);
+                screen.update(leftRendered, rightRendered, debugDrawer);
                 displayCycles = 0;
             }
             return;
@@ -160,7 +167,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
                 controlRegs.setDisplayingFrameBufferPair(currentFbPair(), true, true);
                 renderFrameBuffer(currentLeft, leftRendered);
             } else if (displayCycles == LEFT_DISPLAY_START_CYCLE + MAX_FRAME_BUFFER_DISPLAY_CYCLES) {
-                screen.update(leftRendered, rightRendered);
+                screen.update(leftRendered, rightRendered, debugDrawer);
                 controlRegs.setDisplayingFrameBufferPair(currentFbPair(), true, false);
                 interrupt(VIPInterruptType.LeftDisplayFinished);
             } else if (displayCycles == RIGH_DISPLAY_START_CYCLE) {
@@ -168,7 +175,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
                 controlRegs.setDisplayingFrameBufferPair(currentFbPair(), false, true);
                 renderFrameBuffer(currentRight, rightRendered);
             } else if (displayCycles == RIGH_DISPLAY_START_CYCLE + MAX_FRAME_BUFFER_DISPLAY_CYCLES) {
-                screen.update(leftRendered, rightRendered);
+                screen.update(leftRendered, rightRendered, debugDrawer);
                 controlRegs.setDisplayingFrameBufferPair(currentFbPair(), false, false);
                 interrupt(VIPInterruptType.RightDisplayFinished);
                 displayState = DisplayState.Finished;
@@ -411,5 +418,15 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             return leftFb0;
         }
         throw new BusError(address, Unmapped);
+    }
+
+    private void drawDebug(Graphics g, int scale) {
+        for (int id = 31; id >= 0; id--) {
+            WindowAttributes window = windowAttributes[id];
+            if (window.isStop()) {
+                break;
+            }
+            window.getMode().drawDebug(window, this, g, scale);
+        }
     }
 }

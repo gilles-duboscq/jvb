@@ -1,6 +1,7 @@
 package gd.twohundred.jvb.components.vip;
 
 import gd.twohundred.jvb.BusError;
+import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.components.interfaces.ReadWriteMemory;
 import gd.twohundred.jvb.components.interfaces.Resetable;
 
@@ -40,6 +41,7 @@ public class WindowAttributes implements ReadWriteMemory, Resetable {
     private static final int FLAGS_LEFT_POS = 15;
 
     private final int id;
+    private final Logger logger;
 
     private byte baseSegmentIndex;
     private boolean isStop;
@@ -60,8 +62,9 @@ public class WindowAttributes implements ReadWriteMemory, Resetable {
     private short parallax;
     private short backgroundParallax;
 
-    public WindowAttributes(int id) {
+    public WindowAttributes(int id, Logger logger) {
         this.id = id;
+        this.logger = logger;
     }
 
     @Override
@@ -148,7 +151,7 @@ public class WindowAttributes implements ReadWriteMemory, Resetable {
     @Override
     public int getHalfWord(int address) {
         if (address >= SCRATCH_START) {
-            //System.out.printf("Warning: reading from Window scratch @ 0x%08x%n", address);
+            logger.debug(Logger.Component.VIP, "reading from Window scratch @ %#08x", address);
             return 0xdead;
         }
         switch (address) {

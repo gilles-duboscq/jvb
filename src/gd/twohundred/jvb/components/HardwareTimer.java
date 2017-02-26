@@ -1,6 +1,7 @@
 package gd.twohundred.jvb.components;
 
 import gd.twohundred.jvb.BusError;
+import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
 import gd.twohundred.jvb.components.interfaces.Interrupt;
 import gd.twohundred.jvb.components.interfaces.InterruptSource;
@@ -33,12 +34,18 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
     private static final int INTERVAL_POS = 4;
     private static final int READ_MASK = intBits(ENABLE_POS, ZERO_POS, ENABLE_INT_POS, INTERVAL_POS);
     private static final int WRITE_MASK = intBits(ENABLE_POS, CLEAR_ZERO_POS, ENABLE_INT_POS, INTERVAL_POS);
+    private final Logger logger;
     private byte status;
 
     private short counter;
     private short reloadValue;
     private int cycleCouter;
     private boolean interruptRaised;
+
+    public HardwareTimer(Logger logger) {
+        this.logger = logger;
+    }
+
     @Override
     public int getStart() {
         return START;
@@ -58,8 +65,6 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
         throw new BusError(address, Unmapped);
     }
 
-    private static final boolean DEBUG_TIMER = true;
-
     @Override
     public void setByte(int address, byte value) {
         switch (address) {
@@ -67,19 +72,13 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
                 int effectiveValue = value & WRITE_MASK;
                 if (testBit(effectiveValue, CLEAR_ZERO_POS)) {
                     effectiveValue &= ~intBits(CLEAR_ZERO_POS, ZERO_POS);
-                    if (DEBUG_TIMER) {
-                        System.out.println("Clearing zero status");
-                    }
+                    logger.debug(Logger.Component.Timer, "Clearing zero status");
                 }
                 if (testBit(effectiveValue, ENABLE_INT_POS) && !isInterruptEnabled()) {
-                    if (DEBUG_TIMER) {
-                        System.out.println("Enabling timer interrupts");
-                    }
+                    logger.debug(Logger.Component.Timer, "Enabling timer interrupts");
                 }
                 if (testBit(effectiveValue, ENABLE_POS) && !isTimerEnabled()) {
-                    if (DEBUG_TIMER) {
-                        System.out.println("Enabling timer");
-                    }
+                    logger.debug(Logger.Component.Timer, "Enabling timer");
                 }
                 status = (byte) effectiveValue;
                 return;

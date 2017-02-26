@@ -1,5 +1,6 @@
 package gd.twohundred.jvb.components;
 
+import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
 import gd.twohundred.jvb.components.interfaces.InputProvider;
 import gd.twohundred.jvb.components.interfaces.InputProvider.Inputs;
@@ -22,6 +23,7 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
     private static final int INTERRUPT_STATUS_MASK = ~intBits(Inputs.A.offset(), Inputs.B.offset(), Inputs.One.offset());
 
     private final InputProvider provider;
+    private final Logger logger;
     private byte status;
     private short input;
 
@@ -29,10 +31,9 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
     private boolean interruptRaised;
     private int hardwareReadBit;
 
-    private static final boolean DEBUG_GAME_PAD = false;
-
-    public GamePad(InputProvider inputProvider) {
+    public GamePad(InputProvider inputProvider, Logger logger) {
         this.provider = inputProvider;
+        this.logger = logger;
     }
 
     public void setControl(byte value) {
@@ -48,11 +49,9 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
         } else if (hardwareRead) {
             hardwareReadBit = 15;
             status |= intBit(CONTROL_HARDWARE_INPUT_IN_PROGRESS_POS);
-        } else {
+        } else if (latchInput || sendBit) {
             // TODO latch? sendBit?
-            if (DEBUG_GAME_PAD) {
-                System.out.printf("Ignoring game pad control with latch: %b sendBit: %b%n", latchInput, sendBit);
-            }
+            logger.warning(Logger.Component.GamePad, "Ignoring game pad control with latch: %b sendBit: %b", latchInput, sendBit);
         }
         status |= intBit(CONTROL_SOFTWARE_INPUT_CLOCK_SIGNAL_POS, !sendBit);
         status |= intBit(CONTROL_GAME_PAD_INTERRUPT_DISABLE_POS, interruptEnabled);

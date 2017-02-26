@@ -1,5 +1,6 @@
 package gd.twohundred.jvb.components;
 
+import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.components.interfaces.Emulable;
 import gd.twohundred.jvb.components.interfaces.InputProvider;
 import gd.twohundred.jvb.components.interfaces.Interrupt;
@@ -12,11 +13,14 @@ import gd.twohundred.jvb.components.vsu.VirtualSoundUnit;
 import static gd.twohundred.jvb.components.VirtualBoy.ExecutionMode.DuplexedException;
 
 public class VirtualBoy implements Emulable {
+    public static final String VERSION = "0.1.0";
     private final CPU cpu;
     private final HardwareTimer timer;
     private final VirtualImageProcessor vip;
     private final VirtualSoundUnit vsu;
     private final GamePad gamePad;
+    private final Logger logger;
+    private Debugger debugger;
 
     enum ExecutionMode {
         Normal,
@@ -27,14 +31,15 @@ public class VirtualBoy implements Emulable {
 
     private ExecutionMode executionMode;
 
-    public VirtualBoy(Screen screen, InputProvider inputProvider, CartridgeROM rom, CartridgeRAM ram) {
-        timer = new HardwareTimer();
-        vip = new VirtualImageProcessor(screen);
+    public VirtualBoy(Screen screen, InputProvider inputProvider, CartridgeROM rom, CartridgeRAM ram, Logger logger) {
+        this.logger = logger;
+        timer = new HardwareTimer(logger);
+        vip = new VirtualImageProcessor(screen, logger);
         vsu = new VirtualSoundUnit();
-        gamePad = new GamePad(inputProvider);
-        HardwareControlRegisters controlRegisters = new HardwareControlRegisters(timer, gamePad);
-        Bus bus = new Bus(rom, ram, vip, controlRegisters, vsu);
-        cpu = new CPU(bus);
+        gamePad = new GamePad(inputProvider, logger);
+        HardwareControlRegisters controlRegisters = new HardwareControlRegisters(timer, gamePad, logger);
+        Bus bus = new Bus(rom, ram, vip, controlRegisters, vsu, logger);
+        cpu = new CPU(bus, logger);
     }
 
     @Override
@@ -49,6 +54,9 @@ public class VirtualBoy implements Emulable {
             vip.tickExact(actualCycles);
             vsu.tickExact(actualCycles);
             gamePad.tickExact(actualCycles);
+            if (this.debugger != null) {
+                this.debugger.tickExact(actualCycles);
+            }
             cycles += actualCycles;
             if (handleInterrupts()) {
                 if (executionMode == ExecutionMode.Halt) {
@@ -125,7 +133,7 @@ public class VirtualBoy implements Emulable {
 
     private void handleInterrupt(Interrupt interrupt) {
         if (executionMode == DuplexedException) {
-            System.out.println("Fatal interrupt!!");
+            logger.warning(Logger.Component.Interrupts, "Fatal interrupt!!");
             cpu.getBus().setWord(0, interrupt.getExceptionCode());
             cpu.getBus().setWord(4, cpu.getPc());
             cpu.getBus().setWord(8, cpu.getPsw().getValue());
@@ -158,5 +166,10 @@ public class VirtualBoy implements Emulable {
         vsu.reset();
         gamePad.reset();
         executionMode = ExecutionMode.Normal;
+    }
+
+    public void attach(Debugger debugger) {
+        this.debugger = debugger;
+        this.cpu.attach(debugger);
     }
 }

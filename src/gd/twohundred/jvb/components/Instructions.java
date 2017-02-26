@@ -81,4 +81,19 @@ public class Instructions {
     public static final int BCOND_BN = 0b0100;
     public static final int BCOND_BP = 0b1100;
     public static final int BCOND_BH = 0b1011;
+
+    public enum AccessWidth {
+        Byte(java.lang.Byte.BYTES),
+        HalfWord(Short.BYTES),
+        Word(Integer.BYTES);
+        private final int bytes;
+
+        AccessWidth(int bytes) {
+            this.bytes = bytes;
+        }
+
+        public int getBytes() {
+            return bytes;
+        }
+    }
 }

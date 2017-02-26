@@ -5,6 +5,7 @@ import gd.twohundred.jvb.components.interfaces.InputProvider;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static gd.twohundred.jvb.Utils.intBit;
 import static gd.twohundred.jvb.Utils.testBit;
@@ -24,10 +25,8 @@ public class DefaultSwingInputProvider implements InputProvider, KeyListener, Ke
 
     @Override
     public void keyPressed(KeyEvent e) {
-        System.out.println("Key pressed: " + e);
         Inputs input = keyCodeToInput(e.getKeyCode(), e.getKeyLocation());
         if (input != null) {
-            System.out.println("Key pressed: " + input);
             status |= intBit(input.offset());
         }
     }
@@ -36,7 +35,6 @@ public class DefaultSwingInputProvider implements InputProvider, KeyListener, Ke
     public void keyReleased(KeyEvent e) {
         Inputs input = keyCodeToInput(e.getKeyCode(), e.getKeyLocation());
         if (input != null) {
-            System.out.println("Key released: " + input);
             status &= ~intBit(input.offset());
         }
 
@@ -98,11 +96,9 @@ public class DefaultSwingInputProvider implements InputProvider, KeyListener, Ke
             return false;
         }
         if (e.getID() == KeyEvent.KEY_PRESSED) {
-            System.out.println("Key pressed: " + input);
             status |= intBit(input.offset());
             return true;
         } else if (e.getID() == KeyEvent.KEY_RELEASED) {
-            System.out.println("Key released: " + input);
             status &= ~intBit(input.offset());
             return true;
         }

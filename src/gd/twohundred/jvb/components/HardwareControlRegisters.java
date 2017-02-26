@@ -1,6 +1,7 @@
 package gd.twohundred.jvb.components;
 
 import gd.twohundred.jvb.BusError;
+import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.components.interfaces.ReadWriteMemory;
 import gd.twohundred.jvb.components.interfaces.Resetable;
 
@@ -30,10 +31,12 @@ public class HardwareControlRegisters implements Resetable, ReadWriteMemory {
     private byte waitControl;
     private final HardwareTimer timer;
     private final GamePad gamePad;
+    private final Logger logger;
 
-    public HardwareControlRegisters(HardwareTimer timer, GamePad gamePad) {
+    public HardwareControlRegisters(HardwareTimer timer, GamePad gamePad, Logger logger) {
         this.timer = timer;
         this.gamePad = gamePad;
+        this.logger = logger;
     }
 
     @Override
@@ -70,9 +73,7 @@ public class HardwareControlRegisters implements Resetable, ReadWriteMemory {
             case LINK_RX_REGISTER:
             case LINK_CONTROL_REGISTER:
             case LINK_AUX_REGISTER:
-                if (DEBUG_LINK_CONTROL) {
-                    System.out.printf("Ignoring link control registers read @ 0x%08x%n", address);
-                }
+                logger.warning(Logger.Component.HardwareControlRegs, "Ignoring link control registers read @ %#08x", address);
                 return 0;
             case TIMER_LOW_REGISTER:
             case TIMER_HIGH_REGISTER:
@@ -95,9 +96,7 @@ public class HardwareControlRegisters implements Resetable, ReadWriteMemory {
             switch (address) {
                 case WAIT_CONTROL_REGISTER:
                     waitControl = (byte) (value & intBits(WAIT_ROM_POS, WAIT_EXTENSION_POS));
-                    if (DEBUG_WAIT_CONTROL) {
-                        System.out.println("Ignoring wait control registers:" + (testBit(value, WAIT_ROM_POS) ? " wait ROM" : "") + (testBit(value, WAIT_EXTENSION_POS) ? " wait extension" : ""));
-                    }
+                    logger.warning(Logger.Component.HardwareControlRegs, "Ignoring wait control registers write", address);
                     return;
                 case TIMER_LOW_REGISTER:
                 case TIMER_HIGH_REGISTER:
@@ -111,9 +110,7 @@ public class HardwareControlRegisters implements Resetable, ReadWriteMemory {
                 case LINK_CONTROL_REGISTER:
                 case LINK_AUX_REGISTER:
                 case LINK_TX_REGISTER:
-                    if (DEBUG_LINK_CONTROL) {
-                        System.out.printf("Ignoring link control registers: 0b%s @ 0x%08x%n", toBinary(value & 0xff, Byte.SIZE), address);
-                    }
+                    logger.warning(Logger.Component.HardwareControlRegs, "Ignoring link control registers write @ %#08x", address);
                     return;
                 case GAME_PAD_CONTROL_REGISTER:
                     gamePad.setControl(value);

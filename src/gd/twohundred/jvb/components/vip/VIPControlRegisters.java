@@ -1,6 +1,7 @@
 package gd.twohundred.jvb.components.vip;
 
 import gd.twohundred.jvb.BusError;
+import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.components.interfaces.ReadWriteMemory;
 import gd.twohundred.jvb.components.interfaces.Resetable;
 
@@ -109,6 +110,7 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
     }
 
     private final VirtualImageProcessor vip;
+    private final Logger logger;
 
     private byte ledBrightness1;
     private byte ledBrightness2;
@@ -128,8 +130,9 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
     private short pendingInterrupts;
     private byte frameRepeat;
 
-    public VIPControlRegisters(VirtualImageProcessor vip) {
+    public VIPControlRegisters(VirtualImageProcessor vip, Logger logger) {
         this.vip = vip;
+        this.logger = logger;
     }
 
     @Override
@@ -192,7 +195,7 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
             case FRAME_REPEAT_START:
                 return frameRepeat & 0xf;
             case COLUMN_TABLE_ADDRESS_START:
-                System.out.println("Warning: returning dummy value for Column Table Address");
+                logger.warning(Logger.Component.VIP, "returning dummy value for Column Table Address");
                 return 0x00_00;
             case INTERRUPT_CLEAR_START:
             case DISPLAY_CONTROL_START:
@@ -238,11 +241,9 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
                 return 0xbeef; // not mapped to anything
         }
         // ignore other read? mirroring?
-        System.out.printf("Warning: reading out of range into VIP control regs @ 0x%02x%n", address);
+        logger.warning(Logger.Component.VIP, "reading out of range into VIP control regs @ %#02x", address);
         return 0xcafe;
     }
-
-    public static final boolean DEBUG_VIP_INTERRUPTS = true;
 
     @Override
     public void setHalfWord(int address, short value) {
@@ -252,14 +253,14 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
                 return;
             case INTERRUPT_ENABLE_START:
                 enabledInterrupts = value;
-                if (DEBUG_VIP_INTERRUPTS) {
-                    String msg = "Enabling VIP interrupts:";
+                if (logger.isLevelEnabled(Logger.Component.VIP, Logger.Level.Debug)) {
+                    String msg = "";
                     for (VIPInterruptType t : VIPInterruptType.values()) {
                         if (isInterruptEnabled(t)) {
                             msg += " " + t;
                         }
                     }
-                    System.out.println(msg);
+                    logger.debug(Logger.Component.VIP, "Enabling VIP interrupts: %s", address);
                 }
                 return;
             case INTERRUPT_CLEAR_START:
@@ -368,7 +369,7 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
                 return; // read-only
         }
         // ignore other writes? mirroring?
-        System.out.printf("Warning: writing out of range into VIP control regs @ 0x%02x%n", address);
+        logger.warning(Logger.Component.VIP, "writing out of range into VIP control regs @ %#02x", address);
     }
 
     private void processDisplayControl(short value) {
@@ -389,7 +390,7 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
             vip.softReset();
         }
         if (refresh) {
-            System.out.println("Ignoring VIP refresh...");
+            logger.info(Logger.Component.VIP, "Ignoring VIP refresh");
         }
 
         int affected = intBits(DISPLAY_STATUS_DISPLAY_ENABLED_POS, DISPLAY_STATUS_MEMORY_REFRESHING_POS, DISPLAY_STATUS_COLUMN_TABLE_ADDR_LOCKED_POS);
@@ -511,22 +512,15 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         return interruptYPosition & 0xff;
     }
 
-
-    public static final boolean DEBUG_VIP_CTRL_AS_BYTE = false;
-
     @Override
     public int getByte(int address) {
-        if (DEBUG_VIP_CTRL_AS_BYTE) {
-            System.out.printf("Warning: accessing VIP Control register as byte @ 0x%08x%n", address);
-        }
+        logger.warning(Logger.Component.VIP, "reading VIP Control register as byte @ %#08x", address);
         return 0xde;
     }
 
     @Override
     public void setByte(int address, byte value) {
-        if (DEBUG_VIP_CTRL_AS_BYTE) {
-            System.out.printf("Warning: accessing VIP Control register as byte @ 0x%08x%n", address);
-        }
+        logger.warning(Logger.Component.VIP, "writing VIP Control register as byte @ %#08x", address);
     }
 
     public boolean isDisplayEnabled() {

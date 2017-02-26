@@ -1,5 +1,6 @@
 package gd.twohundred.jvb.components;
 
+import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.components.interfaces.ReadOnlyMemory;
 
 import java.io.IOException;
@@ -9,6 +10,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 
+import static gd.twohundred.jvb.Logger.Component.Memory;
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.file.StandardOpenOption.READ;
@@ -20,8 +22,8 @@ public class CartridgeROM implements ReadOnlyMemory {
     private final MappedByteBuffer cartridgeData;
     private final int addressMask;
 
-    public CartridgeROM(Path cartridgePath) throws IOException {
-        System.out.println("Opening " + cartridgePath + "...");
+    public CartridgeROM(Path cartridgePath, Logger logger) throws IOException {
+        logger.info(Logger.Component.CartridgeROM, "Opening %s", cartridgePath);
         FileChannel fileChannel = FileChannel.open(cartridgePath, READ);
         long size = fileChannel.size();
         assert size >= MIN_SIZE && size <= MAX_SIZE && Long.bitCount(size) == 1;

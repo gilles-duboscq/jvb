@@ -12,7 +12,6 @@ public abstract class AbstractRAM implements ReadWriteMemory, Resetable {
     private final ByteBuffer data;
 
     public AbstractRAM(int size) {
-        assert Integer.bitCount(size) == 1;
         data = ByteBuffer.allocateDirect(size);
         data.order(ByteOrder.LITTLE_ENDIAN);
     }

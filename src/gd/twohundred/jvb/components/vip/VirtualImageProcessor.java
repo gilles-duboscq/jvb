@@ -1,6 +1,7 @@
 package gd.twohundred.jvb.components.vip;
 
 import gd.twohundred.jvb.BusError;
+import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.RenderedFrame;
 import gd.twohundred.jvb.components.CPU;
 import gd.twohundred.jvb.components.SimpleInterrupt;
@@ -43,14 +44,13 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private final FrameBuffer leftFb1 = new FrameBuffer(LEFT_FRAMEBUFFER_1_START);
     private final FrameBuffer rightFb0 = new FrameBuffer(RIGHT_FRAMEBUFFER_0_START);
     private final FrameBuffer rightFb1 = new FrameBuffer(RIGHT_FRAMEBUFFER_1_START);
-    private final VIPControlRegisters controlRegs = new VIPControlRegisters(this);
-    private final LinearMemoryMirroring controlRegsMirror = new LinearMemoryMirroring(controlRegs, 0x00040000, 0, 0x80);
+    private final VIPControlRegisters controlRegs;
+    private final LinearMemoryMirroring controlRegsMirror;
     private final WindowAttributes[] windowAttributes = new WindowAttributes[WINDOW_ATTRIBUTE_COUNT];
 
     private final BackgroundSegmentsAndParametersRAM backgroundSegmentsAndWindowParameterTable =
             new BackgroundSegmentsAndParametersRAM();
-    private final WarningMemory columnTable =
-            new WarningMemory("Column Table", 0x0003DC00, 0x400);
+    private final WarningMemory columnTable;
     private final ObjectAttributesMemory oam = new ObjectAttributesMemory();
 
     private final CharacterRAM characterRAM = new CharacterRAM();
@@ -60,16 +60,19 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private final LinearMemoryMirroring chrTable2Mirror = new LinearMemoryMirroring(characterRAM, 0x00016000, 0x4000, 0x2000);
     private final LinearMemoryMirroring chrTable3Mirror = new LinearMemoryMirroring(characterRAM, 0x0001E000, 0x6000, 0x2000);
 
-    public static final boolean DEBUG_GRAPHICS = true;
+    public static final boolean DEBUG_GRAPHICS = false;
 
-    public VirtualImageProcessor(Screen screen) {
+    public VirtualImageProcessor(Screen screen, Logger logger) {
         this.screen = screen;
         for (int i = 0; i < WINDOW_ATTRIBUTE_COUNT; i++) {
-            windowAttributes[i] = new WindowAttributes(i);
+            windowAttributes[i] = new WindowAttributes(i, logger);
         }
         if (DEBUG_GRAPHICS) {
             debugDrawer = this::drawDebug;
         }
+        columnTable = new WarningMemory("Column Table", 0x0003DC00, 0x400, logger);
+        controlRegs = new VIPControlRegisters(this, logger);
+        controlRegsMirror = new LinearMemoryMirroring(controlRegs, 0x00040000, 0, 0x80);
     }
 
     private RenderedFrame renderFrameBuffer(FrameBuffer fb, RenderedFrame frame) {

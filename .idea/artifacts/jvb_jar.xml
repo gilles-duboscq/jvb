@@ -1,0 +1,11 @@
+<component name="ArtifactManager">
+  <artifact name="jvb:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/jvb_jar</output-path>
+    <root id="root">
+      <element id="archive" name="jvb.jar">
+        <element id="module-output" name="jvb" />
+      </element>
+      <element id="library" level="project" name="org.jline:jline:3.1.2" />
+    </root>
+  </artifact>
+</component>

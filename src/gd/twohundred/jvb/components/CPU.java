@@ -1,5 +1,6 @@
 package gd.twohundred.jvb.components;
 
+import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.components.interfaces.Emulable;
 import gd.twohundred.jvb.components.interfaces.Interrupt;
 import gd.twohundred.jvb.components.interfaces.InterruptSource;
@@ -135,10 +136,13 @@ public class CPU implements Emulable, Resetable, InterruptSource {
     private static final int TKCW = 0x000000E0;
 
     private final Bus bus;
+    private final Logger logger;
+    private Debugger debugger;
     private Interrupt pendingInterrupt;
 
-    public CPU(Bus bus) {
+    public CPU(Bus bus, Logger logger) {
         this.bus = bus;
+        this.logger = logger;
     }
 
     static {
@@ -183,10 +187,10 @@ public class CPU implements Emulable, Resetable, InterruptSource {
             case PIR_REG:
             case TKCW_REG:
             case ECR_REG:
-                System.err.printf("warning: setting read-only system reg %d%n", r);
+                logger.warning(Logger.Component.CPU, "setting read-only system reg %s (%d)", getSystemRegisterName(r), r);
                 break;
             default:
-                System.err.printf("warning: setting unknown system reg %d%n", r);
+                logger.warning(Logger.Component.CPU, "setting unknown system reg %d", r);
                 break;
         }
     }
@@ -253,7 +257,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
     private void processCacheControlCommand(int value) {
         chcw = value & intBit(CHCW_ICE_POS);
         if (DEBUG_CC) {
-            System.out.printf("ignoring: cache control 0b%s%n", toBinary(value, 32));
+            logger.debug(Logger.Component.CPU, "ignoring cache control 0b%s", toBinary(value, 32));
         }
     }
 
@@ -278,6 +282,9 @@ public class CPU implements Emulable, Resetable, InterruptSource {
 
     @Override
     public int tick(int targetCycles) {
+        if (this.debugger != null) {
+            this.debugger.onExec(pc);
+        }
         int first = bus.getHalfWord(pc);
         int nextPC = pc + 2;
         int cycles = 1;
@@ -816,7 +823,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     break;
                 }
                 case OP_ILL_1: {
-                    System.out.printf("Warning: Illegal instruction @ %08x!%n", pc);
+                    logger.warning(Logger.Component.CPU, "Illegal instruction @ %#08x!", pc);
                     if (DEBUG_INST) {
                         debugInstOut.println(String.format("%08x illegal! 0b%s", pc, toBinary(opcode, OPCODE_LEN)));
                     }
@@ -988,5 +995,10 @@ public class CPU implements Emulable, Resetable, InterruptSource {
         Interrupt interrupt = pendingInterrupt;
         pendingInterrupt = null;
         return interrupt;
+    }
+
+    void attach(Debugger debugger) {
+        this.debugger = debugger;
+        this.bus.attach(debugger);
     }
 }

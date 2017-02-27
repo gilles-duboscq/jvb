@@ -134,4 +134,8 @@ public class Bus extends MappedModules {
     public void attach(Debugger debugger) {
         this.debugger = debugger;
     }
+
+    CartridgeROM getRom() {
+        return rom;
+    }
 }

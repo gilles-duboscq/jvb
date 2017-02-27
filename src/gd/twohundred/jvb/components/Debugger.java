@@ -1,7 +1,6 @@
 package gd.twohundred.jvb.components;
 
 import gd.twohundred.jvb.Logger;
-import gd.twohundred.jvb.TimeoutBindingReader;
 import gd.twohundred.jvb.components.Instructions.AccessWidth;
 import gd.twohundred.jvb.components.debug.LogMessage;
 import gd.twohundred.jvb.components.debug.Logs;
@@ -26,12 +25,11 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Debugger implements ExactlyEmulable, Logger {
-    private static final int REFRESH_RATE_HZ = 2;
-    private static final long REFRESH_PERIOD = CPU.CLOCK_HZ / REFRESH_RATE_HZ;
-    private static final long KEY_REFRESH_PERIOD = CPU.CLOCK_HZ / REFRESH_RATE_HZ;
-    private static final AttributedString EMPTY_LINE = new AttributedString("");
+    private static final int DISPLAY_REFRESH_RATE_HZ = 2;
+    private static final long DISPLAY_REFRESH_PERIOD = CPU.CLOCK_HZ / DISPLAY_REFRESH_RATE_HZ;
     private static final String APP_NAME = "JVB";
 
     private final Display display;
@@ -44,11 +42,13 @@ public class Debugger implements ExactlyEmulable, Logger {
     private final Map<Component, Level> levels;
     private final BindingReader bindingReader;
     private final KeyMap<Runnable> keyMap;
+    private final Terminal.SignalHandler prevWinchHandler;
     private int currentViewIndex;
-    private long cycles;
+    private long cyclesDisplay;
+    private boolean forceRefresh;
     private VirtualBoy virtualBoy;
     private boolean cursorVisible = true;
-    private boolean supportsCursorVisibility;
+    private ConcurrentLinkedQueue<Runnable> inputActions;
 
     public Debugger() throws IOException {
         this.log = new ArrayList<>();
@@ -57,7 +57,7 @@ public class Debugger implements ExactlyEmulable, Logger {
             levels.put(c, Level.Warning);
         }
         this.views = new ArrayList<>();
-        this.views.add(new Overview());
+        this.views.add(new Overview(this));
         this.views.add(new Logs(log));
         this.terminal = TerminalBuilder.terminal();
         this.size = new Size();
@@ -71,16 +71,17 @@ public class Debugger implements ExactlyEmulable, Logger {
                 size.setColumns(columns);
             }
         }
-        supportsCursorVisibility = terminal.getBooleanCapability(InfoCmp.Capability.cursor_visible) && terminal.getBooleanCapability(InfoCmp.Capability.cursor_invisible);
         this.display = new Display(terminal, true);
         originalAttributes = terminal.enterRawMode();
+        prevWinchHandler = terminal.handle(Terminal.Signal.WINCH, this::resize);
         terminal.puts(InfoCmp.Capability.enter_ca_mode);
         display.clear();
         display.reset();
         display.resize(size.getRows(), size.getColumns());
-        bindingReader = new TimeoutBindingReader(terminal.reader(), 10);
+        bindingReader = new BindingReader(terminal.reader());
+        inputActions = new ConcurrentLinkedQueue<>();
         keyMap = initKeyMap();
-        currentViewIndex = 1;
+        new InputThread().start();
     }
 
     private KeyMap<Runnable> initKeyMap() {
@@ -90,8 +91,10 @@ public class Debugger implements ExactlyEmulable, Logger {
             Runnable r = () -> {
                 currentViewIndex = idx;
             };
-            keyMap.bind(r, KeyMap.alt((char) ('0' + i)));
+            keyMap.bind(r, KeyMap.ctrl(views.get(i).getAccelerator()));
         }
+        keyMap.bind(() -> this.virtualBoy.halt(), KeyMap.esc());
+        keyMap.setAmbiguousTimeout(10);
         return keyMap;
     }
 
@@ -112,8 +115,15 @@ public class Debugger implements ExactlyEmulable, Logger {
 
     }
 
+    private void resize(Terminal.Signal signal) {
+        size.copy(terminal.getSize());
+        display.clear();
+        display.resize(size.getRows(), size.getColumns());
+        forceRefresh = true;
+    }
+
     public void refresh() {
-        View currentView = views.get(currentViewIndex);
+        View currentView = getCurrentView();
         List<AttributedString> lines = new ArrayList<>();
         AttributedStringBuilder header = new AttributedStringBuilder();
         for (View v : views) {
@@ -128,47 +138,66 @@ public class Debugger implements ExactlyEmulable, Logger {
                 header.append(title, AttributedStyle.BOLD);
                 header.append(']');
             } else {
-                header.append('-');
-                header.append(title);
-                header.append('-');
+                header.append(' ');
+                int idx = title.indexOf(v.getAccelerator());
+                if (idx < 0) {
+                    idx = title.indexOf(Character.toUpperCase(v.getAccelerator()));
+                }
+                if (idx < 0) {
+                    header.append(title);
+                } else {
+                    header.append(title.substring(0, idx));
+                    header.append(title.substring(idx, idx + 1), AttributedStyle.DEFAULT.underline());
+                    header.append(title.substring(idx + 1));
+                }
+                header.append(' ');
             }
+        }
+        int rightPad = size.getColumns() - header.length();
+        for (int i = 0; i < rightPad; i++) {
+            header.append('─');
         }
         lines.add(header.toAttributedString());
         currentView.appendLines(lines, size.getRows() - 2);
         while (lines.size() < size.getRows() - 1) {
-            lines.add(EMPTY_LINE);
+            lines.add(AttributedString.EMPTY);
         }
         AttributedStringBuilder footer = new AttributedStringBuilder();
-        int leftPad = size.getColumns() - 2 - APP_NAME.length() - VirtualBoy.VERSION.length();
+        int leftPad = size.getColumns() - 3 - APP_NAME.length() - VirtualBoy.VERSION.length();
         if (leftPad < 0) {
             for (int i = 0; i < size.getColumns(); i++) {
-                footer.append('-');
+                footer.append('─');
             }
         } else {
             for (int i = 0; i < leftPad; i++) {
-                footer.append('-');
+                footer.append('─');
             }
+            footer.append(' ');
             footer.append(APP_NAME);
-            footer.append('-');
+            footer.append(' ');
             footer.append(VirtualBoy.VERSION);
-            footer.append('-');
+            footer.append('─');
         }
         lines.add(footer.toAttributedString());
         int targetCursorPos;
         Cursor viewCursor = currentView.getCursorPosition();
         if (viewCursor != null) {
-            if (!cursorVisible && supportsCursorVisibility) {
+            if (!cursorVisible) {
                 terminal.puts(InfoCmp.Capability.cursor_normal);
             }
             targetCursorPos = size.cursorPos(viewCursor.getY() + 1, viewCursor.getX());
         } else {
             targetCursorPos = -1;
-            if (cursorVisible && supportsCursorVisibility) {
+            if (cursorVisible) {
                 terminal.puts(InfoCmp.Capability.cursor_invisible);
             }
         }
         display.update(lines, targetCursorPos);
         terminal.flush();
+    }
+
+    private View getCurrentView() {
+        return views.get(currentViewIndex);
     }
 
     @Override
@@ -178,23 +207,58 @@ public class Debugger implements ExactlyEmulable, Logger {
 
     @Override
     public void tickExact(int cycles) {
-        this.cycles += cycles;
-        if (this.cycles >= REFRESH_PERIOD) {
+        inputTick();
+        cyclesDisplay += cycles;
+        if (forceRefresh || cyclesDisplay >= DISPLAY_REFRESH_PERIOD) {
             refresh();
-            this.cycles = 0;
+            forceRefresh = false;
+            cyclesDisplay = 0;
+        }
+    }
+
+    private void inputTick() {
+        Runnable runnable = inputActions.poll();
+        if (runnable != null) {
+            runnable.run();
+            forceRefresh = true;
+        }
+    }
+
+    public VirtualBoy getVirtualBoy() {
+        return virtualBoy;
+    }
+
+    public CartridgeROM getCartridgeRom() {
+        return getVirtualBoy().getCpu().getBus().getRom();
+    }
+
+    private class InputThread extends Thread {
+        InputThread() {
+            super("InputThread");
+        }
+
+        @Override
+        public void run() {
+            while (!isInterrupted()) {
+                Runnable runnable = bindingReader.readBinding(keyMap, getCurrentView().getKeyMap());
+                inputActions.offer(runnable);
+            }
         }
     }
 
     public void exit() {
+        terminal.puts(InfoCmp.Capability.cursor_normal);
         terminal.puts(InfoCmp.Capability.exit_ca_mode);
         terminal.flush();
         terminal.setAttributes(originalAttributes);
+        terminal.handle(Terminal.Signal.WINCH, prevWinchHandler);
     }
 
     @Override
     public void log(Component component, Level level, String format, Object... args) {
         if (isLevelEnabled(component, level)) {
             log.add(new LogMessage(level, component, String.format(format, args)));
+            forceRefresh = true;
         }
     }
 

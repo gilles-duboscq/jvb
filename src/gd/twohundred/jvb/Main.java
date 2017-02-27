@@ -37,38 +37,38 @@ public class Main {
             logger = debugger;
         } catch (RuntimeException re) {
             logger = new StdLogger();
-            logger.error(Misc, "Could not create debugger: %s", re);
+            logger.error(Misc, re, "Could not create debugger");
         }
-        mainWindow.setVisible(true);
-        CartridgeROM rom = new CartridgeROM(cartridgePath, logger);
-        /*System.out.println(" Title: " + rom.getGameTitle());
-        System.out.println(" Maker code: " + rom.getMakerCode());
-        System.out.println(" Game code: " + rom.getGameCode());
-        System.out.println(" Version: 1." + rom.getGameVersion());*/
-        DefaultSwingInputProvider inputProvider = new DefaultSwingInputProvider();
-        mainWindow.setFocusable(true);
-        mainWindow.addKeyListener(inputProvider);
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(inputProvider);
-        VirtualBoy virtualBoy = new VirtualBoy(mainWindow.getScreen(), inputProvider, rom, new CartridgeRAM(), logger);
-        virtualBoy.reset();
-        if (debugger != null) {
-            debugger.attach(virtualBoy);
-            debugger.refresh();
-        }
-        long t = System.nanoTime();
-        long cycles = 0;
-        while (!Thread.interrupted() && mainWindow.isOpen()) {
-            long newT = System.nanoTime();
-            long dt = newT - t;
-            long dCycles = dt * CPU.CLOCK_HZ / Utils.NANOS_PER_SECOND;
-            long missingCycles = dCycles - cycles;
+        try {
+            mainWindow.setVisible(true);
+            CartridgeROM rom = new CartridgeROM(cartridgePath, logger);
+            DefaultSwingInputProvider inputProvider = new DefaultSwingInputProvider();
+            mainWindow.setFocusable(true);
+            mainWindow.addKeyListener(inputProvider);
+            KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(inputProvider);
+            VirtualBoy virtualBoy = new VirtualBoy(mainWindow.getScreen(), inputProvider, rom, new CartridgeRAM(), logger);
+            virtualBoy.reset();
+            if (debugger != null) {
+                debugger.attach(virtualBoy);
+                debugger.refresh();
+            }
+            long t = System.nanoTime();
+            long cycles = 0;
+            while (!Thread.interrupted() && mainWindow.isOpen() && !virtualBoy.isHalted()) {
+                long newT = System.nanoTime();
+                long dt = newT - t;
+                long dCycles = dt * CPU.CLOCK_HZ / Utils.NANOS_PER_SECOND;
+                long missingCycles = dCycles - cycles;
 
-            int cyclesDone = virtualBoy.tick((int) missingCycles);
-            cycles += cyclesDone;
-            LockSupport.parkNanos(100000);
-        }
-        if (debugger != null) {
-            debugger.exit();
+                int cyclesDone = virtualBoy.tick((int) missingCycles);
+                cycles += cyclesDone;
+                LockSupport.parkNanos(100000);
+            }
+            logger.info(Misc, "Bye :)");
+        } finally {
+            if (debugger != null) {
+                debugger.exit();
+            }
         }
         System.exit(0);
     }

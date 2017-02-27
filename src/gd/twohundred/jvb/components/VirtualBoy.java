@@ -11,6 +11,7 @@ import gd.twohundred.jvb.components.vip.VirtualImageProcessor;
 import gd.twohundred.jvb.components.vsu.VirtualSoundUnit;
 
 import static gd.twohundred.jvb.components.VirtualBoy.ExecutionMode.DuplexedException;
+import static gd.twohundred.jvb.components.VirtualBoy.ExecutionMode.Halt;
 
 public class VirtualBoy implements Emulable {
     public static final String VERSION = "0.1.0";
@@ -44,7 +45,7 @@ public class VirtualBoy implements Emulable {
 
     @Override
     public int tick(int targetCycles) {
-        if (executionMode == ExecutionMode.Halt) {
+        if (isHalted()) {
             return targetCycles;
         }
         int cycles = 0;
@@ -58,14 +59,16 @@ public class VirtualBoy implements Emulable {
                 this.debugger.tickExact(actualCycles);
             }
             cycles += actualCycles;
-            if (handleInterrupts()) {
-                if (executionMode == ExecutionMode.Halt) {
-                    return targetCycles;
-                }
-                break;
+            handleInterrupts();
+            if (isHalted()) {
+                return cycles;
             }
         }
         return cycles;
+    }
+
+    public boolean isHalted() {
+        return executionMode == ExecutionMode.Halt;
     }
 
     private static class InterruptChain {
@@ -171,5 +174,13 @@ public class VirtualBoy implements Emulable {
     public void attach(Debugger debugger) {
         this.debugger = debugger;
         this.cpu.attach(debugger);
+    }
+
+    void halt() {
+        executionMode = Halt;
+    }
+
+    CPU getCpu() {
+        return cpu;
     }
 }

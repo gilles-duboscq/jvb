@@ -1,6 +1,7 @@
 package gd.twohundred.jvb.components.debug;
 
 import gd.twohundred.jvb.Logger;
+import org.jline.keymap.KeyMap;
 import org.jline.terminal.Cursor;
 import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
@@ -41,6 +42,16 @@ public class Logs implements View {
             builder.append(message.getMessage());
             lines.add(builder.toAttributedString());
         }
+    }
+
+    @Override
+    public KeyMap<Runnable> getKeyMap() {
+        return null;
+    }
+
+    @Override
+    public char getAccelerator() {
+        return 'l';
     }
 
     private static int levelColor(Logger.Level level) {

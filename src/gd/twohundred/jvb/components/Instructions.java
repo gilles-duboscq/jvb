@@ -14,6 +14,8 @@ public class Instructions {
     public static final int DISP9_POS = 0;
     public static final int DISP9_LEN = 9;
     public static final int DISP26_LEN = 26;
+    public static final int SUB_OPCODE_POS = 26;
+    public static final int SUB_OPCODE_LEN = 6;
 
     public static final int FORMAT_III_PREFIX = 0b100;
     public static final int FORMAT_III_PREFIX_LEN = 3;

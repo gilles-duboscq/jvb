@@ -121,7 +121,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
     private static final int ECR_FECC_LEN = 16;
 
 
-    private static final int REGISTER_COUNT = 32;
+    public static final int REGISTER_COUNT = 32;
     private final int[] registers = new int[REGISTER_COUNT];
     private int pc;
     private final ProgramStatusWord psw = new ProgramStatusWord();
@@ -159,6 +159,10 @@ public class CPU implements Emulable, Resetable, InterruptSource {
         if (r != 0) {
             registers[r] = value;
         }
+    }
+
+    public int getRegister(int r) {
+        return registers[r];
     }
 
     private void setSystemRegister(int r, int value) {
@@ -222,7 +226,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
         }
     }
 
-    private String getSystemRegisterName(int r) {
+    public static String getSystemRegisterName(int r) {
         switch (r) {
             case EIPC_REG:
                 return "EIPC";
@@ -247,10 +251,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
             default:
                 return "???" + r;
         }
-    }
-
-    private int getRegister(int r) {
-        return registers[r];
     }
 
     private static final int CHCW_ICE_POS = 1;

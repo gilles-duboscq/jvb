@@ -2,6 +2,7 @@ package gd.twohundred.jvb.components;
 
 import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.components.Instructions.AccessWidth;
+import gd.twohundred.jvb.components.debug.CPUView;
 import gd.twohundred.jvb.components.debug.LogMessage;
 import gd.twohundred.jvb.components.debug.Logs;
 import gd.twohundred.jvb.components.debug.Overview;
@@ -58,6 +59,7 @@ public class Debugger implements ExactlyEmulable, Logger {
         }
         this.views = new ArrayList<>();
         this.views.add(new Overview(this));
+        this.views.add(new CPUView(this));
         this.views.add(new Logs(log));
         this.terminal = TerminalBuilder.terminal();
         this.size = new Size();
@@ -93,7 +95,7 @@ public class Debugger implements ExactlyEmulable, Logger {
             };
             keyMap.bind(r, KeyMap.ctrl(views.get(i).getAccelerator()));
         }
-        keyMap.bind(() -> this.virtualBoy.halt(), KeyMap.esc());
+        keyMap.bind(() -> this.virtualBoy.halt(), "q");
         keyMap.setAmbiguousTimeout(10);
         return keyMap;
     }
@@ -158,7 +160,7 @@ public class Debugger implements ExactlyEmulable, Logger {
             header.append('─');
         }
         lines.add(header.toAttributedString());
-        currentView.appendLines(lines, size.getRows() - 2);
+        currentView.appendLines(lines, size.getColumns(), size.getRows() - 2);
         while (lines.size() < size.getRows() - 1) {
             lines.add(AttributedString.EMPTY);
         }
@@ -187,7 +189,7 @@ public class Debugger implements ExactlyEmulable, Logger {
             }
             targetCursorPos = size.cursorPos(viewCursor.getY() + 1, viewCursor.getX());
         } else {
-            targetCursorPos = -1;
+            targetCursorPos = 0;
             if (cursorVisible) {
                 terminal.puts(InfoCmp.Capability.cursor_invisible);
             }
@@ -230,6 +232,17 @@ public class Debugger implements ExactlyEmulable, Logger {
 
     public CartridgeROM getCartridgeRom() {
         return getVirtualBoy().getCpu().getBus().getRom();
+    }
+    public CPU getCpu() {
+        return getVirtualBoy().getCpu();
+    }
+
+    public int getPc() {
+        return getCpu().getPc();
+    }
+
+    public Bus getBus() {
+        return getCpu().getBus();
     }
 
     private class InputThread extends Thread {

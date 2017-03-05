@@ -26,7 +26,7 @@ public class Overview implements View {
     }
 
     @Override
-    public void appendLines(List<AttributedString> lines, int maxLines) {
+    public void appendLines(List<AttributedString> lines, int width, int height) {
         CartridgeROM cartridgeRom = debugger.getCartridgeRom();
         lines.add(new AttributedString(" Title:      " + cartridgeRom.getGameTitle()));
         lines.add(new AttributedString(" Game code:  " + cartridgeRom.getGameCode()));

@@ -11,7 +11,7 @@ public interface View {
 
     String getTitle();
 
-    void appendLines(List<AttributedString> lines, int maxLines);
+    void appendLines(List<AttributedString> lines, int width, int height);
 
     KeyMap<Runnable> getKeyMap();
 

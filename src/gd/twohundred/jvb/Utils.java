@@ -1,10 +1,5 @@
 package gd.twohundred.jvb;
 
-import java.util.Arrays;
-import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 public class Utils {
     public static final long NANOS_PER_SECOND = 1_000_000_000L;
 
@@ -24,6 +19,10 @@ public class Utils {
         assert pos >= 0 && pos < 32;
         assert len > 0 && len + pos < 32;
         return (v >> pos) & mask(len);
+    }
+
+    public static int topU(int v, int count, int len) {
+        return extractU(v, len - count, count);
     }
 
     public static int extractNthU(int v, int n, int len) {

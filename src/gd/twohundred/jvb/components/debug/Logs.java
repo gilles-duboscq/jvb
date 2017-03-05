@@ -29,8 +29,8 @@ public class Logs implements View {
     }
 
     @Override
-    public void appendLines(List<AttributedString> lines, int maxLines) {
-        int start = max(0, messages.size() - maxLines);
+    public void appendLines(List<AttributedString> lines, int width, int height) {
+        int start = max(0, messages.size() - height);
         for (int i = start; i < messages.size(); i++) {
             LogMessage message = messages.get(i);
             AttributedStringBuilder builder = new AttributedStringBuilder();

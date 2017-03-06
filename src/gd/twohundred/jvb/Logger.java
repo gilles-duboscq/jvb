@@ -17,7 +17,10 @@ public interface Logger {
         CartridgeROM,
         HardwareControlRegs,
         Interrupts,
-        GamePad, Timer, Misc
+        GamePad,
+        Timer,
+        Misc,
+        Debugger,
     }
 
     enum Level {

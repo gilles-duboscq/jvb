@@ -6,6 +6,7 @@ import gd.twohundred.jvb.disassembler.Disassembler;
 import gd.twohundred.jvb.disassembler.Instruction;
 import org.jline.keymap.KeyMap;
 import org.jline.terminal.Cursor;
+import org.jline.terminal.Size;
 import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
@@ -21,7 +22,7 @@ public class CPUView implements View {
     }
 
     @Override
-    public Cursor getCursorPosition() {
+    public Cursor getCursorPosition(Size size) {
         return null;
     }
 
@@ -55,7 +56,7 @@ public class CPUView implements View {
                 asb.style(AttributedStyle.BOLD);
             }
             String pcHex = Integer.toHexString(pc);
-            repeat(asb, 8 - pcHex.length(), '0');
+            View.repeat(asb, 8 - pcHex.length(), '0');
             asb.append(pcHex);
             asb.append("  ");
             Instruction instruction = Disassembler.disassemble(debugger.getBus(), pc);
@@ -91,7 +92,7 @@ public class CPUView implements View {
     }
 
     private static void pad(AttributedStringBuilder asb, int width) {
-        repeat(asb, width, ' ');
+        View.repeat(asb, width, ' ');
     }
 
     private static AttributedString top(int instructionsWidth, int registersWidth, int totalWidth) {
@@ -99,7 +100,7 @@ public class CPUView implements View {
     }
 
     private static AttributedString bottom(int instructionsWidth, int registersWidth, int totalWidth) {
-        return line(CPUView::horizontalLine, CPUView::horizontalLine, instructionsWidth, registersWidth, totalWidth, '└', '┘');
+        return line(View::horizontalLine, View::horizontalLine, instructionsWidth, registersWidth, totalWidth, '└', '┘');
     }
 
     private static LineFragmentWidget title(String title) {
@@ -112,18 +113,8 @@ public class CPUView implements View {
             } else {
                 pad = width;
             }
-            repeat(asb, pad, '─');
+            View.repeat(asb, pad, '─');
         };
-    }
-
-    private static void horizontalLine(AttributedStringBuilder asb, int width) {
-        repeat(asb, width, '─');
-    }
-
-    private static void repeat(AttributedStringBuilder asb, int width, char c) {
-        for (int i = 0; i < width; i++) {
-            asb.append(c);
-        }
     }
 
     private static AttributedString line(LineFragmentWidget instructions, LineFragmentWidget registers, int instructionsWidth, int registersWidth, int totalWidth, char left, char right) {

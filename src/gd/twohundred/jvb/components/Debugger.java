@@ -1,7 +1,10 @@
 package gd.twohundred.jvb.components;
 
 import gd.twohundred.jvb.Logger;
+import gd.twohundred.jvb.Utils;
+import gd.twohundred.jvb.Utils.IntArray;
 import gd.twohundred.jvb.components.Instructions.AccessWidth;
+import gd.twohundred.jvb.components.debug.Breakpoints;
 import gd.twohundred.jvb.components.debug.CPUView;
 import gd.twohundred.jvb.components.debug.LogMessage;
 import gd.twohundred.jvb.components.debug.Logs;
@@ -26,7 +29,6 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Debugger implements ExactlyEmulable, Logger {
     private static final int DISPLAY_REFRESH_RATE_HZ = 2;
@@ -34,7 +36,8 @@ public class Debugger implements ExactlyEmulable, Logger {
     private static final String APP_NAME = "JVB";
 
     private final Display display;
-    private final int[] memoryBreakpoints = new int[2];
+    private final IntArray memoryBreakpoints;
+    private final IntArray execBreakpoints;
     private final Terminal terminal;
     private final Attributes originalAttributes;
     private final Size size;
@@ -49,19 +52,38 @@ public class Debugger implements ExactlyEmulable, Logger {
     private boolean forceRefresh;
     private VirtualBoy virtualBoy;
     private boolean cursorVisible = true;
-    private ConcurrentLinkedQueue<Runnable> inputActions;
+    private volatile Runnable inputAction;
+    private volatile ControlCommand controlCommand;
+    private InputThread inputThread;
+    private State state;
+
+    public enum State {
+        Running,
+        Paused
+    }
+
+    public enum ControlCommand {
+        Run,
+        Step,
+        Halt
+    }
 
     public Debugger() throws IOException {
         this.log = new ArrayList<>();
         this.levels = new EnumMap<>(Component.class);
         for (Component c : Component.values()) {
-            levels.put(c, Level.Warning);
+            levels.put(c, Level.Info);
         }
+        levels.put(Component.Memory, Level.Warning);
+        memoryBreakpoints = new IntArray();
+        execBreakpoints = new IntArray();
+        state = State.Running;
+        this.terminal = TerminalBuilder.terminal();
         this.views = new ArrayList<>();
         this.views.add(new Overview(this));
         this.views.add(new CPUView(this));
+        this.views.add(new Breakpoints(this));
         this.views.add(new Logs(log));
-        this.terminal = TerminalBuilder.terminal();
         this.size = new Size();
         size.copy(terminal.getSize());
         if (size.getRows() == 0) {
@@ -77,13 +99,14 @@ public class Debugger implements ExactlyEmulable, Logger {
         originalAttributes = terminal.enterRawMode();
         prevWinchHandler = terminal.handle(Terminal.Signal.WINCH, this::resize);
         terminal.puts(InfoCmp.Capability.enter_ca_mode);
+        terminal.puts(InfoCmp.Capability.keypad_xmit);
         display.clear();
         display.reset();
         display.resize(size.getRows(), size.getColumns());
         bindingReader = new BindingReader(terminal.reader());
-        inputActions = new ConcurrentLinkedQueue<>();
         keyMap = initKeyMap();
-        new InputThread().start();
+        inputThread = new InputThread();
+        inputThread.start();
     }
 
     private KeyMap<Runnable> initKeyMap() {
@@ -95,7 +118,12 @@ public class Debugger implements ExactlyEmulable, Logger {
             };
             keyMap.bind(r, KeyMap.ctrl(views.get(i).getAccelerator()));
         }
-        keyMap.bind(() -> this.virtualBoy.halt(), "q");
+        keyMap.bind(() -> {
+            this.virtualBoy.halt();
+            if (this.state != State.Running) {
+                this.controlCommand = ControlCommand.Halt;
+            }
+        }, "q");
         keyMap.setAmbiguousTimeout(10);
         return keyMap;
     }
@@ -105,8 +133,15 @@ public class Debugger implements ExactlyEmulable, Logger {
         virtualBoy.attach(this);
     }
 
-    public void onExec(int pc) {
+    public Terminal getTerminal() {
+        return terminal;
+    }
 
+    public void onExec(int pc) {
+        if (execBreakpoints.contains(pc)) {
+            log(Component.Debugger, Level.Info, "Break on PC %#010x", pc);
+            onBreak();
+        }
     }
 
     public void onRead(int address, AccessWidth width) {
@@ -117,11 +152,23 @@ public class Debugger implements ExactlyEmulable, Logger {
 
     }
 
+    private void onBreak() {
+        state = State.Paused;
+        refresh();
+        while (controlCommand == null) {
+            inputTick();
+            if (forceRefresh) {
+                refresh();
+                forceRefresh = false;
+            }
+        }
+    }
+
     private void resize(Terminal.Signal signal) {
         size.copy(terminal.getSize());
         display.clear();
         display.resize(size.getRows(), size.getColumns());
-        forceRefresh = true;
+        markRefreshNeeded();
     }
 
     public void refresh() {
@@ -165,12 +212,15 @@ public class Debugger implements ExactlyEmulable, Logger {
             lines.add(AttributedString.EMPTY);
         }
         AttributedStringBuilder footer = new AttributedStringBuilder();
-        int leftPad = size.getColumns() - 3 - APP_NAME.length() - VirtualBoy.VERSION.length();
+        String stateString = state.name().toUpperCase();
+        int leftPad = size.getColumns() - 3 - APP_NAME.length() - VirtualBoy.VERSION.length() - stateString.length() - 1;
         if (leftPad < 0) {
             for (int i = 0; i < size.getColumns(); i++) {
                 footer.append('─');
             }
         } else {
+            footer.append('─');
+            footer.append(stateString);
             for (int i = 0; i < leftPad; i++) {
                 footer.append('─');
             }
@@ -182,15 +232,17 @@ public class Debugger implements ExactlyEmulable, Logger {
         }
         lines.add(footer.toAttributedString());
         int targetCursorPos;
-        Cursor viewCursor = currentView.getCursorPosition();
+        Cursor viewCursor = currentView.getCursorPosition(size);
         if (viewCursor != null) {
             if (!cursorVisible) {
+                cursorVisible = true;
                 terminal.puts(InfoCmp.Capability.cursor_normal);
             }
             targetCursorPos = size.cursorPos(viewCursor.getY() + 1, viewCursor.getX());
         } else {
             targetCursorPos = 0;
             if (cursorVisible) {
+                cursorVisible = false;
                 terminal.puts(InfoCmp.Capability.cursor_invisible);
             }
         }
@@ -219,11 +271,19 @@ public class Debugger implements ExactlyEmulable, Logger {
     }
 
     private void inputTick() {
-        Runnable runnable = inputActions.poll();
+        Runnable runnable = inputAction;
         if (runnable != null) {
             runnable.run();
-            forceRefresh = true;
+            inputAction = null;
+            synchronized (inputThread) {
+                inputThread.notify();
+            }
+            markRefreshNeeded();
         }
+    }
+
+    public void markRefreshNeeded() {
+        forceRefresh = true;
     }
 
     public VirtualBoy getVirtualBoy() {
@@ -233,6 +293,7 @@ public class Debugger implements ExactlyEmulable, Logger {
     public CartridgeROM getCartridgeRom() {
         return getVirtualBoy().getCpu().getBus().getRom();
     }
+
     public CPU getCpu() {
         return getVirtualBoy().getCpu();
     }
@@ -245,6 +306,10 @@ public class Debugger implements ExactlyEmulable, Logger {
         return getCpu().getBus();
     }
 
+    public void addExecBreakPoint(int pc) {
+        execBreakpoints.add(pc);
+    }
+
     private class InputThread extends Thread {
         InputThread() {
             super("InputThread");
@@ -253,8 +318,16 @@ public class Debugger implements ExactlyEmulable, Logger {
         @Override
         public void run() {
             while (!isInterrupted()) {
-                Runnable runnable = bindingReader.readBinding(keyMap, getCurrentView().getKeyMap());
-                inputActions.offer(runnable);
+                while (inputAction != null) {
+                    try {
+                        synchronized (this) {
+                            this.wait();
+                        }
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                }
+                inputAction = bindingReader.readBinding(keyMap, getCurrentView().getKeyMap());
             }
         }
     }
@@ -262,6 +335,7 @@ public class Debugger implements ExactlyEmulable, Logger {
     public void exit() {
         terminal.puts(InfoCmp.Capability.cursor_normal);
         terminal.puts(InfoCmp.Capability.exit_ca_mode);
+        terminal.puts(InfoCmp.Capability.keypad_local);
         terminal.flush();
         terminal.setAttributes(originalAttributes);
         terminal.handle(Terminal.Signal.WINCH, prevWinchHandler);
@@ -271,7 +345,7 @@ public class Debugger implements ExactlyEmulable, Logger {
     public void log(Component component, Level level, String format, Object... args) {
         if (isLevelEnabled(component, level)) {
             log.add(new LogMessage(level, component, String.format(format, args)));
-            forceRefresh = true;
+            markRefreshNeeded();
         }
     }
 

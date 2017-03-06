@@ -3,6 +3,7 @@ package gd.twohundred.jvb.components.debug;
 import gd.twohundred.jvb.Logger;
 import org.jline.keymap.KeyMap;
 import org.jline.terminal.Cursor;
+import org.jline.terminal.Size;
 import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
@@ -19,7 +20,7 @@ public class Logs implements View {
     }
 
     @Override
-    public Cursor getCursorPosition() {
+    public Cursor getCursorPosition(Size size) {
         return null;
     }
 

@@ -4,6 +4,7 @@ import gd.twohundred.jvb.components.CartridgeROM;
 import gd.twohundred.jvb.components.Debugger;
 import org.jline.keymap.KeyMap;
 import org.jline.terminal.Cursor;
+import org.jline.terminal.Size;
 import org.jline.utils.AttributedString;
 
 import java.util.List;
@@ -16,7 +17,7 @@ public class Overview implements View {
     }
 
     @Override
-    public Cursor getCursorPosition() {
+    public Cursor getCursorPosition(Size size) {
         return null;
     }
 

@@ -2,6 +2,10 @@ package gd.twohundred.jvb.components.debug;
 
 import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.components.Debugger;
+import gd.twohundred.jvb.components.Instructions;
+import gd.twohundred.jvb.components.debug.boxes.Table;
+import gd.twohundred.jvb.components.debug.boxes.Table.Column;
+import gd.twohundred.jvb.components.debug.boxes.VerticalBoxes;
 import org.jline.keymap.KeyMap;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Size;
@@ -10,6 +14,8 @@ import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Breakpoints implements View {
@@ -23,9 +29,191 @@ public class Breakpoints implements View {
     private volatile State state;
     private volatile int addressCursor;
 
+    private final List<Breakpoint> execBreakpoints;
+    private final List<MemBreakpoint> memBreakpoints;
+    private final VerticalBoxes verticalBoxes;
+
+    private static class Breakpoint {
+        private final int address;
+        private final String comment;
+        private boolean enabled;
+        private int hitCount;
+
+        protected Breakpoint(int address, String comment) {
+            this.address = address;
+            this.comment = comment;
+            this.enabled = true;
+        }
+
+        public int getAddress() {
+            return address;
+        }
+
+        public String getComment() {
+            return comment;
+        }
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public void incrementHistCount() {
+            hitCount++;
+        }
+
+        public int getHitCount() {
+            return hitCount;
+        }
+    }
+
+    private static class MemBreakpoint extends Breakpoint {
+        private boolean read;
+        private boolean write;
+        private Integer value;
+
+        protected MemBreakpoint(int address, String comment, boolean read, boolean write) {
+            super(address, comment);
+        }
+
+        public boolean isRead() {
+            return read;
+        }
+
+        public boolean isWrite() {
+            return write;
+        }
+
+        public void setRead(boolean read) {
+            this.read = read;
+        }
+
+        public void setWrite(boolean write) {
+            this.write = write;
+        }
+
+        public Integer getValue() {
+            return value;
+        }
+
+        public void setValue(Integer value) {
+            this.value = value;
+        }
+    }
+
     private enum State {
         Idle,
         Adding
+    }
+
+    private abstract class BreakpointColumn implements Column {
+        private final BreakpointType type;
+
+        private BreakpointColumn(BreakpointType type) {
+            this.type = type;
+        }
+
+        @Override
+        public void cell(AttributedStringBuilder asb, int row, int width) {
+            List<? extends Breakpoint> breakpoints = type.get(Breakpoints.this);
+            if (row >= breakpoints.size()) {
+                return;
+            }
+            cell(asb, breakpoints.get(row));
+        }
+
+        protected void cell(AttributedStringBuilder asb, Breakpoint breakpoint) {
+
+        }
+    }
+
+    private class EnabledColumn extends BreakpointColumn {
+
+        private EnabledColumn(BreakpointType type) {
+            super(type);
+        }
+
+        @Override
+        public String name() {
+            return "E";
+        }
+
+        @Override
+        public int minWidth() {
+            return 1;
+        }
+
+        @Override
+        public boolean fixedWidth() {
+            return true;
+        }
+
+        @Override
+        public void cell(AttributedStringBuilder asb, Breakpoint breakpoint) {
+            asb.append(breakpoint.isEnabled() ? '✔' : ' ');
+        }
+    }
+
+    private class AddressColumn extends BreakpointColumn {
+
+        private AddressColumn(BreakpointType type) {
+            super(type);
+        }
+
+        @Override
+        public String name() {
+            return "Address";
+        }
+
+        @Override
+        public int minWidth() {
+            return 8;
+        }
+
+        @Override
+        public boolean fixedWidth() {
+            return true;
+        }
+
+        @Override
+        public void cell(AttributedStringBuilder asb, Breakpoint breakpoint) {
+            String hexString = Integer.toHexString(breakpoint.getAddress());
+            int padding = 8 - hexString.length();
+            for (int i = 0; i < padding; i++) {
+                asb.append('0');
+            }
+            asb.append(hexString);
+        }
+    }
+
+    private enum BreakpointType {
+        Execute,
+        Memory;
+
+        public List<? extends Breakpoint> get(Breakpoints bps) {
+            switch (this) {
+                case Execute:
+                    return bps.execBreakpoints;
+                case Memory:
+                    return bps.memBreakpoints;
+            }
+            throw new RuntimeException("should not reach here");
+        }
+    }
+
+    private class ExecBreakpointsTable extends Table {
+        protected ExecBreakpointsTable() {
+            super("Execute", Arrays.asList(new EnabledColumn(BreakpointType.Execute), new AddressColumn(BreakpointType.Execute)));
+        }
+    }
+
+    private class MemBreakpointsTable extends Table {
+        protected MemBreakpointsTable() {
+            super("Memory", Arrays.asList(new EnabledColumn(BreakpointType.Memory), new AddressColumn(BreakpointType.Memory)));
+        }
     }
 
     public Breakpoints(Debugger debugger) {
@@ -51,6 +239,9 @@ public class Breakpoints implements View {
         addingKeyMap.bind(this::moveCursorRight, KeyMap.key(debugger.getTerminal(), InfoCmp.Capability.key_right));
         addingKeyMap.bind(this::moveCursorLeft, KeyMap.key(debugger.getTerminal(), InfoCmp.Capability.key_left));
         addingKeyMap.bind(this::abortAddBreakpoint, "q");
+        execBreakpoints = new ArrayList<>();
+        memBreakpoints = new ArrayList<>();
+        verticalBoxes = new VerticalBoxes("Breakpoints", Arrays.asList(new ExecBreakpointsTable(), new MemBreakpointsTable()));
     }
 
     @Override
@@ -72,6 +263,7 @@ public class Breakpoints implements View {
 
     @Override
     public void appendLines(List<AttributedString> lines, int width, int height) {
+        int startLines = lines.size();
         if (state == State.Adding) {
             AttributedStringBuilder addrPromptLine = new AttributedStringBuilder();
             addrPromptLine.append('│');
@@ -86,15 +278,29 @@ public class Breakpoints implements View {
             lines.add(addrPromptLine.toAttributedString());
             AttributedStringBuilder addrPromptBottomLine = new AttributedStringBuilder();
             addrPromptBottomLine.append('└');
-            View.horizontalLine(addrPromptLine, width - 2);
+            View.horizontalLine(addrPromptBottomLine, width - 2);
             addrPromptBottomLine.append('┘');
             lines.add(addrPromptBottomLine.toAttributedString());
+            AttributedStringBuilder actionsLine = new AttributedStringBuilder();
+            actionsLine.append(" └Abort(");
+            actionsLine.append("q", AttributedStyle.DEFAULT.underline());
+            actionsLine.append(")┘ └Accept(");
+            actionsLine.append("⏎", validateAddress() ? AttributedStyle.DEFAULT.underline() : AttributedStyle.DEFAULT);
+            actionsLine.append(")┘");
+            lines.add(actionsLine.toAttributedString());
+        } else {
+            AttributedStringBuilder addLine = new AttributedStringBuilder();
+            addLine.append(" └");
+            addLine.append("A", AttributedStyle.DEFAULT.underline());
+            addLine.append("dd┘");
+            lines.add(addLine.toAttributedString());
         }
-        AttributedStringBuilder addLine = new AttributedStringBuilder();
-        addLine.append(" └");
-        addLine.append("A", AttributedStyle.DEFAULT.underline());
-        addLine.append("dd┘");
-        lines.add(addLine.toAttributedString());
+        int remainingHeight = height - (lines.size() - startLines);
+        for (int i = 0; i < remainingHeight; i++) {
+            AttributedStringBuilder asb = new AttributedStringBuilder();
+            verticalBoxes.line(asb, i, width, remainingHeight);
+            lines.add(asb.toAttributedString());
+        }
     }
 
     @Override
@@ -123,7 +329,8 @@ public class Breakpoints implements View {
     }
 
     private boolean validateAddress() {
-        return addressBuffer.length() <= 8;
+        int length = addressBuffer.length();
+        return length <= 8 && length > 0;
     }
 
     private void finishAddBreakpoint() {
@@ -133,7 +340,7 @@ public class Breakpoints implements View {
         state = State.Idle;
         int addr = Integer.valueOf(addressBuffer.toString(), 16);
         debugger.log(Logger.Component.Debugger, Logger.Level.Info, "Adding bp at %#010x", addr);
-        debugger.addExecBreakPoint(addr);
+        execBreakpoints.add(new Breakpoint(addr, ""));
         debugger.markRefreshNeeded();
     }
 
@@ -176,5 +383,17 @@ public class Breakpoints implements View {
             addressCursor--;
         }
 
+    }
+
+    public boolean shouldBreakOnExec(int pc) {
+        return execBreakpoints.stream().anyMatch(b -> b.getAddress() == pc && b.isEnabled());
+    }
+
+    public boolean shouldBreakOnRead(int address, Instructions.AccessWidth width) {
+        return memBreakpoints.stream().anyMatch(b -> b.getAddress() == address && b.isEnabled() && b.isRead());
+    }
+
+    public boolean shouldBreakOnWrite(int address, int value, Instructions.AccessWidth width) {
+        return memBreakpoints.stream().anyMatch(b -> b.getAddress() == address && b.isEnabled() && b.isWrite());
     }
 }

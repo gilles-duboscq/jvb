@@ -1,5 +1,6 @@
 package gd.twohundred.jvb.components.debug;
 
+import gd.twohundred.jvb.components.debug.boxes.Box;
 import org.jline.keymap.KeyMap;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Size;
@@ -7,6 +8,8 @@ import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 
 import java.util.List;
+
+import static java.lang.Integer.max;
 
 public interface View {
     Cursor getCursorPosition(Size size);

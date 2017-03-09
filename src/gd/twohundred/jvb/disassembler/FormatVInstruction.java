@@ -58,13 +58,13 @@ public class FormatVInstruction implements Instruction {
             case ADDI:
             case MOVEA:
                 imm = signExtend(imm, 5);
-                return String.format("%-8s r%d, %d", lowerType, reg2, imm);
+                return String.format("%-8s r%d, r%d, %d", lowerType, reg2, reg1, imm);
             case MOVHI:
                 imm <<= 16;
             case ANDI:
             case ORI:
             case XORI:
-                return String.format("%-8s r%d, %#04x", lowerType, reg2, imm);
+                return String.format("%-8s r%d, r%d, %#04x", lowerType, reg2, reg1, imm);
         }
         throw new RuntimeException("should not reach here");
     }

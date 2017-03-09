@@ -50,7 +50,7 @@ public enum Format {
             case V:
             case VI:
             case VII:
-                return 2;
+                return 4;
         }
         throw new RuntimeException("should not reach here: " + this);
     }

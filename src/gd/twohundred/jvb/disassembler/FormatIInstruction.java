@@ -43,7 +43,12 @@ public class FormatIInstruction implements Instruction {
 
     @Override
     public String toString() {
-        return String.format("%-8s r%d, r%d", type.name().toLowerCase(), reg2, reg1);
+        switch (type) {
+            case JMP:
+                return String.format("%-8s r%d", type.name().toLowerCase(), reg1);
+            default:
+                return String.format("%-8s r%d, r%d", type.name().toLowerCase(), reg2, reg1);
+        }
     }
 
     @Override

@@ -2,6 +2,8 @@ package gd.twohundred.jvb.components.debug;
 
 import gd.twohundred.jvb.components.CPU;
 import gd.twohundred.jvb.components.Debugger;
+import gd.twohundred.jvb.components.debug.boxes.Box;
+import gd.twohundred.jvb.components.debug.boxes.HorizontalBoxes;
 import gd.twohundred.jvb.disassembler.Disassembler;
 import gd.twohundred.jvb.disassembler.Instruction;
 import org.jline.keymap.KeyMap;
@@ -11,14 +13,24 @@ import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 
+import java.util.Arrays;
 import java.util.Formatter;
 import java.util.List;
 
 public class CPUView implements View {
     private final Debugger debugger;
+    private final KeyMap<Runnable> runningKeyMap;
+    private final KeyMap<Runnable> pausedKeyMap;
+    private final RegistersBox registersBox;
 
     public CPUView(Debugger debugger) {
         this.debugger = debugger;
+        runningKeyMap = new KeyMap<>();
+        pausedKeyMap = new KeyMap<>();
+        runningKeyMap.bind(debugger::pause, "p");
+        pausedKeyMap.bind(debugger::continueExecution, "c");
+        pausedKeyMap.bind(debugger::step, "s");
+        registersBox = new RegistersBox();
     }
 
     @Override
@@ -31,26 +43,40 @@ public class CPUView implements View {
         return "CPU";
     }
 
-    private int pc = 0xdeadbeef;
+    private class DisassemblyBox implements Box {
+        private int pc;
 
-    @Override
-    public void appendLines(List<AttributedString> lines, int width, int height) {
-        pc = debugger.getPc();
-        int registersWidth = 16 + 2;
-        int instructionsWidth = width - registersWidth - 2 - 2 - 1;
-        lines.add(top(instructionsWidth, registersWidth, width));
-        for (int i = 0; i < height - 2; i++) {
-            lines.add(line(instructionsWidth, registersWidth, width, i));
+        public DisassemblyBox(int startPc) {
+            this.pc = startPc;
         }
-        lines.add(bottom(instructionsWidth, registersWidth, width));
-    }
 
-    private AttributedString line(int instructionsWidth, int registersWidth, int totalWidth, int line) {
-        return line(padded(instructionLine(line)), padded(registerLine(line)), instructionsWidth, registersWidth, totalWidth, '│', '│');
-    }
+        @Override
+        public String name() {
+            return "Disassembly";
+        }
 
-    private LineFragmentWidget instructionLine(int line) {
-        return (asb, width) -> {
+        @Override
+        public int minWidth() {
+            return 38;
+        }
+
+        @Override
+        public boolean fixedWidth() {
+            return false;
+        }
+
+        @Override
+        public int minHeight() {
+            return 0;
+        }
+
+        @Override
+        public boolean fixedHeight() {
+            return false;
+        }
+
+        @Override
+        public void line(AttributedStringBuilder asb, int line, int width, int height) {
             boolean currentPc = debugger.getPc() == pc;
             if (currentPc) {
                 asb.style(AttributedStyle.BOLD);
@@ -70,74 +96,78 @@ public class CPUView implements View {
             if (currentPc) {
                 asb.style(AttributedStyle.BOLD_OFF);
             }
-        };
+        }
     }
 
-    private LineFragmentWidget registerLine(int line) {
-        return (asb, width) -> {
+    private class RegistersBox implements Box {
+        @Override
+        public String name() {
+            return "Registers";
+        }
+
+        @Override
+        public int minWidth() {
+            return 15;
+        }
+
+        @Override
+        public boolean fixedWidth() {
+            return true;
+        }
+
+        @Override
+        public int minHeight() {
+            return CPU.REGISTER_COUNT + 1;
+        }
+
+        @Override
+        public boolean fixedHeight() {
+            return false;
+        }
+
+        @Override
+        public void line(AttributedStringBuilder asb, int line, int width, int height) {
             if (line < CPU.REGISTER_COUNT) {
                 new Formatter(asb).format("r%02d: %#010x", line, debugger.getCpu().getRegister(line));
             } else if (line == CPU.REGISTER_COUNT) {
                 new Formatter(asb).format("pc:  %#010x", debugger.getPc());
             }
-        };
-    }
-
-    private static LineFragmentWidget padded(LineFragmentWidget content) {
-        return (asb, width) -> {
-            int start = asb.length();
-            content.append(asb, width);
-            pad(asb, width - (asb.length() - start));
-        };
-    }
-
-    private static void pad(AttributedStringBuilder asb, int width) {
-        View.repeat(asb, width, ' ');
-    }
-
-    private static AttributedString top(int instructionsWidth, int registersWidth, int totalWidth) {
-        return line(title("Disassembly"), title("Registers"), instructionsWidth, registersWidth, totalWidth, '┌', '┐');
-    }
-
-    private static AttributedString bottom(int instructionsWidth, int registersWidth, int totalWidth) {
-        return line(View::horizontalLine, View::horizontalLine, instructionsWidth, registersWidth, totalWidth, '└', '┘');
-    }
-
-    private static LineFragmentWidget title(String title) {
-        return (asb, width) -> {
-            int pad;
-            if (title.length() + 1<= width) {
-                asb.append('─');
-                asb.append(title);
-                pad = width - title.length() - 1;
-            } else {
-                pad = width;
-            }
-            View.repeat(asb, pad, '─');
-        };
-    }
-
-    private static AttributedString line(LineFragmentWidget instructions, LineFragmentWidget registers, int instructionsWidth, int registersWidth, int totalWidth, char left, char right) {
-        AttributedStringBuilder asb = new AttributedStringBuilder();
-        asb.append(left);
-        instructions.append(asb, instructionsWidth);
-        asb.append(right);
-        for (int i = 0; i < totalWidth - instructionsWidth - registersWidth - 4; i++) {
-            asb.append(' ');
         }
-        asb.append(left);
-        registers.append(asb, registersWidth);
-        asb.append(right);
-        return asb.toAttributedString();
     }
 
-    private interface LineFragmentWidget {
-        void append(AttributedStringBuilder asb, int width);
+
+    @Override
+    public void appendLines(List<AttributedString> lines, int width, int height) {
+        AttributedStringBuilder actionsLine = new AttributedStringBuilder();
+        switch (debugger.getState()) {
+            case Running:
+                actionsLine.append(" └");
+                actionsLine.append("P", AttributedStyle.DEFAULT.underline());
+                actionsLine.append("ause┘");
+                break;
+            case Paused:
+                actionsLine.append(" └");
+                actionsLine.append("C", AttributedStyle.DEFAULT.underline());
+                actionsLine.append("ontinue┘ └");
+                actionsLine.append("S", AttributedStyle.DEFAULT.underline());
+                actionsLine.append("tep┘");
+                break;
+        }
+        lines.add(actionsLine.toAttributedString());
+        HorizontalBoxes.horizontalBoxes(lines, width, height - 1, Arrays.asList(new DisassemblyBox(debugger.getPc()), registersBox));
     }
 
     @Override
     public KeyMap<Runnable> getKeyMap() {
-        return null;
+        switch (debugger.getState()) {
+            case Running:
+                return runningKeyMap;
+            case Stepping:
+            case Paused:
+                return pausedKeyMap;
+            default:
+                return null;
+        }
     }
 
     @Override

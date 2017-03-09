@@ -78,12 +78,12 @@ public class FormatVIInstruction implements Instruction {
             case OUT_H:
             case OUT_W:
                 if (disp == 0) {
-                    return String.format("%-8s [r%d], %d", lowerType, reg1, reg2);
+                    return String.format("%-8s [r%d], r%d", lowerType, reg1, reg2);
                 } else if (disp > 0) {
-                    return String.format("%-8s [r%d + %d], %d", lowerType, reg1, disp, reg2);
+                    return String.format("%-8s [r%d + %d], r%d", lowerType, reg1, disp, reg2);
                 } else {
                     assert disp < 0;
-                    return String.format("%-8s [r%d - %d], %d", lowerType, reg1, -disp, reg2);
+                    return String.format("%-8s [r%d - %d], r%d", lowerType, reg1, -disp, reg2);
                 }
         }
         throw new RuntimeException("shoudl not reach here");

@@ -29,6 +29,14 @@ public interface View {
         }
     }
 
+    static void leftPadInt(AttributedStringBuilder asb, int length, int value) {
+        String s = Integer.toString(value);
+        if (s.length() < length) {
+            View.repeat(asb, length - s.length(), ' ');
+        }
+        asb.append(s);
+    }
+
     static void padToLength(AttributedStringBuilder asb, int length) {
         padToLength(asb, length, ' ');
     }

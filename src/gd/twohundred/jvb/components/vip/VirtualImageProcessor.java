@@ -284,6 +284,10 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         return windowAttributes[currentWindowId];
     }
 
+    public WindowAttributes[] getWindowAttributes() {
+        return windowAttributes;
+    }
+
     public FrameBuffer getCurrentFrameBuffer(boolean left) {
         return left ? currentLeft : currentRight;
     }

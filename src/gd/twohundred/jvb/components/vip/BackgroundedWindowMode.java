@@ -28,7 +28,7 @@ public abstract class BackgroundedWindowMode extends WindowMode {
         int maxY = minY + DRAWING_BLOCK_HEIGHT;
 
         int startWindowY = max(minY - window.getY(), 0);
-        int endWindowY = min(maxY - window.getY(), window.getHeight());
+        int endWindowY = min(maxY - window.getY(), window.getActualHeight());
 
         int parallax = left ? -window.getParallax() : window.getParallax();
         int backgroundParallax = left ? -window.getBackgroundParallax() : window.getBackgroundParallax();
@@ -40,7 +40,7 @@ public abstract class BackgroundedWindowMode extends WindowMode {
         for (int windowY = startWindowY; windowY < endWindowY; windowY++) {
             int y = windowY + window.getY();
             int backgroundY = windowY + window.getBackgroundY();
-            for (int windowX = 0; windowX < window.getWidth(); windowX++) {
+            for (int windowX = 0; windowX < window.getActualWidth(); windowX++) {
                 int x = windowX + window.getX() + parallax;
                 if (x >= Screen.WIDTH || x < 0) {
                     continue;
@@ -98,8 +98,8 @@ public abstract class BackgroundedWindowMode extends WindowMode {
                 + " BG.sw:" + window.getBackgroundWidthSegments()+ " BG.sh:" + window.getBackgroundHeightSegments()
                 + " BG.oob:" + (window.isUseOutOfBoundsCharacter() ? "char" : "tile")
                 , 2 +window.getX() * scale, window.getY() * scale + g.getFontMetrics().getHeight() * 2);
-        int widthChars = ceilDiv(window.getWidth(), CharacterRAM.CHARACTER_WIDTH_PX);
-        int heightChars = ceilDiv(window.getHeight(), CharacterRAM.CHARACTER_HEIGHT_PX);
+        int widthChars = ceilDiv(window.getActualWidth(), CharacterRAM.CHARACTER_WIDTH_PX);
+        int heightChars = ceilDiv(window.getActualHeight(), CharacterRAM.CHARACTER_HEIGHT_PX);
         int bgDx = window.getBackgroundX() % CharacterRAM.CHARACTER_WIDTH_PX;
         int bgDy = window.getBackgroundY() % CharacterRAM.CHARACTER_HEIGHT_PX;
         for (int cx = 0; cx < widthChars; cx++) {

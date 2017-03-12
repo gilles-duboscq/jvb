@@ -268,12 +268,20 @@ public class WindowAttributes implements ReadWriteMemory, Resetable {
         return backgroundY;
     }
 
-    public short getHeight() {
+    public int getHeight() {
         return height;
     }
 
-    public short getWidth() {
+    public int getActualHeight() {
+        return getHeight() + 1;
+    }
+
+    public int getWidth() {
         return width;
+    }
+
+    public int getActualWidth() {
+        return getWidth() + 1;
     }
 
     public short getParameterIndex() {
@@ -292,7 +300,7 @@ public class WindowAttributes implements ReadWriteMemory, Resetable {
         return backgroundParallax;
     }
 
-    int getId() {
+    public int getId() {
         return id;
     }
 }

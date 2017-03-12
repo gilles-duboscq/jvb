@@ -7,8 +7,10 @@ import gd.twohundred.jvb.components.debug.CPUView;
 import gd.twohundred.jvb.components.debug.LogMessage;
 import gd.twohundred.jvb.components.debug.Logs;
 import gd.twohundred.jvb.components.debug.Overview;
+import gd.twohundred.jvb.components.debug.VIPView;
 import gd.twohundred.jvb.components.debug.View;
 import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
+import gd.twohundred.jvb.components.vip.WindowAttributes;
 import org.jline.keymap.BindingReader;
 import org.jline.keymap.KeyMap;
 import org.jline.terminal.Attributes;
@@ -75,6 +77,7 @@ public class Debugger implements ExactlyEmulable, Logger {
         this.views.add(new CPUView(this));
         breakpoints = new Breakpoints(this);
         this.views.add(breakpoints);
+        this.views.add(new VIPView(this));
         this.views.add(new Logs(log));
         this.size = new Size();
         size.copy(terminal.getSize());
@@ -326,6 +329,10 @@ public class Debugger implements ExactlyEmulable, Logger {
 
     public Bus getBus() {
         return getCpu().getBus();
+    }
+
+    public WindowAttributes[] getWindowAttributes() {
+        return getBus().getVIP().getWindowAttributes();
     }
 
     public State getState() {

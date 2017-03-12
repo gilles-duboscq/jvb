@@ -30,8 +30,8 @@ public abstract class WindowMode {
 
     public void drawDebug(WindowAttributes window, VirtualImageProcessor vip, Graphics g, int scale) {
         g.setColor(Color.green);
-        g.drawRect(window.getX() * scale, window.getY() * scale, window.getWidth() * scale, window.getHeight() * scale);
-        g.drawString("W" + window.getId() + " W.w:" + window.getWidth() + " W.h:" + window.getHeight(),
+        g.drawRect(window.getX() * scale, window.getY() * scale, window.getActualWidth() * scale, window.getActualHeight() * scale);
+        g.drawString("W" + window.getId() + " W.w:" + window.getActualWidth() + " W.h:" + window.getActualHeight(),
                 2 +window.getX() * scale, window.getY() * scale + g.getFontMetrics().getHeight());
     }
 

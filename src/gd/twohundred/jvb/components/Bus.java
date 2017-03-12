@@ -138,4 +138,8 @@ public class Bus extends MappedModules {
     CartridgeROM getRom() {
         return rom;
     }
+
+    VirtualImageProcessor getVIP() {
+        return vip;
+    }
 }

@@ -10,7 +10,7 @@ TODO:
 | affine_demo_1 | Affine Window mode
 | affine_demo_2 | Affine Window mode
 | Blox V1.0 by KR155E (PD) | Too fast, some missing graphics?
-| Blox V1.1 by KR155E (PD) | Menus are OK, in-game: character missing + VSU
+| Blox V1.1 by KR155E (PD) | VSU
 | Bound High! (JU) | Need to get ROM
 | Croach, The (PD) | Nothing happens?
 | Etch-A-Sketch by Pat Daderko (PD) | ✓
@@ -29,10 +29,10 @@ TODO:
 | Mario Flying Demo by Frostgiant (PD) | ✓ (Seems to use uninitialized memory as a "black" char)
 | Mario's Tennis (JU) [a1] | Graphic glitch (top bar) and nothing happens
 | Mario's Tennis (JU) | illegal instruction?
-| Matrix, The by Cooler (PD) | Glitchy, wait too fast
+| Matrix, The by Cooler (PD) | Glitchy, way too fast
 | Nester's Funky Bowling (U) [a1] | bitstring
 | Nester's Funky Bowling (U) | bitstring
-| OBJ Pointer Demo by Dan Bergman (PD) | objects seems to miss their last line
+| OBJ Pointer Demo by Dan Bergman (PD) | ✓
 | Panic Bomber (J) | FPU
 | Panic Bomber (U) | FPU
 | pong | nothing happens
@@ -52,7 +52,7 @@ TODO:
 | Tic Tac Toe by Pat Daderko (PD) | Link
 | Tron VB by Pat Daderko (PD) | Link
 | VB Rocks! Demo by KR155E (PD) | Displays dead data from fb
-| vb_test_2 | Display truncates number to 0xf even if the right value seems to be used. OOB char switches window mode? FPU for obj mode. Affine & Line shift modes.
+| vb_test_2 | OOB char switches window mode? FPU for obj mode. Affine & Line shift modes.
 | VeeBee Cursor Demo by David Williamson (PD) | Displays dead data from fb
 | Vertical Force (J) | VSU
 | Vertical Force (U) | VSU

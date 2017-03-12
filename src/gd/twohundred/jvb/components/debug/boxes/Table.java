@@ -1,9 +1,14 @@
 package gd.twohundred.jvb.components.debug.boxes;
 
 import gd.twohundred.jvb.components.debug.View;
+import org.jline.keymap.KeyMap;
+import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedStringBuilder;
+import org.jline.utils.AttributedStyle;
+import org.jline.utils.InfoCmp;
 
 import java.util.List;
+import java.util.function.IntConsumer;
 
 import static java.lang.Integer.max;
 
@@ -11,11 +16,39 @@ public abstract class Table implements Box {
     private final List<Column> columns;
     private final String name;
     private final int minWidth;
+    private final KeyMap<Runnable> keyMap;
+    private int selectedRow;
+    private boolean active;
 
-    protected Table(String name, List<Column> columns) {
+    protected Table(String name, List<Column> columns, Terminal terminal) {
         this.columns = columns;
         this.minWidth = columns.stream().mapToInt(Column::minWidth).sum() + max(0, columns.size() - 1);
         this.name = name;
+        keyMap = new KeyMap<>();
+        if (terminal != null) {
+            keyMap.bind(() -> this.selectedRow++, KeyMap.key(terminal, InfoCmp.Capability.key_down));
+            keyMap.bind(() -> {
+                if (selectedRow > 0) {
+                    this.selectedRow--;
+                }
+            }, KeyMap.key(terminal, InfoCmp.Capability.key_up));
+        }
+    }
+
+    public KeyMap<Runnable> getKeyMap() {
+        return keyMap;
+    }
+
+    public void bind(IntConsumer action, String binding) {
+        keyMap.bind(() -> action.accept(selectedRow), binding);
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     @Override
@@ -62,9 +95,12 @@ public abstract class Table implements Box {
         void cell(AttributedStringBuilder asb, int row, int width);
     }
 
-    private static void line(int width, List<Column> columns, int[] widths, int row, AttributedStringBuilder asb) {
+    private void line(int width, List<Column> columns, int[] widths, int row, AttributedStringBuilder asb) {
         int currentWidth = 0;
         int startLen = asb.length();
+        if (isActive() && row == selectedRow) {
+            asb.style(AttributedStyle.INVERSE);
+        }
         for (int i = 0; i < widths.length; i++) {
             Column column = columns.get(i);
             column.cell(asb, row, widths[i]);
@@ -88,6 +124,7 @@ public abstract class Table implements Box {
                 break;
             }
         }
+        asb.style(AttributedStyle.INVERSE_OFF);
     }
 
     private static void header(int width, List<Column> columns, int[] widths, AttributedStringBuilder asb) {

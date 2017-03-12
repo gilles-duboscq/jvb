@@ -55,11 +55,12 @@ public class VerticalBoxes implements Box {
         } else {
             int nonFixedHeight = getNonFixedHeight(height, boxes);
             int currentHeight = 1;
-            int i = 0;
+            int i = -1;
             Box box;
             int boxStart;
             int boxHeight;
             do {
+                i++;
                 boxStart = currentHeight;
                 if (i >= boxes.size()) {
                     return;
@@ -67,7 +68,7 @@ public class VerticalBoxes implements Box {
                 box = boxes.get(i);
                 boxHeight = box.fixedHeight() ? box.minHeight() : nonFixedHeight;
                 currentHeight += boxHeight + 2;
-            } while (currentHeight < line);
+            } while (currentHeight <= line);
             if (line == boxStart + boxHeight) {
                 HorizontalBoxes.bottom(new int[]{max(0, width - 2)}, width, asb);
             }  else if (line == boxStart + boxHeight + 1) {

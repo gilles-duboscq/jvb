@@ -9,6 +9,7 @@ import gd.twohundred.jvb.components.debug.boxes.VerticalBoxes;
 import org.jline.keymap.KeyMap;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Size;
+import org.jline.terminal.Terminal;
 import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
@@ -22,16 +23,22 @@ public class Breakpoints implements View {
     private static final String ADDRESS_PROMPT = "Address: ";
     private static final int ADDRESS_PROMPT_LEN = ADDRESS_PROMPT.length();
     private static final char DEL = '\177';
-    private final KeyMap<Runnable> idleKeyMap;
-    private final KeyMap<Runnable> addingKeyMap;
-    private final Debugger debugger;
-    private final StringBuffer addressBuffer;
-    private volatile State state;
-    private volatile int addressCursor;
 
+    private final Debugger debugger;
     private final List<Breakpoint> execBreakpoints;
     private final List<MemBreakpoint> memBreakpoints;
     private final VerticalBoxes verticalBoxes;
+    private final ExecBreakpointsTable execBreakpointsTable;
+    private final MemBreakpointsTable memBreakpointsTable;
+    private volatile State state;
+    private Table selectedTable;
+
+    private final KeyMap<Runnable> addingKeyMap;
+    private final StringBuffer addressBuffer;
+    private volatile int addressCursor;
+    private boolean addingExec = true;
+    private boolean addingRead;
+    private boolean addingWrite;
 
     private static class Breakpoint {
         private final int address;
@@ -77,6 +84,8 @@ public class Breakpoints implements View {
 
         protected MemBreakpoint(int address, String comment, boolean read, boolean write) {
             super(address, comment);
+            this.read = read;
+            this.write = write;
         }
 
         public boolean isRead() {
@@ -111,9 +120,28 @@ public class Breakpoints implements View {
 
     private abstract class BreakpointColumn implements Column {
         private final BreakpointType type;
+        private final String name;
+        private final int width;
 
-        private BreakpointColumn(BreakpointType type) {
+        private BreakpointColumn(BreakpointType type, String name, int width) {
             this.type = type;
+            this.name = name;
+            this.width = width;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public int minWidth() {
+            return width;
+        }
+
+        @Override
+        public boolean fixedWidth() {
+            return true;
         }
 
         @Override
@@ -125,30 +153,12 @@ public class Breakpoints implements View {
             cell(asb, breakpoints.get(row));
         }
 
-        protected void cell(AttributedStringBuilder asb, Breakpoint breakpoint) {
-
-        }
+        protected abstract void cell(AttributedStringBuilder asb, Breakpoint breakpoint);
     }
 
     private class EnabledColumn extends BreakpointColumn {
-
         private EnabledColumn(BreakpointType type) {
-            super(type);
-        }
-
-        @Override
-        public String name() {
-            return "E";
-        }
-
-        @Override
-        public int minWidth() {
-            return 1;
-        }
-
-        @Override
-        public boolean fixedWidth() {
-            return true;
+            super(type, "E", 1);
         }
 
         @Override
@@ -158,24 +168,8 @@ public class Breakpoints implements View {
     }
 
     private class AddressColumn extends BreakpointColumn {
-
         private AddressColumn(BreakpointType type) {
-            super(type);
-        }
-
-        @Override
-        public String name() {
-            return "Address";
-        }
-
-        @Override
-        public int minWidth() {
-            return 8;
-        }
-
-        @Override
-        public boolean fixedWidth() {
-            return true;
+            super(type, "Address", 8);
         }
 
         @Override
@@ -186,6 +180,66 @@ public class Breakpoints implements View {
                 asb.append('0');
             }
             asb.append(hexString);
+        }
+    }
+
+    private class HitsColumn extends BreakpointColumn {
+        private HitsColumn(BreakpointType type) {
+            super(type, "Hits", 5);
+        }
+
+        @Override
+        public void cell(AttributedStringBuilder asb, Breakpoint breakpoint) {
+            String str = Integer.toString(breakpoint.hitCount);
+            View.repeat(asb, minWidth() - str.length(), ' ');
+            asb.append(str);
+        }
+    }
+
+    private class CommentsColumn extends BreakpointColumn {
+        private CommentsColumn(BreakpointType type) {
+            super(type, "Comments", 10);
+        }
+
+        @Override
+        public boolean fixedWidth() {
+            return false;
+        }
+
+        @Override
+        protected void cell(AttributedStringBuilder asb, Breakpoint breakpoint) {
+            asb.append(breakpoint.getComment());
+        }
+    }
+
+    private class ModesColumn implements Column {
+        @Override
+        public String name() {
+            return "Mode";
+        }
+
+        @Override
+        public int minWidth() {
+            return 4;
+        }
+
+        @Override
+        public boolean fixedWidth() {
+            return true;
+        }
+
+        @Override
+        public void cell(AttributedStringBuilder asb, int row, int width) {
+            if (row >= memBreakpoints.size()) {
+                return;
+            }
+            MemBreakpoint memBreakpoint = memBreakpoints.get(row);
+            if (memBreakpoint.isRead()) {
+                asb.append('R');
+            }
+            if (memBreakpoint.isWrite()) {
+                asb.append('W');
+            }
         }
     }
 
@@ -205,14 +259,14 @@ public class Breakpoints implements View {
     }
 
     private class ExecBreakpointsTable extends Table {
-        protected ExecBreakpointsTable() {
-            super("Execute", Arrays.asList(new EnabledColumn(BreakpointType.Execute), new AddressColumn(BreakpointType.Execute)));
+        protected ExecBreakpointsTable(Terminal terminal) {
+            super("Execute", Arrays.asList(new EnabledColumn(BreakpointType.Execute), new AddressColumn(BreakpointType.Execute), new HitsColumn(BreakpointType.Execute), new CommentsColumn(BreakpointType.Execute)), terminal);
         }
     }
 
     private class MemBreakpointsTable extends Table {
-        protected MemBreakpointsTable() {
-            super("Memory", Arrays.asList(new EnabledColumn(BreakpointType.Memory), new AddressColumn(BreakpointType.Memory)));
+        protected MemBreakpointsTable(Terminal terminal) {
+            super("Memory", Arrays.asList(new EnabledColumn(BreakpointType.Memory), new AddressColumn(BreakpointType.Memory), new ModesColumn(), new HitsColumn(BreakpointType.Memory), new CommentsColumn(BreakpointType.Memory)), terminal);
         }
     }
 
@@ -220,8 +274,16 @@ public class Breakpoints implements View {
         this.debugger = debugger;
         this.state = State.Idle;
         addressBuffer = new StringBuffer();
-        idleKeyMap = new KeyMap<>();
-        idleKeyMap.bind(this::startAddBreakpoint, "a");
+        execBreakpoints = new ArrayList<>();
+        memBreakpoints = new ArrayList<>();
+        execBreakpointsTable = new ExecBreakpointsTable(debugger.getTerminal());
+        memBreakpointsTable = new MemBreakpointsTable(debugger.getTerminal());
+        selectedTable = execBreakpointsTable;
+        selectedTable.setActive(true);
+        addIdleKeyBindings(execBreakpointsTable.getKeyMap());
+        addIdleKeyBindings(memBreakpointsTable.getKeyMap());
+        addTableKeyBindings(execBreakpointsTable, execBreakpoints, debugger.getTerminal());
+        addTableKeyBindings(memBreakpointsTable, memBreakpoints, debugger.getTerminal());
         addingKeyMap = new KeyMap<>();
         addingKeyMap.bind(this::finishAddBreakpoint, "\r");
         for (char i = '0'; i <= '9'; i++) {
@@ -239,9 +301,38 @@ public class Breakpoints implements View {
         addingKeyMap.bind(this::moveCursorRight, KeyMap.key(debugger.getTerminal(), InfoCmp.Capability.key_right));
         addingKeyMap.bind(this::moveCursorLeft, KeyMap.key(debugger.getTerminal(), InfoCmp.Capability.key_left));
         addingKeyMap.bind(this::abortAddBreakpoint, "q");
-        execBreakpoints = new ArrayList<>();
-        memBreakpoints = new ArrayList<>();
-        verticalBoxes = new VerticalBoxes("Breakpoints", Arrays.asList(new ExecBreakpointsTable(), new MemBreakpointsTable()));
+        addingKeyMap.bind(() -> this.addingExec = !this.addingExec, "x");
+        addingKeyMap.bind(() -> this.addingRead = !this.addingRead, "r");
+        addingKeyMap.bind(() -> this.addingWrite = !this.addingWrite, "w");
+        verticalBoxes = new VerticalBoxes("Breakpoints", Arrays.asList(execBreakpointsTable, memBreakpointsTable));
+    }
+
+    private void addTableKeyBindings(Table table, List<? extends Breakpoint> list, Terminal terminal) {
+        table.bind((index) -> {
+            if (index < list.size()) {
+                list.remove(index);
+            }
+        }, KeyMap.key(terminal, InfoCmp.Capability.key_dc));
+        table.bind(i -> {
+            if (i < list.size()) {
+                Breakpoint breakpoint = list.get(i);
+                breakpoint.setEnabled(!breakpoint.isEnabled());
+            }
+        }, "e");
+    }
+
+    private void addIdleKeyBindings(KeyMap<Runnable> keyMap) {
+        keyMap.bind(this::startAddBreakpoint, "a");
+        keyMap.bind(() -> {
+            selectedTable = execBreakpointsTable;
+            selectedTable.setActive(true);
+            memBreakpointsTable.setActive(false);
+        }, KeyMap.key(debugger.getTerminal(), InfoCmp.Capability.key_ppage));
+        keyMap.bind(() -> {
+            selectedTable = memBreakpointsTable;
+            selectedTable.setActive(true);
+            execBreakpointsTable.setActive(false);
+        }, KeyMap.key(debugger.getTerminal(), InfoCmp.Capability.key_npage));
     }
 
     @Override
@@ -273,14 +364,43 @@ public class Breakpoints implements View {
                 style = style.foreground(AttributedStyle.RED);
             }
             addrPromptLine.append(addressBuffer.toString(), style);
-            View.repeat(addrPromptLine, width - addrPromptLine.length() - 1, ' ');
+            View.padToLength(addrPromptLine, width - 1);
             addrPromptLine.append('│');
             lines.add(addrPromptLine.toAttributedString());
+
+            AttributedStringBuilder modeLine = new AttributedStringBuilder();
+            modeLine.append('│');
+            if (addingExec) {
+                modeLine.style(AttributedStyle.INVERSE);
+            }
+            modeLine.append('E');
+            modeLine.append("X", AttributedStyle.DEFAULT.underline());
+            modeLine.append("EC");
+            modeLine.style(AttributedStyle.INVERSE_OFF);
+            modeLine.append(' ');
+            if (addingRead) {
+                modeLine.style(AttributedStyle.INVERSE);
+            }
+            modeLine.append("R", AttributedStyle.DEFAULT.underline());
+            modeLine.append("EAD");
+            modeLine.style(AttributedStyle.INVERSE_OFF);
+            modeLine.append(' ');
+            if (addingWrite) {
+                modeLine.style(AttributedStyle.INVERSE);
+            }
+            modeLine.append("W", AttributedStyle.DEFAULT.underline());
+            modeLine.append("RITE");
+            modeLine.style(AttributedStyle.INVERSE_OFF);
+            View.padToLength(modeLine, width - 1);
+            modeLine.append('│');
+            lines.add(modeLine.toAttributedString());
+
             AttributedStringBuilder addrPromptBottomLine = new AttributedStringBuilder();
             addrPromptBottomLine.append('└');
             View.horizontalLine(addrPromptBottomLine, width - 2);
             addrPromptBottomLine.append('┘');
             lines.add(addrPromptBottomLine.toAttributedString());
+
             AttributedStringBuilder actionsLine = new AttributedStringBuilder();
             actionsLine.append(" └Abort(");
             actionsLine.append("q", AttributedStyle.DEFAULT.underline());
@@ -307,7 +427,7 @@ public class Breakpoints implements View {
     public KeyMap<Runnable> getKeyMap() {
         switch (state) {
             case Idle:
-                return idleKeyMap;
+                return selectedTable.getKeyMap();
             case Adding:
                 return addingKeyMap;
             default:
@@ -340,7 +460,12 @@ public class Breakpoints implements View {
         state = State.Idle;
         int addr = Integer.valueOf(addressBuffer.toString(), 16);
         debugger.log(Logger.Component.Debugger, Logger.Level.Info, "Adding bp at %#010x", addr);
-        execBreakpoints.add(new Breakpoint(addr, ""));
+        if (addingExec) {
+            execBreakpoints.add(new Breakpoint(addr, ""));
+        }
+        if (addingRead || addingWrite) {
+            memBreakpoints.add(new MemBreakpoint(addr, "", addingRead, addingWrite));
+        }
         debugger.markRefreshNeeded();
     }
 
@@ -386,14 +511,32 @@ public class Breakpoints implements View {
     }
 
     public boolean shouldBreakOnExec(int pc) {
-        return execBreakpoints.stream().anyMatch(b -> b.getAddress() == pc && b.isEnabled());
+        for (Breakpoint b : execBreakpoints) {
+            if (b.getAddress() == pc && b.isEnabled()) {
+                b.incrementHistCount();
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean shouldBreakOnRead(int address, Instructions.AccessWidth width) {
-        return memBreakpoints.stream().anyMatch(b -> b.getAddress() == address && b.isEnabled() && b.isRead());
+        for (MemBreakpoint b : memBreakpoints) {
+            if (b.getAddress() == address && b.isEnabled() && b.isRead()) {
+                b.incrementHistCount();
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean shouldBreakOnWrite(int address, int value, Instructions.AccessWidth width) {
-        return memBreakpoints.stream().anyMatch(b -> b.getAddress() == address && b.isEnabled() && b.isWrite());
+        for (MemBreakpoint b : memBreakpoints) {
+            if (b.getAddress() == address && b.isEnabled() && b.isWrite()) {
+                b.incrementHistCount();
+                return true;
+            }
+        }
+        return false;
     }
 }

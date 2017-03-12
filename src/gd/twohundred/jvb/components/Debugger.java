@@ -51,7 +51,7 @@ public class Debugger implements ExactlyEmulable, Logger {
     private boolean cursorVisible = true;
     private volatile Runnable inputAction;
     private volatile State state;
-    private InputThread inputThread;
+    private final InputThread inputThread;
     private boolean displaying;
 
     public enum State {
@@ -296,8 +296,8 @@ public class Debugger implements ExactlyEmulable, Logger {
         Runnable runnable = inputAction;
         if (runnable != null) {
             runnable.run();
-            inputAction = null;
             synchronized (inputThread) {
+                inputAction = null;
                 inputThread.notify();
             }
             markRefreshNeeded();
@@ -355,7 +355,9 @@ public class Debugger implements ExactlyEmulable, Logger {
                 while (inputAction != null) {
                     try {
                         synchronized (this) {
-                            this.wait();
+                            if (inputAction != null) {
+                                this.wait();
+                            }
                         }
                     } catch (InterruptedException e) {
                         return;

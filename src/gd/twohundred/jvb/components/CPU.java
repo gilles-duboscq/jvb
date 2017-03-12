@@ -935,7 +935,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
     }
 
     private int div(int a, int b) {
-        int value = a * b;
+        int value = a / b;
         boolean zero = value == 0;
         boolean sign = value < 0;
         psw.setZeroSignOveflow(zero, sign, a == Integer.MIN_VALUE && b == -1);
@@ -943,7 +943,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
     }
 
     private int divu(long a, long b) {
-        int value = (int) (a * b);
+        int value = (int) (a / b);
         boolean zero = value == 0;
         boolean sign = value < 0;
         psw.setZeroSignOveflow(zero, sign, false);

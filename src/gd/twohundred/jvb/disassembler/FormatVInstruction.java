@@ -56,12 +56,12 @@ public class FormatVInstruction implements Instruction {
         String lowerType = type.name().toLowerCase();
         switch (type) {
             case ADDI:
-            case MOVEA:
-                imm = signExtend(imm, 5);
+                imm = signExtend(imm, 16);
                 return String.format("%-8s r%d, r%d, %d", lowerType, reg2, reg1, imm);
             case MOVHI:
                 imm <<= 16;
             case ANDI:
+            case MOVEA:
             case ORI:
             case XORI:
                 return String.format("%-8s r%d, r%d, %#04x", lowerType, reg2, reg1, imm);

@@ -31,7 +31,6 @@ public abstract class BackgroundedWindowMode extends WindowMode {
         int endWindowY = min(maxY - window.getY(), window.getActualHeight());
 
         int parallax = left ? -window.getParallax() : window.getParallax();
-        int backgroundParallax = left ? -window.getBackgroundParallax() : window.getBackgroundParallax();
 
         int backgroundWidth = widthSegments * BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_WIDTH_PX;
         int backgroundHeight = heightSegments * BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_HEIGHT_PX;
@@ -39,13 +38,13 @@ public abstract class BackgroundedWindowMode extends WindowMode {
         // TODO: just find the portion of segment/char to draw and use drawChar rather than drawCharPixel
         for (int windowY = startWindowY; windowY < endWindowY; windowY++) {
             int y = windowY + window.getY();
-            int backgroundY = windowY + window.getBackgroundY();
             for (int windowX = 0; windowX < window.getActualWidth(); windowX++) {
                 int x = windowX + window.getX() + parallax;
                 if (x >= Screen.WIDTH || x < 0) {
                     continue;
                 }
-                int backgroundX = windowX + window.getBackgroundX() + backgroundParallax;
+                int backgroundX = getBackgroundX(window, vip, windowX, windowY, left);
+                int backgroundY = getBackgroundY(window, vip, windowX, windowY, left);
                 int cellAddr;
                 if (window.isUseOutOfBoundsCharacter() && (backgroundX < 0 || backgroundX >= backgroundWidth || backgroundY < 0 || backgroundY >= backgroundHeight)) {
                     // oob char
@@ -75,6 +74,15 @@ public abstract class BackgroundedWindowMode extends WindowMode {
                 drawCharacterPixel(x, y, characterX, characterY, cell, backgroundPalettes, vip, left);
             }
         }
+    }
+
+    public int getBackgroundY(WindowAttributes window, VirtualImageProcessor vip, int x, int y, boolean left) {
+        return window.getBackgroundY() + y;
+    }
+
+    public int getBackgroundX(WindowAttributes window, VirtualImageProcessor vip, int x, int y, boolean left) {
+        int backgroundParallax = left ? -window.getBackgroundParallax() : window.getBackgroundParallax();
+        return window.getBackgroundX() + backgroundParallax + x;
     }
 
     private static final int SEGMENT_COUNT = BackgroundSegmentsAndParametersRAM.SIZE / BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_SIZE;

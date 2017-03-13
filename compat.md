@@ -7,8 +7,8 @@ TODO:
 | Title | Notes
 | --- | ---
 | 3D Tetris (U) | VSU
-| affine_demo_1 | Affine Window mode
-| affine_demo_2 | Affine Window mode
+| affine_demo_1 | FPU, Affine Window mode
+| affine_demo_2 | FPU, Affine Window mode
 | Blox V1.0 by KR155E (PD) | Too fast, some missing graphics?
 | Blox V1.1 by KR155E (PD) | VSU
 | Bound High! (JU) | Need to get ROM
@@ -40,7 +40,7 @@ TODO:
 | Reality Boy Demo 2 (PD) | Link
 | Red Alarm (J) | VSU
 | Red Alarm (U) | VSU
-| Scaling Demo by Parasyte (PD) | Affine Window mode
+| Scaling Demo by Parasyte (PD) | FPU, Affine Window mode
 | SD Gundam Dimension War (J) | Need to get ROM
 | Simon by Pat Daderko (PD) | ✓
 | Space Invaders: Virtual Collection (J) | Need to get ROM
@@ -52,7 +52,7 @@ TODO:
 | Tic Tac Toe by Pat Daderko (PD) | Link
 | Tron VB by Pat Daderko (PD) | Link
 | VB Rocks! Demo by KR155E (PD) | Displays dead data from fb
-| vb_test_2 | OOB char switches window mode? FPU for obj mode. Affine & Line shift modes.
+| vb_test_2 | OOB char switches window mode? FPU for obj mode. FPU, Affine & Line shift modes.
 | VeeBee Cursor Demo by David Williamson (PD) | Displays dead data from fb
 | Vertical Force (J) | VSU
 | Vertical Force (U) | VSU

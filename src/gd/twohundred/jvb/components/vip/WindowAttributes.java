@@ -284,8 +284,8 @@ public class WindowAttributes implements ReadWriteMemory, Resetable {
         return getWidth() + 1;
     }
 
-    public short getParameterIndex() {
-        return parameterIndex;
+    public int getParameterIndex() {
+        return parameterIndex & 0xffff;
     }
 
     public short getOutOfBoundsCharacter() {

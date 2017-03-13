@@ -22,6 +22,8 @@ public abstract class WindowMode {
                 return ObjectWindowMode.INSTANCE;
             case LineShiftWindowMode.ID:
                 return LineShiftWindowMode.INSTANCE;
+            case AffineWindowMode.ID:
+                return AffineWindowMode.INSTANCE;
         }
         throw new RuntimeException("NYI: " + id);
     }

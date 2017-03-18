@@ -43,7 +43,7 @@ TODO:
 | Reality Boy Demo 2 (PD) | Link
 | Red Alarm (J) | VSU
 | Red Alarm (U) | VSU
-| Scaling Demo by Parasyte (PD) | Glitchy (affine mode problems?), Div by Zero exception
+| Scaling Demo by Parasyte (PD) | ✓ (Does not initialize window param memory properly)
 | SD Gundam Dimension War (J) | Need to get ROM
 | Simon by Pat Daderko (PD) | ✓
 | Space Invaders: Virtual Collection (J) | Need to get ROM

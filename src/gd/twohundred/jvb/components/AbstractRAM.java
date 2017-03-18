@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 public abstract class AbstractRAM implements ReadWriteMemory, Resetable {
+    public static final int INIT_VALUE = Integer.getInteger("jvb.ram.init", 0xdeadbeef);
     private final ByteBuffer data;
 
     public AbstractRAM(int size) {
@@ -81,7 +82,7 @@ public abstract class AbstractRAM implements ReadWriteMemory, Resetable {
     @Override
     public void reset() {
         for (int i = 0; i < data.limit(); i+=4) {
-            data.putInt(0xdeadbeef);
+            data.putInt(INIT_VALUE);
         }
     }
 }

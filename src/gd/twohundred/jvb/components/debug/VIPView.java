@@ -145,9 +145,20 @@ public class VIPView implements View {
         }
     }
 
+    private class ParamIndexColumn extends WindowAttributesColumn {
+        protected ParamIndexColumn() {
+            super("Param", 5);
+        }
+
+        @Override
+        protected void cell(AttributedStringBuilder asb, WindowAttributes attributes) {
+            View.leftPadHex(asb, minWidth(), attributes.getParameterIndex());
+        }
+    }
+
     private class WindowAttributesTable extends Table {
         private WindowAttributesTable(Terminal terminal) {
-            super("Windows", Arrays.asList(new IDColumn(), new StopColumn(), new ModeColumn(), new XColumn(), new YColumn(), new WidthColumn(), new HeightColumn(), new BaseSegmentColumn()), terminal);
+            super("Windows", Arrays.asList(new IDColumn(), new StopColumn(), new ModeColumn(), new XColumn(), new YColumn(), new WidthColumn(), new HeightColumn(), new BaseSegmentColumn(), new ParamIndexColumn()), terminal);
         }
     }
 

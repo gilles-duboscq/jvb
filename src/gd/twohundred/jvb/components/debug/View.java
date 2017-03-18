@@ -29,8 +29,16 @@ public interface View {
         }
     }
 
-    static void leftPadInt(AttributedStringBuilder asb, int length, int value) {
-        String s = Integer.toString(value);
+    static void leftPadInt(AttributedStringBuilder asb, int length, long value) {
+        String s = Long.toString(value);
+        if (s.length() < length) {
+            View.repeat(asb, length - s.length(), ' ');
+        }
+        asb.append(s);
+    }
+
+    static void leftPadHex(AttributedStringBuilder asb, int length, long value) {
+        String s = Long.toHexString(value);
         if (s.length() < length) {
             View.repeat(asb, length - s.length(), ' ');
         }

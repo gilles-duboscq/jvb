@@ -71,7 +71,7 @@ public class FormatIIInstruction implements Instruction {
                 return String.format("%-8s %d", lowerType, imm);
             case LDSR:
             case STSR:
-                return String.format("%-8s %d, %s", lowerType, reg2, CPU.getSystemRegisterName(imm));
+                return String.format("%-8s r%d, %s", lowerType, reg2, CPU.getSystemRegisterName(imm));
         }
         throw new RuntimeException("should not reach here");
     }

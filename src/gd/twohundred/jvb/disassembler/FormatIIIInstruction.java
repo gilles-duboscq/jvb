@@ -34,7 +34,11 @@ public class FormatIIIInstruction implements Instruction {
 
     @Override
     public String toString() {
-        return String.format("%-8s %+d", type.name().toLowerCase(), disp);
+        if (type == FormatIIIInstructionType.NOP) {
+            return "nop";
+        } else {
+            return String.format("%-8s %+d", type.name().toLowerCase(), disp);
+        }
     }
 
     @Override

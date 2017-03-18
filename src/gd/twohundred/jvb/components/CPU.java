@@ -450,6 +450,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     setRegister(reg2, getRegister(reg1));
                     break;
                 }
+                case OP_OUTB:
                 case OP_STB: {
                     int second = bus.getHalfWord(pc + 2);
                     nextPC += 2;
@@ -458,6 +459,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     bus.setByte(getRegister(reg1) + disp16, (byte) getRegister(reg2));
                     break;
                 }
+                case OP_OUTH:
                 case OP_STH: {
                     int second = bus.getHalfWord(pc + 2);
                     nextPC += 2;
@@ -466,30 +468,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     bus.setHalfWord(getRegister(reg1) + disp16, (short) getRegister(reg2));
                     break;
                 }
-                case OP_STW: {
-                    int second = bus.getHalfWord(pc + 2);
-                    nextPC += 2;
-                    cycles = 4;
-                    int disp16 = signExtend(second, 16);
-                    bus.setWord(getRegister(reg1) + disp16, getRegister(reg2));
-                    break;
-                }
-                case OP_OUTB: {
-                    int second = bus.getHalfWord(pc + 2);
-                    nextPC += 2;
-                    cycles = 4;
-                    int disp16 = signExtend(second, 16);
-                    bus.setByte(getRegister(reg1) + disp16, (byte) getRegister(reg2));
-                    break;
-                }
-                case OP_OUTH: {
-                    int second = bus.getHalfWord(pc + 2);
-                    nextPC += 2;
-                    cycles = 4;
-                    int disp16 = signExtend(second, 16);
-                    bus.setHalfWord(getRegister(reg1) + disp16, (short) getRegister(reg2));
-                    break;
-                }
+                case OP_STW:
                 case OP_OUTW: {
                     int second = bus.getHalfWord(pc + 2);
                     nextPC += 2;
@@ -514,6 +493,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     setRegister(reg2, signExtend(bus.getHalfWord(getRegister(reg1) + disp16), Short.SIZE));
                     break;
                 }
+                case OP_INW:
                 case OP_LDW: {
                     int second = bus.getHalfWord(pc + 2);
                     nextPC += 2;
@@ -536,14 +516,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     cycles = 4;
                     int disp16 = signExtend(second, 16);
                     setRegister(reg2, zeroExtend(bus.getHalfWord(getRegister(reg1) + disp16), Short.SIZE));
-                    break;
-                }
-                case OP_INW: {
-                    int second = bus.getHalfWord(pc + 2);
-                    nextPC += 2;
-                    cycles = 4;
-                    int disp16 = signExtend(second, 16);
-                    setRegister(reg2, bus.getWord(getRegister(reg1) + disp16));
                     break;
                 }
                 case OP_JAL: {

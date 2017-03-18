@@ -10,7 +10,7 @@ TODO:
 | Title | Notes
 | --- | ---
 | 3D Tetris (U) | VSU
-| affine_demo_1 | Glitchy (affine computation problem + read from uninitialized?)
+| affine_demo_1 | ✓ (read from uninitialized?)
 | affine_demo_2 | ✓
 | Blox V1.0 by KR155E (PD) | Too fast, some missing graphics?
 | Blox V1.1 by KR155E (PD) | VSU
@@ -43,7 +43,7 @@ TODO:
 | Reality Boy Demo 2 (PD) | Link
 | Red Alarm (J) | VSU
 | Red Alarm (U) | VSU
-| Scaling Demo by Parasyte (PD) | Glitchy (affine mode problems), Div by Zero exception
+| Scaling Demo by Parasyte (PD) | Glitchy (affine mode problems?), Div by Zero exception
 | SD Gundam Dimension War (J) | Need to get ROM
 | Simon by Pat Daderko (PD) | ✓
 | Space Invaders: Virtual Collection (J) | Need to get ROM

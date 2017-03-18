@@ -43,9 +43,11 @@ public class AffineWindowMode extends BackgroundedWindowMode {
         int parameterBaseAddress = (window.getParameterIndex() + AFFINE_PARAMETER_LEN_SHORTS * y) * Short.BYTES;
         BackgroundSegmentsAndParametersRAM parameterTable = vip.getBackgroundSegmentsAndWindowParameterTable();
         int bgParallax = signExtend(parameterTable.getHalfWord(parameterBaseAddress + BG_PARALLAX_OFFSET_SHORTS * Short.BYTES), Short.SIZE);
-        FixedPoint bgIncrement = new FixedPoint(parameterTable.getHalfWord(parameterBaseAddress + incOffsetShorts * Short.BYTES), INC_FRACTIONAL_BITS);
-        FixedPoint bgOffset = new FixedPoint(signExtend(parameterTable.getHalfWord(parameterBaseAddress + bgOffsetShorts * Short.BYTES), Short.SIZE), BG_FRACTIONAL_BITS);
-        if ((bgParallax <= 0) ^ left) {
+        int rawBgIncrement = signExtend(parameterTable.getHalfWord(parameterBaseAddress + incOffsetShorts * Short.BYTES), Short.SIZE);
+        int rawBgOffset = signExtend(parameterTable.getHalfWord(parameterBaseAddress + bgOffsetShorts * Short.BYTES), Short.SIZE);
+        FixedPoint bgIncrement = new FixedPoint(rawBgIncrement, INC_FRACTIONAL_BITS);
+        FixedPoint bgOffset = new FixedPoint(rawBgOffset, BG_FRACTIONAL_BITS);
+        if ((bgParallax < 0) ^ left) {
             return (int) bgIncrement.mul(x).add(bgOffset).roundToLong();
         } else {
             return (int) bgIncrement.mul(x + bgParallax).add(bgOffset).roundToLong();

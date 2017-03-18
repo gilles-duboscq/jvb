@@ -36,6 +36,7 @@ import static gd.twohundred.jvb.components.Instructions.DISP9_POS;
 import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX;
 import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX_LEN;
 import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX_POS;
+import static gd.twohundred.jvb.components.Instructions.SUBOP_ADDF_S;
 import static gd.twohundred.jvb.components.Instructions.IMM5_LEN;
 import static gd.twohundred.jvb.components.Instructions.OPCODE_LEN;
 import static gd.twohundred.jvb.components.Instructions.OPCODE_POS;
@@ -49,6 +50,7 @@ import static gd.twohundred.jvb.components.Instructions.OP_CMP_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_CMP_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_DIV;
 import static gd.twohundred.jvb.components.Instructions.OP_DIVU;
+import static gd.twohundred.jvb.components.Instructions.OP_SUBOP;
 import static gd.twohundred.jvb.components.Instructions.OP_ILL_1;
 import static gd.twohundred.jvb.components.Instructions.OP_INB;
 import static gd.twohundred.jvb.components.Instructions.OP_INH;
@@ -96,6 +98,18 @@ import static gd.twohundred.jvb.Utils.intBit;
 import static gd.twohundred.jvb.Utils.signExtend;
 import static gd.twohundred.jvb.Utils.testBits;
 import static gd.twohundred.jvb.Utils.toBinary;
+import static gd.twohundred.jvb.components.Instructions.SUBOP_CMPF_S;
+import static gd.twohundred.jvb.components.Instructions.SUBOP_CVT_SW;
+import static gd.twohundred.jvb.components.Instructions.SUBOP_CVT_WS;
+import static gd.twohundred.jvb.components.Instructions.SUBOP_DIVF_S;
+import static gd.twohundred.jvb.components.Instructions.SUBOP_MPYHW;
+import static gd.twohundred.jvb.components.Instructions.SUBOP_MULF_S;
+import static gd.twohundred.jvb.components.Instructions.SUBOP_REV;
+import static gd.twohundred.jvb.components.Instructions.SUBOP_SUBF_S;
+import static gd.twohundred.jvb.components.Instructions.SUBOP_XB;
+import static gd.twohundred.jvb.components.Instructions.SUBOP_XH;
+import static gd.twohundred.jvb.components.Instructions.SUB_OPCODE_LEN;
+import static gd.twohundred.jvb.components.Instructions.SUB_OPCODE_POS;
 import static java.lang.Math.abs;
 
 public class CPU implements Emulable, Resetable, InterruptSource {
@@ -163,6 +177,14 @@ public class CPU implements Emulable, Resetable, InterruptSource {
 
     public int getRegister(int r) {
         return registers[r];
+    }
+
+    private void setFloatRegister(int r, float value) {
+        setRegister(r, Float.floatToRawIntBits(value));
+    }
+
+    private float getFloatRegister(int r) {
+        return Float.intBitsToFloat(getRegister(r));
     }
 
     private void setSystemRegister(int r, int value) {
@@ -822,6 +844,13 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     }
                     break;
                 }
+                case OP_SUBOP: {
+                    int second = bus.getHalfWord(pc + 2);
+                    int subOp = extractU(second, SUB_OPCODE_POS - 16, SUB_OPCODE_LEN);
+                    nextPC += 2;
+                    cycles = subop(reg2, reg1, subOp);
+                    break;
+                }
                 case OP_ILL_1: {
                     logger.warning(Logger.Component.CPU, "Illegal instruction @ %#08x!", pc);
                     if (DEBUG_INST) {
@@ -836,6 +865,146 @@ public class CPU implements Emulable, Resetable, InterruptSource {
         }
         pc = nextPC;
         return cycles;
+    }
+
+    private int subop(int reg2, int reg1, int subOp) {
+        switch (subOp) {
+            case SUBOP_ADDF_S: {
+                setFloatRegister(reg2, addf(getFloatRegister(reg2), getFloatRegister(reg1)));
+                return 28;
+            }
+            case SUBOP_SUBF_S: {
+                setFloatRegister(reg2, subf(getFloatRegister(reg2), getFloatRegister(reg1)));
+                return 28;
+            }
+            case SUBOP_MULF_S: {
+                setFloatRegister(reg2, mulf(getFloatRegister(reg2), getFloatRegister(reg1)));
+                return 30;
+            }
+            case SUBOP_DIVF_S: {
+                setFloatRegister(reg2, divf(getFloatRegister(reg2), getFloatRegister(reg1)));
+                return 44;
+            }
+            case SUBOP_CMPF_S: {
+                subf(getFloatRegister(reg2), getFloatRegister(reg1));
+                return 10;
+            }
+            case SUBOP_CVT_WS: {
+                setFloatRegister(reg2, cvt(getRegister(reg1)));
+                return 16;
+            }
+            case SUBOP_CVT_SW: {
+                setRegister(reg2, cvt(getFloatRegister(reg1)));
+                return 14;
+            }
+            case SUBOP_REV: {
+                setRegister(reg2, Integer.reverse(getRegister(reg1)));
+                return 1;
+            }
+            case SUBOP_XB: {
+                setRegister(reg2, xb(getRegister(reg2)));
+                return 1;
+            }
+            case SUBOP_XH: {
+                setRegister(reg2, xh(getRegister(reg2)));
+                return 1;
+            }
+            case SUBOP_MPYHW: {
+                setRegister(reg2, signExtend(getRegister(reg2), Short.SIZE) * signExtend(getRegister(reg1), Short.SIZE));
+                return 9;
+            }
+            default:
+                throw new RuntimeException(String.format("Unknown subop opcode: 0b%s @ %08X", toBinary(subOp, SUB_OPCODE_LEN), pc));
+        }
+    }
+
+    private boolean isReserved(float v) {
+        return !Float.isFinite(v) || isDenormal(v);
+    }
+
+    private boolean isDenormal(float v) {
+        return v != 0 && Math.abs(v) < Float.MIN_NORMAL;
+    }
+
+    private void commonFPUFlagsAndExceptions(float a, float b, float result) {
+        boolean reservedArg = isReserved(a) || isReserved(b);
+        boolean underflow = isDenormal(result);
+        boolean overflow = Float.isInfinite(result);
+        boolean precisionDegradation = false; // TODO
+        psw.accumulateReservedUnderFlowOverflowPrecisionDegradation(reservedArg, underflow, overflow, precisionDegradation);
+        // TODO exceptions
+    }
+
+    private float cvt(int a) {
+        float value = (float) a;
+        // TODO precision
+        return value;
+    }
+
+    private int cvt(float a) {
+        int value = (int) a;
+        psw.accumulateReservedUnderFlowOverflowPrecisionDegradation(isReserved(a), false, false, false);
+        // TODO precision / invalid
+        return value;
+    }
+
+    private float addf(float a, float b) {
+        float value = a + b;
+        commonFPUFlagsAndExceptions(a, b, value);
+        boolean zero = value == 0;
+        boolean sign = value < 0;
+        // TODO OF? CY?
+        psw.setZeroSignOveflowCarry(zero, sign, false, false);
+        return value;
+    }
+
+    private float subf(float a, float b) {
+        float value = a - b;
+        commonFPUFlagsAndExceptions(a, b, value);
+        boolean zero = value == 0;
+        boolean sign = value < 0;
+        // TODO OF? CY?
+        psw.setZeroSignOveflowCarry(zero, sign, false, false);
+        return value;
+    }
+
+    private float mulf(float a, float b) {
+        float value = a * b;
+        commonFPUFlagsAndExceptions(a, b, value);
+        boolean zero = value == 0;
+        boolean sign = value < 0;
+        // TODO OF? CY?
+        psw.setZeroSignOveflowCarry(zero, sign, false, false);
+        return value;
+    }
+
+    private float divf(float a, float b) {
+        if (b == 0) {
+            if (a == 0) {
+                // TODO exception
+                psw.accumulateFPUInvalidOp();
+                return a; // ?
+            } else {
+                // TODO exception
+                psw.accumulateFPUDivByZero();
+                return a; // ?
+            }
+        }
+        float value = a / b;
+        commonFPUFlagsAndExceptions(a, b, value);
+        boolean zero = value == 0;
+        boolean sign = value < 0;
+        // TODO OF? CY?
+        psw.setZeroSignOveflowCarry(zero, sign, false, false);
+        return value;
+    }
+
+    private int xb(int a) {
+        return extractU(a, 16, 16) | (extractU(a, 0, 8) << 8) | (extractU(a, 8, 8) >> 8);
+    }
+
+    private int xh(int a) {
+        return (extractU(a, 16, 16) >> 16) | (extractU(a, 0, 16) << 16);
     }
 
     private int add(int a, int b) {

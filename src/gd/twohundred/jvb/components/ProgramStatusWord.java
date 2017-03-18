@@ -13,6 +13,12 @@ public class ProgramStatusWord {
     private static final int S_POS = 1;
     private static final int OV_POS = 2;
     private static final int CY_POS = 3;
+    private static final int FPR_POS = 4;
+    private static final int FUD_POS = 5;
+    private static final int FOV_POS = 6;
+    private static final int FZD_POS = 7;
+    private static final int FIV_POS = 8;
+    private static final int FRO_POS = 9;
     private static final int ID_POS = 11;
     private static final int AE_POS = 13;
     private static final int EP_POS = 14;
@@ -37,6 +43,9 @@ public class ProgramStatusWord {
         psw = maskedMerge(set, affected, psw);
     }
 
+    public void accumulateReservedUnderFlowOverflowPrecisionDegradation(boolean reservedArg, boolean underflow, boolean overflow, boolean precisionDegradation) {
+        psw |= intBit(FRO_POS, reservedArg) | intBit(FUD_POS, underflow) | intBit(FOV_POS, overflow) | intBit(FPR_POS, precisionDegradation);
+    }
 
     public void setInterruptDisable(boolean set) {
         psw = insert(set, ID_POS, psw);
@@ -88,5 +97,13 @@ public class ProgramStatusWord {
 
     public boolean getNP() {
         return testBit(psw, NP_POS);
+    }
+
+    public void accumulateFPUInvalidOp() {
+        psw |= intBit(FIV_POS);
+    }
+
+    public void accumulateFPUDivByZero() {
+        psw |= intBit(FZD_POS);
     }
 }

@@ -36,10 +36,8 @@ public class FormatVIIInstruction implements Instruction{
         return reg1;
     }
 
-
-
     public static FormatVIIInstruction decode(int firstHalf, int secondHalf) {
-        int subOp = extractU(secondHalf, SUB_OPCODE_POS, SUB_OPCODE_LEN);
+        int subOp = extractU(secondHalf, SUB_OPCODE_POS - 16, SUB_OPCODE_LEN);
         int reg1 = extractU(firstHalf, REG1_POS, REG1_LEN);
         int reg2 = extractU(firstHalf, REG2_POS, REG2_LEN);
         FormatVIIInstructionType type = FormatVIIInstructionType.decode(subOp);

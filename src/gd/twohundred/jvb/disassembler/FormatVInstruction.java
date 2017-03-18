@@ -64,7 +64,7 @@ public class FormatVInstruction implements Instruction {
             case MOVEA:
             case ORI:
             case XORI:
-                return String.format("%-8s r%d, r%d, %#04x", lowerType, reg2, reg1, imm);
+                return String.format("%-8s r%d, r%d, %#06x", lowerType, reg2, reg1, imm);
         }
         throw new RuntimeException("should not reach here");
     }

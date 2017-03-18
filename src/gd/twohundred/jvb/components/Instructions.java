@@ -68,6 +68,7 @@ public class Instructions {
     public static final int OP_RETI = 0b011001;
     public static final int OP_NOT = 0b001111;
     public static final int OP_ILL_1 = 0b110010;
+    public static final int OP_SUBOP = 0b111110;
 
     public static final int BCOND_BNE = 0b1010;
     public static final int BCOND_BL = 0b0001;
@@ -83,6 +84,18 @@ public class Instructions {
     public static final int BCOND_BN = 0b0100;
     public static final int BCOND_BP = 0b1100;
     public static final int BCOND_BH = 0b1011;
+
+    public static final int SUBOP_ADDF_S = 0b000100;
+    public static final int SUBOP_SUBF_S = 0b000101;
+    public static final int SUBOP_MULF_S = 0b000110;
+    public static final int SUBOP_DIVF_S = 0b000111;
+    public static final int SUBOP_CMPF_S = 0b000000;
+    public static final int SUBOP_CVT_WS = 0b000010;
+    public static final int SUBOP_CVT_SW = 0b000011;
+    public static final int SUBOP_REV = 0b001010;
+    public static final int SUBOP_XB = 0b001000;
+    public static final int SUBOP_XH = 0b001001;
+    public static final int SUBOP_MPYHW = 0b001100;
 
     public enum AccessWidth {
         Byte(java.lang.Byte.BYTES),

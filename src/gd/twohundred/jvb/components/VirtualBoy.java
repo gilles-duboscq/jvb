@@ -73,16 +73,23 @@ public class VirtualBoy implements Emulable {
 
     private static class InterruptChain {
         Interrupt head;
-        Interrupt tail;
         void append(Interrupt i) {
-            if (tail == null) {
-                tail = i;
-                head = i;
-            } else {
-                tail.setNext(i);
-            }
-            while (tail.getNext() != null) {
-                tail = tail.getNext();
+            Interrupt inserting = i;
+            Interrupt previous = null;
+            Interrupt current = head;
+            while (inserting != null) {
+                while (current != null && i.compareTo(current) <= 0) {
+                    previous = current;
+                    current = current.getNext();
+                }
+                if (previous == null) {
+                    head = inserting;
+                } else {
+                    previous.setNext(inserting);
+                }
+                Interrupt next = inserting.getNext();
+                inserting.setNext(current);
+                inserting = next;
             }
         }
     }
@@ -117,7 +124,6 @@ public class VirtualBoy implements Emulable {
     }
 
     private boolean processInterrupt(Interrupt interrupt) {
-        // FIXME: sort interrupts properly!
         if (interrupt.getType().isMaskable()) {
             if (executionMode != ExecutionMode.Normal) {
                 return false;

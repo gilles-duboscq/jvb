@@ -592,25 +592,29 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     break;
                 }
                 case OP_DIVU: {
-                    cycles = 36;
                     long divisor = getRegister(reg1) & 0xffff_ffffL;
                     if (divisor == 0) {
-                        throw new RuntimeException("Impl Zero Division exception");
+                        cycles = 3;
+                        pendingInterrupt = new SimpleInterrupt(Interrupt.InterruptType.ZeroDivision);
+                    } else {
+                        cycles = 36;
+                        long dividend = getRegister(reg2) & 0xffff_ffffL;
+                        setRegister(30, (int) (dividend % divisor)); // mod or rem?
+                        setRegister(reg2, divu(dividend, divisor));
                     }
-                    long dividend = getRegister(reg2) & 0xffff_ffffL;
-                    setRegister(30, (int) (dividend % divisor)); // mod or rem?
-                    setRegister(reg2, divu(dividend, divisor));
                     break;
                 }
                 case OP_DIV: {
-                    cycles = 38;
                     int divisor = getRegister(reg1);
                     if (divisor == 0) {
-                        throw new RuntimeException("Impl Zero Division exception");
+                        cycles = 3;
+                        pendingInterrupt = new SimpleInterrupt(Interrupt.InterruptType.ZeroDivision);
+                    } else {
+                        cycles = 38;
+                        int dividend = getRegister(reg2);
+                        setRegister(30, dividend % divisor); // mod or rem?
+                        setRegister(reg2, div(dividend, divisor));
                     }
-                    int dividend = getRegister(reg2);
-                    setRegister(30, dividend % divisor); // mod or rem?
-                    setRegister(reg2, div(dividend, divisor));
                     break;
                 }
                 case OP_RETI: {

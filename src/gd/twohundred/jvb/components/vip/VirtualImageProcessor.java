@@ -96,7 +96,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         return frame;
     }
 
-    static final int FRAME_PERIOD = (int) (CPU.CLOCK_HZ / Screen.DISPLAY_REFRESH_RATE_HZ);
+    static final long FRAME_PERIOD = CPU.CLOCK_HZ / Screen.DISPLAY_REFRESH_RATE_HZ;
 
     // Fake value
     static final int DRAWING_INIT_CYCLES = 300;
@@ -105,9 +105,9 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private static final long FOUR_COLUMN_UNIT_TIME_NS = 200;
     private static final long COLUMN_UNIT_TIME_NS = FOUR_COLUMN_UNIT_TIME_NS / 4;
     private static final long MAX_FRAME_BUFFER_DISPLAY_TIME_NS = MAX_COLUMN_TIME * COLUMN_UNIT_TIME_NS * Screen.WIDTH;
-    private static final int MAX_FRAME_BUFFER_DISPLAY_CYCLES = (int) (CPU.CLOCK_HZ * MAX_FRAME_BUFFER_DISPLAY_TIME_NS / NANOS_PER_SECOND);
-    private static final int RIGH_DISPLAY_START_CYCLE = FRAME_PERIOD - (10 + MAX_FRAME_BUFFER_DISPLAY_CYCLES);
-    private static final int LEFT_DISPLAY_START_CYCLE = RIGH_DISPLAY_START_CYCLE - (10 + MAX_FRAME_BUFFER_DISPLAY_CYCLES);
+    private static final long MAX_FRAME_BUFFER_DISPLAY_CYCLES = CPU.CLOCK_HZ * MAX_FRAME_BUFFER_DISPLAY_TIME_NS / NANOS_PER_SECOND;
+    private static final long RIGHT_DISPLAY_START_CYCLE = FRAME_PERIOD - (10 + MAX_FRAME_BUFFER_DISPLAY_CYCLES);
+    private static final long LEFT_DISPLAY_START_CYCLE = RIGHT_DISPLAY_START_CYCLE - (10 + MAX_FRAME_BUFFER_DISPLAY_CYCLES);
 
     static final int DRAWING_WINDOW_COUNT = 32;
     static final int DRAWING_BLOCK_HEIGHT = 8;
@@ -115,8 +115,8 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
 
     private final RenderedFrame leftRendered = new RenderedFrame();
     private final RenderedFrame rightRendered = new RenderedFrame();
-    private int displayCycles;
-    private int nextWindowCycles;
+    private long displayCycles;
+    private long nextWindowCycles;
     private long frameCounter;
     private DrawingState drawingState;
     private DisplayState displayState;
@@ -144,10 +144,10 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     }
 
     @Override
-    public void tickExact(int cycles) {
-        int cyclesToConsume = cycles;
+    public void tickExact(long cycles) {
+        long cyclesToConsume = cycles;
         if (displayState == DisplayState.Finished) {
-            int idleCycles = min(cyclesToConsume, FRAME_PERIOD - displayCycles);
+            long idleCycles = min(cyclesToConsume, FRAME_PERIOD - displayCycles);
             cyclesToConsume -= idleCycles;
             displayCycles += idleCycles;
         }
@@ -173,11 +173,11 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
                 screen.update(leftRendered, rightRendered, debugDrawer);
                 controlRegs.setDisplayingFrameBufferPair(currentFbPair(), true, false);
                 interrupt(VIPInterruptType.LeftDisplayFinished);
-            } else if (displayCycles == RIGH_DISPLAY_START_CYCLE) {
+            } else if (displayCycles == RIGHT_DISPLAY_START_CYCLE) {
                 displayState = RightFrameBuffer;
                 controlRegs.setDisplayingFrameBufferPair(currentFbPair(), false, true);
                 renderFrameBuffer(currentRight, rightRendered);
-            } else if (displayCycles == RIGH_DISPLAY_START_CYCLE + MAX_FRAME_BUFFER_DISPLAY_CYCLES) {
+            } else if (displayCycles == RIGHT_DISPLAY_START_CYCLE + MAX_FRAME_BUFFER_DISPLAY_CYCLES) {
                 screen.update(leftRendered, rightRendered, debugDrawer);
                 controlRegs.setDisplayingFrameBufferPair(currentFbPair(), false, false);
                 interrupt(VIPInterruptType.RightDisplayFinished);

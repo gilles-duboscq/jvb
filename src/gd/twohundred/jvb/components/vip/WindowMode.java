@@ -67,9 +67,9 @@ public abstract class WindowMode {
 
     public abstract int getId();
 
-    public int cycles() {
+    public long cycles() {
         // Fake values
-        int drawingPeriod = VirtualImageProcessor.FRAME_PERIOD / 4;
+        long drawingPeriod = VirtualImageProcessor.FRAME_PERIOD / 4;
         return (drawingPeriod - VirtualImageProcessor.DRAWING_INIT_CYCLES) / (VirtualImageProcessor.DRAWING_WINDOW_COUNT * VirtualImageProcessor.DRAWING_BLOCK_COUNT);
     }
 }

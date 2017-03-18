@@ -2,10 +2,10 @@ package gd.twohundred.jvb.components.interfaces;
 
 public interface ExactlyEmulable extends Emulable {
     @Override
-    default int tick(int cycles) {
+    default long tick(long cycles) {
         tickExact(cycles);
         return cycles;
     }
 
-    void tickExact(int cycles);
+    void tickExact(long cycles);
 }

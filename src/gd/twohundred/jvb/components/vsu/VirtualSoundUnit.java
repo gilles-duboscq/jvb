@@ -128,7 +128,7 @@ public class VirtualSoundUnit implements ExactlyEmulable, WriteOnlyMemory {
     }
 
     @Override
-    public void tickExact(int cycles) {
+    public void tickExact(long cycles) {
         // TODO
     }
 }

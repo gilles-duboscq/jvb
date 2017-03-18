@@ -44,13 +44,13 @@ public class VirtualBoy implements Emulable {
     }
 
     @Override
-    public int tick(int targetCycles) {
+    public long tick(long targetCycles) {
         if (isHalted()) {
             return targetCycles;
         }
-        int cycles = 0;
+        long cycles = 0;
         while (cycles < targetCycles) {
-            int actualCycles = cpu.tick(targetCycles);
+            long actualCycles = cpu.tick(targetCycles);
             timer.tickExact(actualCycles);
             vip.tickExact(actualCycles);
             vsu.tickExact(actualCycles);

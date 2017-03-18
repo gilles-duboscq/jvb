@@ -285,7 +285,7 @@ public class Debugger implements ExactlyEmulable, Logger {
     }
 
     @Override
-    public void tickExact(int cycles) {
+    public void tickExact(long cycles) {
         inputTick();
         cyclesDisplay += cycles;
         if (forceRefresh || cyclesDisplay >= DISPLAY_REFRESH_PERIOD) {

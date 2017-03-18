@@ -20,8 +20,8 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
     private static final double SMALL_INTERVAL_MICROS_PER_CYCLE = 20.0;
 
     private static final int MICROS_PER_SECOND = 1_000_000;
-    private static final int LARGE_INTERVAL_PERIOD = (int) (CPU.CLOCK_HZ * LARGE_INTERVAL_MICROS_PER_CYCLE / MICROS_PER_SECOND);
-    private static final int SMALL_INTERVAL_PERIOD = (int) (CPU.CLOCK_HZ * SMALL_INTERVAL_MICROS_PER_CYCLE / MICROS_PER_SECOND);
+    private static final long LARGE_INTERVAL_PERIOD = (long) (CPU.CLOCK_HZ * LARGE_INTERVAL_MICROS_PER_CYCLE / MICROS_PER_SECOND);
+    private static final long SMALL_INTERVAL_PERIOD = (long) (CPU.CLOCK_HZ * SMALL_INTERVAL_MICROS_PER_CYCLE / MICROS_PER_SECOND);
 
     private static final int LOW_REGISTER = 0;
     private static final int HIGH_REGISTER = 4;
@@ -39,7 +39,7 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
 
     private short counter;
     private short reloadValue;
-    private int cycleCouter;
+    private long cycleCounter;
     private boolean interruptRaised;
 
     public HardwareTimer(Logger logger) {
@@ -102,7 +102,7 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
         return testBit(status, ENABLE_INT_POS);
     }
 
-    private int getPeriod() {
+    private long getPeriod() {
         return testBit(status, INTERVAL_POS) ? SMALL_INTERVAL_PERIOD : LARGE_INTERVAL_PERIOD;
     }
 
@@ -115,14 +115,14 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
     }
 
     @Override
-    public void tickExact(int cycles) {
+    public void tickExact(long cycles) {
         if (isTimerEnabled()) {
-            int period = getPeriod();
-            int cyclesToConsume = cycles;
+            long period = getPeriod();
+            long cyclesToConsume = cycles;
             while (cyclesToConsume > 0) {
-                int remaining = period - cycleCouter;
+                long remaining = period - cycleCounter;
                 if (cyclesToConsume >= remaining) {
-                    cycleCouter = 0;
+                    cycleCounter = 0;
                     counter--;
                     if (counter == 0) {
                         status |= intBit(ZERO_POS);
@@ -133,7 +133,7 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
                     }
                     cyclesToConsume -= remaining;
                 } else {
-                    cycleCouter += cyclesToConsume;
+                    cycleCounter += cyclesToConsume;
                     break;
                 }
             }

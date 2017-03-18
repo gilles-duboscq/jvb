@@ -303,7 +303,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
     public static final boolean DEBUG_CC = false;
 
     @Override
-    public int tick(int targetCycles) {
+    public long tick(long targetCycles) {
         if (this.debugger != null) {
             this.debugger.onExec(pc);
         }

@@ -60,7 +60,7 @@ public class Main {
                 long dCycles = dt * CPU.CLOCK_HZ / Utils.NANOS_PER_SECOND;
                 long missingCycles = dCycles - cycles;
 
-                int cyclesDone = virtualBoy.tick((int) missingCycles);
+                long cyclesDone = virtualBoy.tick(missingCycles);
                 cycles += cyclesDone;
                 LockSupport.parkNanos(100000);
             }

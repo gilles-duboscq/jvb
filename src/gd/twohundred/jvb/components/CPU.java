@@ -159,16 +159,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
         this.logger = logger;
     }
 
-    static {
-        PrintStream out = System.out;
-        try {
-            out = new PrintStream("trace.txt");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        debugInstOut = out;
-    }
-
     private void setRegister(int r, int value) {
         if (r != 0) {
             registers[r] = value;
@@ -298,8 +288,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
         chcw = 0xdeadbeef;
     }
 
-    public static final boolean DEBUG_INST = false;
-    public static final PrintStream debugInstOut;
     public static final boolean DEBUG_CC = false;
 
     @Override
@@ -317,100 +305,58 @@ public class CPU implements Emulable, Resetable, InterruptSource {
             switch (cond) {
                 case BCOND_BR: {
                     branchTaken = true;
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x br     %s0x%x", pc, signStr(disp9), abs(disp9)));
-                    }
                     break;
                 }
                 case BCOND_BNE: {
                     branchTaken = !psw.getZ();
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x bne    %s0x%x", pc, signStr(disp9), abs(disp9)));
-                    }
                     break;
                 }
                 case BCOND_BE: {
                     branchTaken = psw.getZ();
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x be     %s0x%x", pc, signStr(disp9), abs(disp9)));
-                    }
                     break;
                 }
                 case BCOND_BNH: {
                     branchTaken = psw.getZ() || psw.getCY();
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x bnh    %s0x%x", pc, signStr(disp9), abs(disp9)));
-                    }
                     break;
                 }
                 case BCOND_BH: {
                     branchTaken = !(psw.getZ() || psw.getCY());
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x bh     %s0x%x", pc, signStr(disp9), abs(disp9)));
-                    }
                     break;
                 }
                 case BCOND_BL: {
                     branchTaken = psw.getCY();
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x bl     %s0x%x", pc, signStr(disp9), abs(disp9)));
-                    }
                     break;
                 }
                 case BCOND_BNL: {
                     branchTaken = !psw.getCY();
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x bnl    %s0x%x", pc, signStr(disp9), abs(disp9)));
-                    }
                     break;
                 }
                 case BCOND_BLT: {
                     branchTaken = psw.getS() ^ psw.getOV();
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x blt    %s0x%x", pc, signStr(disp9), abs(disp9)));
-                    }
                     break;
                 }
                 case BCOND_BLE: {
                     branchTaken = (psw.getS() ^ psw.getOV()) || psw.getZ();
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x ble    %s0x%x", pc, signStr(disp9), abs(disp9)));
-                    }
                     break;
                 }
                 case BCOND_BGT: {
                     branchTaken = !((psw.getS() ^ psw.getOV()) || psw.getZ());
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x bgt    %s0x%x", pc, signStr(disp9), abs(disp9)));
-                    }
                     break;
                 }
                 case BCOND_BGE: {
                     branchTaken = !(psw.getS() ^ psw.getOV());
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x bge    %s0x%x", pc, signStr(disp9), abs(disp9)));
-                    }
                     break;
                 }
                 case BCOND_NOP: {
                     branchTaken = false;
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x nop", pc));
-                    }
                     break;
                 }
                 case BCOND_BN: {
                     branchTaken = psw.getS();
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x bn     %s0x%x", pc, signStr(disp9), abs(disp9)));
-                    }
                     break;
                 }
                 case BCOND_BP: {
                     branchTaken = !psw.getS();
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x bp     %s0x%x", pc, signStr(disp9), abs(disp9)));
-                    }
                     break;
                 }
                 default:
@@ -430,126 +376,78 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     int second = bus.getHalfWord(pc + 2);
                     nextPC += 2;
                     setRegister(reg2, getRegister(reg1) + signExtend(second, 16));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x movea  0x%04x, r%d, r%d", pc, second, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_MOVHI: {
                     int second = bus.getHalfWord(pc + 2);
                     nextPC += 2;
                     setRegister(reg2, getRegister(reg1) + (second << 16));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x movhi  0x%04x, r%d, r%d", pc, second, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_ADDI: {
                     int second = bus.getHalfWord(pc + 2);
                     nextPC += 2;
                     setRegister(reg2, add(getRegister(reg1), signExtend(second, 16)));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x addi   0x%04x, r%d, r%d", pc, second, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_AND_IMM: {
                     int second = bus.getHalfWord(pc + 2);
                     nextPC += 2;
                     setRegister(reg2, andi(getRegister(reg1), second));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x andi   0x%04x, r%d, r%d", pc, second, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_OR_IMM: {
                     int second = bus.getHalfWord(pc + 2);
                     nextPC += 2;
                     setRegister(reg2, or(getRegister(reg1), second));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x ori    0x%04x, r%d, r%d", pc, second, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_XOR_IMM: {
                     int second = bus.getHalfWord(pc + 2);
                     nextPC += 2;
                     setRegister(reg2, xor(getRegister(reg2), second));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x xori   0x%04x, r%d", pc, imm5, reg2));
-                    }
                     break;
                 }
                 case OP_JMP: {
                     cycles = 3;
                     nextPC = getRegister(reg1);
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x jmp    r%d", pc, reg1));
-                    }
                     break;
                 }
                 case OP_ADD_IMM: {
                     int intValue = add(getRegister(reg2), signExtend(imm5, IMM5_LEN));
                     setRegister(reg2, intValue);
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x add    %d, r%d, r%d", pc, signExtend(imm5, IMM5_LEN), reg2, reg2));
-                    }
                     break;
                 }
                 case OP_ADD_REG: {
                     setRegister(reg2, add(getRegister(reg2), getRegister(reg1)));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x add    r%d, r%d", pc, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_AND_REG: {
                     setRegister(reg2, and(getRegister(reg2), getRegister(reg1)));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x and    r%d, r%d", pc, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_LDSR: {
                     setSystemRegister(imm5, getRegister(reg2));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x ldsr   r%d, %s", pc, reg2, getSystemRegisterName(imm5)));
-                    }
                     break;
                 }
                 case OP_STSR: {
                     setRegister(reg2, getSystemRegister(imm5));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x ldsr   r%d, %s", pc, reg2, getSystemRegisterName(imm5)));
-                    }
                     break;
                 }
                 case OP_SEI: {
                     psw.setInterruptDisable(true);
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x sei", pc));
-                    }
                     break;
                 }
                 case OP_CLI: {
                     psw.setInterruptDisable(false);
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x sei", pc));
-                    }
                     break;
                 }
                 case OP_MOV_IMM: {
                     setRegister(reg2, signExtend(imm5, IMM5_LEN));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x mov    %d, r%d", pc, signExtend(imm5, IMM5_LEN), reg2));
-                    }
                     break;
                 }
                 case OP_MOV_REG: {
                     setRegister(reg2, getRegister(reg1));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x mov    r%d, r%d", pc, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_STB: {
@@ -558,9 +456,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     cycles = 4;
                     int disp16 = signExtend(second, 16);
                     bus.setByte(getRegister(reg1) + disp16, (byte) getRegister(reg2));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x st.b   r%d, %d[r%d]", pc, reg2, disp16, reg1));
-                    }
                     break;
                 }
                 case OP_STH: {
@@ -569,9 +464,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     cycles = 4;
                     int disp16 = signExtend(second, 16);
                     bus.setHalfWord(getRegister(reg1) + disp16, (short) getRegister(reg2));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x st.h   r%d, %d[r%d]", pc, reg2, disp16, reg1));
-                    }
                     break;
                 }
                 case OP_STW: {
@@ -580,9 +472,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     cycles = 4;
                     int disp16 = signExtend(second, 16);
                     bus.setWord(getRegister(reg1) + disp16, getRegister(reg2));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x st.w   r%d, %d[r%d]", pc, reg2, disp16, reg1));
-                    }
                     break;
                 }
                 case OP_OUTB: {
@@ -591,9 +480,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     cycles = 4;
                     int disp16 = signExtend(second, 16);
                     bus.setByte(getRegister(reg1) + disp16, (byte) getRegister(reg2));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x out.w  r%d, %d[r%d]", pc, reg2, disp16, reg1));
-                    }
                     break;
                 }
                 case OP_OUTH: {
@@ -602,9 +488,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     cycles = 4;
                     int disp16 = signExtend(second, 16);
                     bus.setHalfWord(getRegister(reg1) + disp16, (short) getRegister(reg2));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x out.w  r%d, %d[r%d]", pc, reg2, disp16, reg1));
-                    }
                     break;
                 }
                 case OP_OUTW: {
@@ -613,9 +496,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     cycles = 4;
                     int disp16 = signExtend(second, 16);
                     bus.setWord(getRegister(reg1) + disp16, getRegister(reg2));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x out.w  r%d, %d[r%d]", pc, reg2, disp16, reg1));
-                    }
                     break;
                 }
                 case OP_LDB: {
@@ -624,9 +504,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     cycles = 4;
                     int disp16 = signExtend(second, 16);
                     setRegister(reg2, signExtend(bus.getByte(getRegister(reg1) + disp16), Byte.SIZE));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x ld.b   %d[r%d], r%d", pc, disp16, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_LDH: {
@@ -635,9 +512,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     cycles = 4;
                     int disp16 = signExtend(second, 16);
                     setRegister(reg2, signExtend(bus.getHalfWord(getRegister(reg1) + disp16), Short.SIZE));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x ld.h   %d[r%d], r%d", pc, disp16, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_LDW: {
@@ -646,9 +520,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     cycles = 4;
                     int disp16 = signExtend(second, 16);
                     setRegister(reg2, bus.getWord(getRegister(reg1) + disp16));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x ld.w   %d[r%d], r%d", pc, disp16, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_INB: {
@@ -657,9 +528,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     cycles = 4;
                     int disp16 = signExtend(second, 16);
                     setRegister(reg2, zeroExtend(bus.getByte(getRegister(reg1) + disp16), Byte.SIZE));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x in.b   %d[r%d], r%d", pc, disp16, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_INH: {
@@ -668,9 +536,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     cycles = 4;
                     int disp16 = signExtend(second, 16);
                     setRegister(reg2, zeroExtend(bus.getHalfWord(getRegister(reg1) + disp16), Short.SIZE));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x in.h   %d[r%d], r%d", pc, disp16, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_INW: {
@@ -679,9 +544,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     cycles = 4;
                     int disp16 = signExtend(second, 16);
                     setRegister(reg2, bus.getWord(getRegister(reg1) + disp16));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x in.w   %d[r%d], r%d", pc, disp16, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_JAL: {
@@ -690,9 +552,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     nextPC = pc + disp26;
                     cycles = 3;
                     setRegister(LINK_REG, pc + 4);
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x jal    %s0x%x", pc, signStr(disp26), abs(disp26)));
-                    }
                     break;
                 }
                 case OP_JR: {
@@ -700,86 +559,50 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     int disp26 = signExtend(second | (reg1 << (16 + REG1_POS)) | (reg2 << (16 + REG2_POS)), DISP26_LEN);
                     nextPC = pc + disp26;
                     cycles = 3;
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x jr     %s0x%x", pc, signStr(disp26), abs(disp26)));
-                    }
                     break;
                 }
                 case OP_CMP_REG: {
                     sub(getRegister(reg2), getRegister(reg1));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x cmp    r%d, r%d", pc, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_CMP_IMM: {
                     sub(getRegister(reg2), signExtend(imm5, IMM5_LEN));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x cmp    %d, r%d", pc, signExtend(imm5, IMM5_LEN), reg2));
-                    }
                     break;
                 }
                 case OP_SUB: {
                     setRegister(reg2, sub(getRegister(reg2), getRegister(reg1)));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x sub    r%d, r%d", pc, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_XOR_REG: {
                     setRegister(reg2, xor(getRegister(reg2), getRegister(reg1)));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x xor    r%d, r%d", pc, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_OR_REG: {
                     setRegister(reg2, or(getRegister(reg2), getRegister(reg1)));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x or     r%d, r%d", pc, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_SHL_IMM: {
                     setRegister(reg2, shl(getRegister(reg2), imm5));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x shl    %d, r%d", pc, imm5, reg2));
-                    }
                     break;
                 }
                 case OP_SHL_REG: {
                     setRegister(reg2, shl(getRegister(reg2), getRegister(reg1) & 0x1f));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x shl    r%d, r%d", pc, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_SHR_IMM: {
                     setRegister(reg2, shr(getRegister(reg2), imm5));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x shr    %d, r%d", pc, imm5, reg2));
-                    }
                     break;
                 }
                 case OP_SAR_IMM: {
                     setRegister(reg2, sar(getRegister(reg2), imm5));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x sar    %d, r%d", pc, imm5, reg2));
-                    }
                     break;
                 }
                 case OP_SAR_REG: {
                     setRegister(reg2, sar(getRegister(reg2), getRegister(reg1) & 0x1f));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x sar    r%d, r%d", pc, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_NOT: {
                     setRegister(reg2, not(getRegister(reg1)));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x not    r%d, r%d", pc, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_MULU: {
@@ -787,9 +610,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     long full = mul(getRegister(reg2) & 0xffff_ffffL, getRegister(reg1) & 0xffff_ffffL);
                     setRegister(30, (int) (full >> 32));
                     setRegister(reg2, (int) full);
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x mul    r%d, r%d", pc, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_MUL: {
@@ -797,9 +617,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     long full = mul(getRegister(reg2), getRegister(reg1));
                     setRegister(30, (int) (full >> 32));
                     setRegister(reg2, (int) full);
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x mul    r%d, r%d", pc, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_DIVU: {
@@ -811,9 +628,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     long dividend = getRegister(reg2) & 0xffff_ffffL;
                     setRegister(30, (int) (dividend % divisor)); // mod or rem?
                     setRegister(reg2, divu(dividend, divisor));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x divu   r%d, r%d", pc, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_DIV: {
@@ -825,9 +639,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     int dividend = getRegister(reg2);
                     setRegister(30, dividend % divisor); // mod or rem?
                     setRegister(reg2, div(dividend, divisor));
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x div    r%d, r%d", pc, reg1, reg2));
-                    }
                     break;
                 }
                 case OP_RETI: {
@@ -838,9 +649,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     } else {
                         nextPC = eipc;
                         psw.set(eipsw);
-                    }
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x reti", pc));
                     }
                     break;
                 }
@@ -853,9 +661,6 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                 }
                 case OP_ILL_1: {
                     logger.warning(Logger.Component.CPU, "Illegal instruction @ %#08x!", pc);
-                    if (DEBUG_INST) {
-                        debugInstOut.println(String.format("%08x illegal! 0b%s", pc, toBinary(opcode, OPCODE_LEN)));
-                    }
                     pendingInterrupt = new SimpleInterrupt(Interrupt.InterruptType.IllegalOpcode);
                     break;
                 }

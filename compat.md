@@ -1,14 +1,17 @@
 TODO:
-* VIP fixes with vb_test_2
-* FPU
+* Fix affine mode
+* Test line shift mode
 * VSU
+* Fix exceptions
+* BitString
+* General CPU completeness pass
 
 
 | Title | Notes
 | --- | ---
 | 3D Tetris (U) | VSU
-| affine_demo_1 | FPU, Affine Window mode
-| affine_demo_2 | FPU, Affine Window mode
+| affine_demo_1 | Glitchy (affine computation problem + read from uninitialized?)
+| affine_demo_2 | ✓
 | Blox V1.0 by KR155E (PD) | Too fast, some missing graphics?
 | Blox V1.1 by KR155E (PD) | VSU
 | Bound High! (JU) | Need to get ROM
@@ -33,14 +36,14 @@ TODO:
 | Nester's Funky Bowling (U) [a1] | bitstring
 | Nester's Funky Bowling (U) | bitstring
 | OBJ Pointer Demo by Dan Bergman (PD) | ✓
-| Panic Bomber (J) | FPU
-| Panic Bomber (U) | FPU
+| Panic Bomber (J) | VSU
+| Panic Bomber (U) | VSU
 | pong | nothing happens
 | Reality Boy Demo 1 (PD) | ✓
 | Reality Boy Demo 2 (PD) | Link
 | Red Alarm (J) | VSU
 | Red Alarm (U) | VSU
-| Scaling Demo by Parasyte (PD) | FPU, Affine Window mode
+| Scaling Demo by Parasyte (PD) | Glitchy (affine mode problems), Div by Zero exception
 | SD Gundam Dimension War (J) | Need to get ROM
 | Simon by Pat Daderko (PD) | ✓
 | Space Invaders: Virtual Collection (J) | Need to get ROM
@@ -52,7 +55,7 @@ TODO:
 | Tic Tac Toe by Pat Daderko (PD) | Link
 | Tron VB by Pat Daderko (PD) | Link
 | VB Rocks! Demo by KR155E (PD) | Displays dead data from fb
-| vb_test_2 | OOB char switches window mode? FPU for obj mode. FPU, Affine & Line shift modes.
+| vb_test_2 | Changing OOB char affects other fields
 | VeeBee Cursor Demo by David Williamson (PD) | Displays dead data from fb
 | Vertical Force (J) | VSU
 | Vertical Force (U) | VSU
@@ -63,7 +66,7 @@ TODO:
 | Virtual Fishing (J) | VSU
 | Virtual Lab (J) | Need to get ROM 
 | Virtual League Baseball (U) [a1] | Nothing happens?
-| Virtual League Baseball (U) | FPU?
+| Virtual League Baseball (U) | illegal op?
 | Virtual Pong (PD) | Nothing happens?
 | Virtual Pro Yakyuu '95 (J) | Nothing happens?
 | V Tetris (J) | VSU

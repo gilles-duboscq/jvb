@@ -40,6 +40,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
 
 
     private final Screen screen;
+    private final Logger logger;
     private final FrameBuffer leftFb0 = new FrameBuffer(LEFT_FRAMEBUFFER_0_START);
     private final FrameBuffer leftFb1 = new FrameBuffer(LEFT_FRAMEBUFFER_1_START);
     private final FrameBuffer rightFb0 = new FrameBuffer(RIGHT_FRAMEBUFFER_0_START);
@@ -64,6 +65,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
 
     public VirtualImageProcessor(Screen screen, Logger logger) {
         this.screen = screen;
+        this.logger = logger;
         for (int i = 0; i < WINDOW_ATTRIBUTE_COUNT; i++) {
             windowAttributes[i] = new WindowAttributes(i, logger);
         }
@@ -435,5 +437,9 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             }
             window.getMode().drawDebug(window, this, g, scale);
         }
+    }
+
+    Logger getLogger() {
+        return logger;
     }
 }

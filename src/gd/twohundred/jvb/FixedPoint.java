@@ -25,4 +25,24 @@ public class FixedPoint {
     public long roundToLong() {
         return value >> shift;
     }
+
+    @Override
+    public String toString() {
+        long positiveValue = value;
+        if (positiveValue < 0) {
+            positiveValue = -positiveValue;
+        }
+        double fractional = 0;
+        double weight = 1.0 / 2.0;
+        long v = positiveValue << Long.SIZE - shift;
+        for (int i = 0; i < shift; i++) {
+            if (v < 0) {
+                fractional += weight;
+            }
+            weight /= 2.0;
+            v <<= 1;
+        }
+        assert fractional < 1.0;
+        return (value < 0 ? "-" : "") + Long.toString(positiveValue >> shift) + Double.toString(fractional).substring(1);
+    }
 }

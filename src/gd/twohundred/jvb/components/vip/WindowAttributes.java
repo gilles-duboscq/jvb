@@ -12,20 +12,33 @@ import static gd.twohundred.jvb.Utils.testBit;
 import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.WINDOW_ATTRIBUTES_START;
 
 public class WindowAttributes implements ReadWriteMemory, Resetable {
-    public static final int SIZE = 32;
+    public static final int SIZE = 16 * Short.BYTES;
 
-    private static final int FLAGS_START = 0x00;
-    private static final int X_START = 0x02;
-    private static final int PARALLAX_START = 0x04;
-    private static final int Y_START = 0x06;
-    private static final int BACKGROUND_X_START = 0x08;
-    private static final int BACKGROUND_PARALLAX_START = 0x0a;
-    private static final int BACKGROUND_Y_START = 0x0c;
-    private static final int WIDTH_START = 0x0e;
-    private static final int HEIGHT_START = 0x10;
-    private static final int PARAMETER_INDEX_START = 0x12;
-    private static final int OOB_CHARACTER_START = 0x14;
-    private static final int SCRATCH_START = 0x16;
+    private static final int FLAGS_OFFSET_SHORTS = 0;
+    private static final int X_OFFSET_SHORTS = 1;
+    private static final int PARALLAX_OFFSET_SHORTS = 2;
+    private static final int Y_OFFSET_SHORTS = 3;
+    private static final int BACKGROUND_X_OFFSET_SHORTS = 4;
+    private static final int BACKGROUND_PARALLAX_OFFSET_SHORTS = 5;
+    private static final int BACKGROUND_Y_OFFSET_SHORTS = 6;
+    private static final int WIDTH_OFFSET_SHORTS = 7;
+    private static final int HEIGHT_OFFSET_SHORTS = 8;
+    private static final int PARAMETER_INDEX_OFFSET_SHORTS = 9;
+    private static final int OOB_CHARACTER_OFFSET_SHORTS = 10;
+    private static final int SCRATCH_OFFSET_SHORTS = 11;
+
+    private static final int FLAGS_START = FLAGS_OFFSET_SHORTS * Short.BYTES;
+    private static final int X_START = X_OFFSET_SHORTS * Short.BYTES;
+    private static final int PARALLAX_START = PARALLAX_OFFSET_SHORTS * Short.BYTES;
+    private static final int Y_START = Y_OFFSET_SHORTS * Short.BYTES;
+    private static final int BACKGROUND_X_START = BACKGROUND_X_OFFSET_SHORTS * Short.BYTES;
+    private static final int BACKGROUND_PARALLAX_START = BACKGROUND_PARALLAX_OFFSET_SHORTS * Short.BYTES;
+    private static final int BACKGROUND_Y_START = BACKGROUND_Y_OFFSET_SHORTS * Short.BYTES;
+    private static final int WIDTH_START = WIDTH_OFFSET_SHORTS * Short.BYTES;
+    private static final int HEIGHT_START = HEIGHT_OFFSET_SHORTS * Short.BYTES;
+    private static final int PARAMETER_INDEX_START = PARAMETER_INDEX_OFFSET_SHORTS * Short.BYTES;
+    private static final int OOB_CHARACTER_START = OOB_CHARACTER_OFFSET_SHORTS * Short.BYTES;
+    private static final int SCRATCH_START = SCRATCH_OFFSET_SHORTS * Short.BYTES;
 
     private static final int FLAGS_BASE_SEGMENT_POS = 0;
     private static final int FLAGS_BASE_SEGMENT_LEN = 4;

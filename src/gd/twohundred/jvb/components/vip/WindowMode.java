@@ -28,6 +28,8 @@ public abstract class WindowMode {
         throw new RuntimeException("NYI: " + id);
     }
 
+    public abstract String getShortName();
+
     public abstract void draw(WindowAttributes window, VirtualImageProcessor vip, boolean left);
 
     public void drawDebug(WindowAttributes window, VirtualImageProcessor vip, Graphics g, int scale) {

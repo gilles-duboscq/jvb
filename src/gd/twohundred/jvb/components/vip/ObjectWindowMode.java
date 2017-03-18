@@ -73,4 +73,9 @@ public class ObjectWindowMode extends WindowMode {
     public int getId() {
         return ID;
     }
+
+    @Override
+    public String getShortName() {
+        return "O";
+    }
 }

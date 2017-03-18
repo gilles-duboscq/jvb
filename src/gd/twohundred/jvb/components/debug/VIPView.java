@@ -134,9 +134,20 @@ public class VIPView implements View {
         }
     }
 
+    private class ModeColumn extends WindowAttributesColumn {
+        protected ModeColumn() {
+            super("Mode", 4);
+        }
+
+        @Override
+        protected void cell(AttributedStringBuilder asb, WindowAttributes attributes) {
+            asb.append(attributes.getMode().getShortName());
+        }
+    }
+
     private class WindowAttributesTable extends Table {
         private WindowAttributesTable(Terminal terminal) {
-            super("Windows", Arrays.asList(new IDColumn(), new StopColumn(), new XColumn(), new YColumn(), new WidthColumn(), new HeightColumn(), new BaseSegmentColumn()), terminal);
+            super("Windows", Arrays.asList(new IDColumn(), new StopColumn(), new ModeColumn(), new XColumn(), new YColumn(), new WidthColumn(), new HeightColumn(), new BaseSegmentColumn()), terminal);
         }
     }
 

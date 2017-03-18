@@ -18,4 +18,9 @@ public class LineShiftWindowMode extends BackgroundedWindowMode {
     public int getId() {
         return ID;
     }
+
+    @Override
+    public String getShortName() {
+        return "LS";
+    }
 }

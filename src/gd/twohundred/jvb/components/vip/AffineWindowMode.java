@@ -24,6 +24,11 @@ public class AffineWindowMode extends BackgroundedWindowMode {
     }
 
     @Override
+    public String getShortName() {
+        return "A";
+    }
+
+    @Override
     public int getBackgroundY(WindowAttributes window, VirtualImageProcessor vip, int x, int y, boolean left) {
         return getBackgroundPos(window, vip, x, y, left, BG_Y_INC_OFFSET_SHORTS, BG_Y_OFFSET_SHORTS);
     }

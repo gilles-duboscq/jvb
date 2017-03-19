@@ -27,6 +27,7 @@ import static gd.twohundred.jvb.components.Instructions.BCOND_BNL;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BP;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BR;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BLT;
+import static gd.twohundred.jvb.components.Instructions.BCOND_BV;
 import static gd.twohundred.jvb.components.Instructions.BCOND_NOP;
 import static gd.twohundred.jvb.components.Instructions.COND_LEN;
 import static gd.twohundred.jvb.components.Instructions.COND_POS;
@@ -357,6 +358,10 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                 }
                 case BCOND_BP: {
                     branchTaken = !psw.getS();
+                    break;
+                }
+                case BCOND_BV: {
+                    branchTaken = psw.getOV();
                     break;
                 }
                 default:

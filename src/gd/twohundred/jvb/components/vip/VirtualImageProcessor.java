@@ -359,6 +359,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     @Override
     public Interrupt raised() {
         if (interruptRaised) {
+            interruptRaised = false;
             return new SimpleInterrupt(Interrupt.InterruptType.VIP);
         }
         return null;

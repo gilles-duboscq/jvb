@@ -74,8 +74,7 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
 
     @Override
     public void reset() {
-        setControl((byte) 0x04);
-        hardwareReadBit = -1;
+        setControl((byte) 0x01); // 04??
         interruptRaised = false;
     }
 

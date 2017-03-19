@@ -84,6 +84,7 @@ public class Instructions {
     public static final int BCOND_BN = 0b0100;
     public static final int BCOND_BP = 0b1100;
     public static final int BCOND_BH = 0b1011;
+    public static final int BCOND_BV = 0b0000;
 
     public static final int SUBOP_ADDF_S = 0b000100;
     public static final int SUBOP_SUBF_S = 0b000101;

@@ -1,5 +1,7 @@
 TODO:
 * Test line shift mode
+* Fix VIP crashes
+* GamePad manual mode
 * VSU
 * Fix exceptions
 * BitString
@@ -8,12 +10,12 @@ TODO:
 
 | Title | Notes
 | --- | ---
-| 3D Tetris (U) | VSU
+| 3D Tetris (U) | Nothing happens? (VSU)
 | affine_demo_1 | ✓ (read from uninitialized?)
 | affine_demo_2 | ✓
 | Blox V1.0 by KR155E (PD) | Too fast, some missing graphics?
-| Blox V1.1 by KR155E (PD) | VSU
-| Bound High! (JU) | VSU
+| Blox V1.1 by KR155E (PD) | ✓ (VSU)
+| Bound High! (JU) | Various VIP glitches/issues (VSU)
 | Croach, The (PD) | Nothing happens?
 | Etch-A-Sketch by Pat Daderko (PD) | ✓
 | Framebuffer Drawing Demo by Pat Daderko (PD) | Strange band at the top
@@ -48,8 +50,8 @@ TODO:
 | Space Invaders: Virtual Collection (J) | Need to get ROM
 | Space Squash (J) | VSU
 | Super Fighter Demo by KR155E (PD) | Displays dead data from fb
-| Teleroboxer (JU) [T+Ger.4b_KR155E] | VSU
-| Teleroboxer (JU) | VSU
+| Teleroboxer (JU) [T+Ger.4b_KR155E] | Nothing happens? (VSU)
+| Teleroboxer (JU) | Nothing happens? (VSU)
 | T&E Virtual Golf (J) | Nothing happens?
 | Tic Tac Toe by Pat Daderko (PD) | Link
 | Tron VB by Pat Daderko (PD) | Link
@@ -59,14 +61,14 @@ TODO:
 | Vertical Force (J) | VSU
 | Vertical Force (U) | VSU
 | Virtual Bowling (J) | Need to get ROM 
-| Virtual Boy Wario Land (JU) | Glitchy instructions screen, does not start
-| Virtual-E Cursor Demo (PD) [a1] | Displays dead data from fb
+| Virtual Boy Wario Land (JU) | Nothing happens after instructions screen
+| Virtual-E Cursor Demo (PD) [a1] | Nothing happens?
 | Virtual-E Cursor Demo (PD) | Nothing happens?
-| Virtual Fishing (J) | VSU
+| Virtual Fishing (J) | Nothing happens?
 | Virtual Lab (J) | Need to get ROM 
-| Virtual League Baseball (U) [a1] | Nothing happens?
+| Virtual League Baseball (U) [a1] | GamePad used in manual mode in menu does not work
 | Virtual League Baseball (U) | illegal op?
 | Virtual Pong (PD) | Nothing happens?
-| Virtual Pro Yakyuu '95 (J) | Nothing happens?
-| V Tetris (J) | VSU
-| Waterworld (U) | VSU
+| Virtual Pro Yakyuu '95 (J) | Crashes when playing a ball
+| V Tetris (J) | VIP crash
+| Waterworld (U) | VIP crash

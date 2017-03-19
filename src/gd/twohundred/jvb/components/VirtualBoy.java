@@ -148,6 +148,7 @@ public class VirtualBoy implements Emulable {
             cpu.getBus().setWord(8, cpu.getPsw().getValue());
             executionMode = ExecutionMode.Halt;
         } else if (executionMode == ExecutionMode.Exception) {
+            logger.warning(Logger.Component.Interrupts, "Duplexed Exception! %s", interrupt);
             cpu.setFepc(cpu.getPc());
             cpu.setFepsw(cpu.getPsw().getValue());
             cpu.setFecc(interrupt.getExceptionCode());
@@ -157,6 +158,7 @@ public class VirtualBoy implements Emulable {
             cpu.setPc(InterruptType.DuplexedException.getHandlerAddress());
             executionMode = DuplexedException;
         } else {
+            logger.debug(Logger.Component.Interrupts, "Interrupt: %s", interrupt);
             cpu.setEipc(cpu.getPc());
             cpu.setEipsw(cpu.getPsw().getValue());
             cpu.setEicc(interrupt.getExceptionCode());

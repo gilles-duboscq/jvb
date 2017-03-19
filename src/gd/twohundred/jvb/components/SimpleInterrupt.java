@@ -29,4 +29,9 @@ public class SimpleInterrupt implements Interrupt {
     public void setNext(Interrupt next) {
         this.next = next;
     }
+
+    @Override
+    public String toString() {
+        return type.toString();
+    }
 }

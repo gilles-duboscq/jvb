@@ -37,9 +37,6 @@ public class Bus extends MappedModules {
     public static final boolean TRACE_BUS = false;
 
     protected MappedMemory getMappedModule(int address) {
-        if (TRACE_BUS) {
-            CPU.debugInstOut.printf("access 0x%08x%n", address);
-        }
         if (address >= CartridgeROM.START) {
             return rom;
         }

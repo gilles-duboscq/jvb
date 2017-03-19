@@ -36,7 +36,7 @@ public class VirtualBoy implements Emulable {
         this.logger = logger;
         timer = new HardwareTimer(logger);
         vip = new VirtualImageProcessor(screen, logger);
-        vsu = new VirtualSoundUnit();
+        vsu = new VirtualSoundUnit(logger);
         gamePad = new GamePad(inputProvider, logger);
         HardwareControlRegisters controlRegisters = new HardwareControlRegisters(timer, gamePad, logger);
         Bus bus = new Bus(rom, ram, vip, controlRegisters, vsu, logger);

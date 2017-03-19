@@ -1,10 +1,13 @@
 package gd.twohundred.jvb.components.vsu;
 
+import gd.twohundred.jvb.components.interfaces.Resetable;
 import gd.twohundred.jvb.components.interfaces.WriteOnlyMemory;
+
+import java.nio.ByteBuffer;
 
 import static gd.twohundred.jvb.Utils.mask;
 
-public class PCMWaveTable implements WriteOnlyMemory {
+public class PCMWaveTable implements WriteOnlyMemory, Resetable {
     public static final int SAMPLE_BIT_WIDTH = 6;
     private final int start;
     private final byte[] data = new byte[0x20];
@@ -36,5 +39,13 @@ public class PCMWaveTable implements WriteOnlyMemory {
     @Override
     public void setWord(int address, int value) {
         data[address / 4] = (byte) (value & mask(SAMPLE_BIT_WIDTH));
+    }
+
+    @Override
+    public void reset() {
+        ByteBuffer bb = ByteBuffer.wrap(data);
+        while (bb.hasRemaining()) {
+            bb.putInt(0xdeadbeef);
+        }
     }
 }

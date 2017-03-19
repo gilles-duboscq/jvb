@@ -1,5 +1,4 @@
 TODO:
-* Fix affine mode
 * Test line shift mode
 * VSU
 * Fix exceptions
@@ -14,7 +13,7 @@ TODO:
 | affine_demo_2 | ✓
 | Blox V1.0 by KR155E (PD) | Too fast, some missing graphics?
 | Blox V1.1 by KR155E (PD) | VSU
-| Bound High! (JU) | Need to get ROM
+| Bound High! (JU) | VSU
 | Croach, The (PD) | Nothing happens?
 | Etch-A-Sketch by Pat Daderko (PD) | ✓
 | Framebuffer Drawing Demo by Pat Daderko (PD) | Strange band at the top

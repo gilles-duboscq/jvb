@@ -458,7 +458,7 @@ public class Breakpoints implements View {
             return;
         }
         state = State.Idle;
-        int addr = Integer.valueOf(addressBuffer.toString(), 16);
+        int addr = (int) Long.parseLong(addressBuffer.toString(), 16);
         debugger.log(Logger.Component.Debugger, Logger.Level.Info, "Adding bp at %#010x", addr);
         if (addingExec) {
             execBreakpoints.add(new Breakpoint(addr, ""));

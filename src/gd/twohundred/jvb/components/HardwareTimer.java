@@ -61,6 +61,10 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
         switch (address) {
             case CONTROL_REGISTER:
                 return status & READ_MASK;
+            case LOW_REGISTER:
+                return reloadValue & 0xff;
+            case HIGH_REGISTER:
+                return (reloadValue >> 8) & 0xff;
         }
         throw new BusError(address, Unmapped);
     }

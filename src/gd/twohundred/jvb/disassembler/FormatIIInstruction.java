@@ -1,6 +1,7 @@
 package gd.twohundred.jvb.disassembler;
 
 import gd.twohundred.jvb.components.CPU;
+import gd.twohundred.jvb.disassembler.FormatIIIInstruction.FormatIIIInstructionType;
 
 import java.util.Arrays;
 
@@ -67,8 +68,16 @@ public class FormatIIInstruction implements Instruction {
             case RETI:
                 return lowerType;
             case TRAP:
-            case SETF:
                 return String.format("%-8s %d", lowerType, imm);
+            case SETF:
+                String conditionName;
+                if ((imm & 0b1111) != imm) {
+                    conditionName = "ILLEGAL";
+                } else {
+                    FormatIIIInstructionType bcond = FormatIIIInstructionType.decode(imm);
+                    conditionName = bcond.conditionName();
+                }
+                return String.format("%-8s r%d, %s", lowerType, reg2, conditionName);
             case LDSR:
             case STSR:
                 return String.format("%-8s r%d, %s", lowerType, reg2, CPU.getSystemRegisterName(imm));

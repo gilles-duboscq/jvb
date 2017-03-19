@@ -52,6 +52,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private final BackgroundSegmentsAndParametersRAM backgroundSegmentsAndWindowParameterTable =
             new BackgroundSegmentsAndParametersRAM();
     private final WarningMemory columnTable;
+    private final WarningMemory unusedBlock;
     private final ObjectAttributesMemory oam = new ObjectAttributesMemory();
 
     private final CharacterRAM characterRAM = new CharacterRAM();
@@ -73,6 +74,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             debugDrawer = this::drawDebug;
         }
         columnTable = new WarningMemory("Column Table", 0x0003DC00, 0x400, logger);
+        unusedBlock = new WarningMemory("Not used", 0x00060000, 0x18000, logger);
         controlRegs = new VIPControlRegisters(this, logger);
         controlRegsMirror = new LinearMemoryMirroring(controlRegs, 0x00040000, 0, 0x80);
     }
@@ -153,36 +155,34 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             cyclesToConsume -= idleCycles;
             displayCycles += idleCycles;
         }
-        if (!controlRegs.isDisplayEnabled()) {
-            displayCycles += cycles;
-            if (displayCycles >= FRAME_PERIOD) {
-                leftRendered.clear();
-                rightRendered.clear();
-                screen.update(leftRendered, rightRendered, debugDrawer);
-                displayCycles = 0;
-            }
-            return;
-        }
         while (cyclesToConsume > 0) {
             if (displayCycles >= FRAME_PERIOD) {
                 displayCycles = 0;
                 startDisplay();
             } else if (displayCycles == LEFT_DISPLAY_START_CYCLE) {
                 displayState = LeftFrameBuffer;
-                controlRegs.setDisplayingFrameBufferPair(currentFbPair(), true, true);
-                renderFrameBuffer(currentLeft, leftRendered);
+                if (controlRegs.isDisplayEnabled()) {
+                    controlRegs.setDisplayingFrameBufferPair(currentFbPair(), true, true);
+                    renderFrameBuffer(currentLeft, leftRendered);
+                } else {
+                    leftRendered.clear();
+                }
             } else if (displayCycles == LEFT_DISPLAY_START_CYCLE + MAX_FRAME_BUFFER_DISPLAY_CYCLES) {
                 screen.update(leftRendered, rightRendered, debugDrawer);
                 controlRegs.setDisplayingFrameBufferPair(currentFbPair(), true, false);
-                interrupt(VIPInterruptType.LeftDisplayFinished);
+                interrupt(VIPInterruptType.LeftDisplayFinished); // TODO should this fire when display is disabled?
             } else if (displayCycles == RIGHT_DISPLAY_START_CYCLE) {
                 displayState = RightFrameBuffer;
-                controlRegs.setDisplayingFrameBufferPair(currentFbPair(), false, true);
-                renderFrameBuffer(currentRight, rightRendered);
+                if (controlRegs.isDisplayEnabled()) {
+                    controlRegs.setDisplayingFrameBufferPair(currentFbPair(), false, true);
+                    renderFrameBuffer(currentRight, rightRendered);
+                } else {
+                    rightRendered.clear();
+                }
             } else if (displayCycles == RIGHT_DISPLAY_START_CYCLE + MAX_FRAME_BUFFER_DISPLAY_CYCLES) {
                 screen.update(leftRendered, rightRendered, debugDrawer);
                 controlRegs.setDisplayingFrameBufferPair(currentFbPair(), false, false);
-                interrupt(VIPInterruptType.RightDisplayFinished);
+                interrupt(VIPInterruptType.RightDisplayFinished); // TODO should this fire when display is disabled?
                 displayState = DisplayState.Finished;
             }
             if (drawingState != DrawingState.Finished) {
@@ -209,12 +209,20 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             controlRegs.setDrawingExceedsFramePeriod();
             interrupt(VIPInterruptType.DrawingExceedsFramePeriod);
         }
+        if (!controlRegs.isDisplayEnabled()) {
+            leftRendered.clear();
+            rightRendered.clear();
+            screen.update(leftRendered, rightRendered, debugDrawer);
+        }
         controlRegs.setDisplayProcStart();
         displayState = Waiting;
         controlRegs.setDisplayingFrameBufferPair(0, true, false);
         interrupt(VIPInterruptType.StartFrameProcessing);
-        if (controlRegs.isDrawingEnabled() && frameCounter % (controlRegs.getFrameRepeat() + 1) == 0) {
-            startDrawing();
+        if (frameCounter % (controlRegs.getFrameRepeat() + 1) == 0) {
+            swapBuffers();
+            if (controlRegs.isDrawingEnabled()) {
+                startDrawing();
+            }
         }
         frameCounter++;
     }
@@ -223,18 +231,20 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         interrupt(VIPInterruptType.StartDrawing);
         drawingState = DrawingState.Drawing;
         nextWindowCycles = DRAWING_INIT_CYCLES;
-        // swap buffers
+        setCurrentYBlock(0);
+        currentWindowId = DRAWING_WINDOW_COUNT - 1;
+    }
+
+    private void swapBuffers() {
         if (currentRight == rightFb0) {
             currentRight = rightFb1;
             currentLeft = leftFb1;
-            controlRegs.setDrawingFrameBufferPair(1, true);
+            controlRegs.setDrawingFrameBufferPair(1, controlRegs.isDrawingEnabled());
         } else {
             currentRight = rightFb0;
             currentLeft = leftFb0;
-            controlRegs.setDrawingFrameBufferPair(0, true);
+            controlRegs.setDrawingFrameBufferPair(0, controlRegs.isDrawingEnabled());
         }
-        setCurrentYBlock(0);
-        currentWindowId = DRAWING_WINDOW_COUNT - 1;
     }
 
     private void setCurrentYBlock(int block) {
@@ -381,7 +391,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             return characterRAM;
         }
         if (address >= 0x00060000) {
-            throw new BusError(address, Unimplemented); // not used ?
+            return unusedBlock;
         }
         if (address >= VIPControlRegisters.START) {
             return controlRegs;

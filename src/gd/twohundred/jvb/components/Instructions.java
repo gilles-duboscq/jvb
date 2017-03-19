@@ -52,6 +52,7 @@ public class Instructions {
     public static final int OP_SHL_IMM = 0b010100;
     public static final int OP_SHL_REG = 0b000100;
     public static final int OP_SHR_IMM = 0b010101;
+    public static final int OP_SHR_REG = 0b000101;
     public static final int OP_SAR_IMM = 0b010111;
     public static final int OP_SAR_REG = 0b000111;
     public static final int OP_ADD_REG = 0b000001;
@@ -69,6 +70,7 @@ public class Instructions {
     public static final int OP_NOT = 0b001111;
     public static final int OP_ILL_1 = 0b110010;
     public static final int OP_SUBOP = 0b111110;
+    public static final int OP_SETF = 0b010010;
 
     public static final int BCOND_BNE = 0b1010;
     public static final int BCOND_BL = 0b0001;

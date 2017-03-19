@@ -523,6 +523,18 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         logger.warning(Logger.Component.VIP, "writing VIP Control register as byte @ %#08x", address);
     }
 
+    @Override
+    public int getWord(int address) {
+        logger.warning(Logger.Component.VIP, "reading VIP Control register as word @ %#08x", address);
+        return getHalfWord(address);
+    }
+
+    @Override
+    public void setWord(int address, int value) {
+        logger.warning(Logger.Component.VIP, "writing VIP Control register as word @ %#08x", address);
+        setHalfWord(address, (short) value);
+    }
+
     public boolean isDisplayEnabled() {
         return testBit(displayStatus, DISPLAY_STATUS_DISPLAY_ENABLED_POS);
     }
@@ -546,15 +558,15 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         drawingStatus = (short) maskedMerge(set, affected, drawingStatus);
     }
 
-    public void setDisplayingFrameBufferPair(int pair, boolean left, boolean disaplaying) {
+    public void setDisplayingFrameBufferPair(int pair, boolean left, boolean displaying) {
         int affected = intBits(DISPLAY_STATUS_LEFT_FB_0_DISPLAYED_POS,
                 DISPLAY_STATUS_LEFT_FB_1_DISPLAYED_POS,
                 DISPLAY_STATUS_RIGHT_FB_0_DISPLAYED_POS,
                 DISPLAY_STATUS_RIGHT_FB_1_DISPLAYED_POS);
-        int set = intBit(DISPLAY_STATUS_LEFT_FB_0_DISPLAYED_POS, pair == 0 && left && disaplaying)
-                | intBit(DISPLAY_STATUS_LEFT_FB_1_DISPLAYED_POS, pair == 1 && left && disaplaying)
-                | intBit(DISPLAY_STATUS_RIGHT_FB_0_DISPLAYED_POS, pair == 0 && !left && disaplaying)
-                | intBit(DISPLAY_STATUS_RIGHT_FB_1_DISPLAYED_POS, pair == 1 && !left && disaplaying);
+        int set = intBit(DISPLAY_STATUS_LEFT_FB_0_DISPLAYED_POS, pair == 0 && left && displaying)
+                | intBit(DISPLAY_STATUS_LEFT_FB_1_DISPLAYED_POS, pair == 1 && left && displaying)
+                | intBit(DISPLAY_STATUS_RIGHT_FB_0_DISPLAYED_POS, pair == 0 && !left && displaying)
+                | intBit(DISPLAY_STATUS_RIGHT_FB_1_DISPLAYED_POS, pair == 1 && !left && displaying);
         displayStatus = (short) maskedMerge(set, affected, displayStatus);
     }
 

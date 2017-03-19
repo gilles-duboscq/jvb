@@ -37,6 +37,8 @@ import static gd.twohundred.jvb.components.Instructions.DISP9_POS;
 import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX;
 import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX_LEN;
 import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX_POS;
+import static gd.twohundred.jvb.components.Instructions.OP_SETF;
+import static gd.twohundred.jvb.components.Instructions.OP_SHR_REG;
 import static gd.twohundred.jvb.components.Instructions.SUBOP_ADDF_S;
 import static gd.twohundred.jvb.components.Instructions.IMM5_LEN;
 import static gd.twohundred.jvb.components.Instructions.OPCODE_LEN;
@@ -302,72 +304,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
         if (testBits(first, FORMAT_III_PREFIX, FORMAT_III_PREFIX_POS, FORMAT_III_PREFIX_LEN)) {
             int cond = extractU(first, COND_POS, COND_LEN);
             int disp9 = extractS(first, DISP9_POS, DISP9_LEN);
-            boolean branchTaken;
-            switch (cond) {
-                case BCOND_BR: {
-                    branchTaken = true;
-                    break;
-                }
-                case BCOND_BNE: {
-                    branchTaken = !psw.getZ();
-                    break;
-                }
-                case BCOND_BE: {
-                    branchTaken = psw.getZ();
-                    break;
-                }
-                case BCOND_BNH: {
-                    branchTaken = psw.getZ() || psw.getCY();
-                    break;
-                }
-                case BCOND_BH: {
-                    branchTaken = !(psw.getZ() || psw.getCY());
-                    break;
-                }
-                case BCOND_BL: {
-                    branchTaken = psw.getCY();
-                    break;
-                }
-                case BCOND_BNL: {
-                    branchTaken = !psw.getCY();
-                    break;
-                }
-                case BCOND_BLT: {
-                    branchTaken = psw.getS() ^ psw.getOV();
-                    break;
-                }
-                case BCOND_BLE: {
-                    branchTaken = (psw.getS() ^ psw.getOV()) || psw.getZ();
-                    break;
-                }
-                case BCOND_BGT: {
-                    branchTaken = !((psw.getS() ^ psw.getOV()) || psw.getZ());
-                    break;
-                }
-                case BCOND_BGE: {
-                    branchTaken = !(psw.getS() ^ psw.getOV());
-                    break;
-                }
-                case BCOND_NOP: {
-                    branchTaken = false;
-                    break;
-                }
-                case BCOND_BN: {
-                    branchTaken = psw.getS();
-                    break;
-                }
-                case BCOND_BP: {
-                    branchTaken = !psw.getS();
-                    break;
-                }
-                case BCOND_BV: {
-                    branchTaken = psw.getOV();
-                    break;
-                }
-                default:
-                    throw new RuntimeException("Unknown bcond: 0b" + toBinary(cond, COND_LEN));
-            }
-            if (branchTaken) {
+            if (testCondition(cond)) {
                 cycles = 3;
                 nextPC = pc + disp9;
             }
@@ -570,6 +507,10 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     setRegister(reg2, shr(getRegister(reg2), imm5));
                     break;
                 }
+                case OP_SHR_REG: {
+                    setRegister(reg2, shr(getRegister(reg2), getRegister(reg1) & 0x1f));
+                    break;
+                }
                 case OP_SAR_IMM: {
                     setRegister(reg2, sar(getRegister(reg2), imm5));
                     break;
@@ -640,6 +581,10 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     cycles = subop(reg2, reg1, subOp);
                     break;
                 }
+                case OP_SETF: {
+                    int cond = imm5;
+                    setRegister(reg2, testCondition(cond) ? 1 : 0);
+                }
                 case OP_ILL_1: {
                     logger.warning(Logger.Component.CPU, "Illegal instruction @ %#08x!", pc);
                     pendingInterrupt = new SimpleInterrupt(Interrupt.InterruptType.IllegalOpcode);
@@ -651,6 +596,58 @@ public class CPU implements Emulable, Resetable, InterruptSource {
         }
         pc = nextPC;
         return cycles;
+    }
+
+    private boolean testCondition(int cond) {
+        switch (cond) {
+            case BCOND_BR: {
+                return true;
+            }
+            case BCOND_BNE: {
+                return !psw.getZ();
+            }
+            case BCOND_BE: {
+                return psw.getZ();
+            }
+            case BCOND_BNH: {
+                return psw.getZ() || psw.getCY();
+            }
+            case BCOND_BH: {
+                return !(psw.getZ() || psw.getCY());
+            }
+            case BCOND_BL: {
+                return psw.getCY();
+            }
+            case BCOND_BNL: {
+                return !psw.getCY();
+            }
+            case BCOND_BLT: {
+                return psw.getS() ^ psw.getOV();
+            }
+            case BCOND_BLE: {
+                return (psw.getS() ^ psw.getOV()) || psw.getZ();
+            }
+            case BCOND_BGT: {
+                return !((psw.getS() ^ psw.getOV()) || psw.getZ());
+            }
+            case BCOND_BGE: {
+                return !(psw.getS() ^ psw.getOV());
+            }
+            case BCOND_NOP: {
+                return false;
+            }
+            case BCOND_BN: {
+                return psw.getS();
+            }
+            case BCOND_BP: {
+                return !psw.getS();
+            }
+            case BCOND_BV: {
+                return psw.getOV();
+            }
+            default:
+                throw new RuntimeException("Unknown bcond: 0b" + toBinary(cond, COND_LEN));
+        }
     }
 
     private int subop(int reg2, int reg1, int subOp) {

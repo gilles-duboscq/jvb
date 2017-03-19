@@ -83,5 +83,16 @@ public class FormatIIIInstruction implements Instruction {
             assert (cond & 0b1111) == cond;
             return TABLE[cond];
         }
+
+        public String conditionName() {
+            switch (this) {
+                case BR:
+                    return "T";
+                case NOP:
+                    return "F";
+                default:
+                    return name().substring(1);
+            }
+        }
     }
 }

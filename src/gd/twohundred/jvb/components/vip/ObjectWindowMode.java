@@ -1,5 +1,7 @@
 package gd.twohundred.jvb.components.vip;
 
+import gd.twohundred.jvb.components.interfaces.Screen;
+
 import static gd.twohundred.jvb.Utils.extractU;
 import static gd.twohundred.jvb.Utils.testBit;
 import static gd.twohundred.jvb.components.vip.VirtualImageProcessor.DRAWING_BLOCK_HEIGHT;
@@ -56,6 +58,9 @@ public class ObjectWindowMode extends WindowMode {
                     continue;
                 }
                 for (int characterX = 0; characterX < CharacterRAM.CHARACTER_WIDTH_PX; characterX++) {
+                    if (x + characterX + parallaxX >= Screen.WIDTH || x + characterX + parallaxX < 0) {
+                        continue;
+                    }
                     drawCharacterPixel(x + characterX + parallaxX, y + characterY, characterX, characterY, cell, objectPalettes, vip, left);
                 }
             }

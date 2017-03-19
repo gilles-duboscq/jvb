@@ -18,17 +18,17 @@
 | affine_demo_2 | ✓
 | Blox V1.0 by KR155E (PD) | Too fast, some missing graphics?
 | Blox V1.1 by KR155E (PD) | ✓ (VSU)
-| Bound High! (JU) | Various VIP glitches/issues: object mode crash, horizontal stripes (VSU)
+| Bound High! (JU) | Various VIP glitches/issues: horizontal stripes, glitchy game screens. CAXI (VSU)
 | Croach, The (PD) | Nothing happens (waiting for drawing status to change while drawing is disabled?)
 | Etch-A-Sketch by Pat Daderko (PD) | ✓
 | Framebuffer Drawing Demo by Pat Daderko (PD) | Strange band at the top
-| Galactic Pinball (JU) | VIP crash (object mode) (VSU)
+| Galactic Pinball (JU) | ✓ (VSU)
 | GLOW Demo by KR155E (PD) [a1] | ✓
 | GLOW Demo by KR155E (PD) | ✓
 | Golf (U) | Bitstring
 | Hello, World! Demo V1.0 by Amos Bieler (PD) | Displays dead data from fb (waiting for display *not* ready?)
 | Hello, World! Demo V1.1 by Amos Bieler (PD) | Displays dead data from fb (waiting for display *not* ready?)
-| Insmouse No Yakata (J) / Insane Mouse Mansion (J) | VIP crash
+| Insmouse No Yakata (J) / Insane Mouse Mansion (J) | Password screen does not display correctly
 | Jack Bros (J) | Glitchy/non functional instructions screen (VSU)
 | Jack Bros (U) | Glitchy/non functional instructions screen (VSU)
 | Mario Clash (JU) | Does not register key on instructions screen (manual gamepad reading?)
@@ -39,18 +39,18 @@
 | Nester's Funky Bowling (U) [a1] | bitstring
 | Nester's Funky Bowling (U) | bitstring
 | OBJ Pointer Demo by Dan Bergman (PD) | ✓
-| Panic Bomber (J) | VIP object mode crash (VSU)
-| Panic Bomber (U) | VIP object mode crash (VSU)
+| Panic Bomber (J) | Some graphics are missing (VSU)
+| Panic Bomber (U) | Some graphics are missing (VSU)
 | pong | nothing happens (waiting for drawing status to change while drawing is disabled?)
 | Reality Boy Demo 1 (PD) | ✓
 | Reality Boy Demo 2 (PD) | Link
 | Red Alarm (J) | Hangs after some intro screens (waiting for an interrupt?) (VSU)
 | Red Alarm (U) | Hangs after some intro screens (waiting for an interrupt?) (VSU)
 | Scaling Demo by Parasyte (PD) | ✓ (Does not initialize window param memory properly, use -Djvb.ram.init=0)
-| SD Gundam Dimension War (J) | VIP crash (objects)
+| SD Gundam Dimension War (J) | Glitchy graphics/hangs
 | Simon by Pat Daderko (PD) | ✓
 | Space Invaders: Virtual Collection (J) | Glitchy graphcis, seems to wait for interrupt
-| Space Squash (J) | VIP object mode crash (VSU)
+| Space Squash (J) | Hangs (VSU)
 | Super Fighter Demo by KR155E (PD) | Displays dead data from fb (waiting for display *not* ready?)
 | Teleroboxer (JU) [T+Ger.4b_KR155E] | Stuck on instructions (manual gamepad input?) (VSU)
 | Teleroboxer (JU) | Stuck on instructions (manual gamepad input?) (VSU)
@@ -66,11 +66,11 @@
 | Virtual Boy Wario Land (JU) | Nothing happens after instruction & focus screen
 | Virtual-E Cursor Demo (PD) [a1] | Nothing happens (waiting for display *not* ready?) 
 | Virtual-E Cursor Demo (PD) | Bad rom?
-| Virtual Fishing (J) | VIP object mode crash & crash/reset after game's splash screen.
+| Virtual Fishing (J) | Crash/reset after game's splash screen.
 | Virtual Lab (J) | Falling pieces are not displayed
 | Virtual League Baseball (U) [a1] | GamePad used in manual mode in menu does not work
 | Virtual League Baseball (U) | illegal op?
 | Virtual Pong (PD) | Nothing happens (waiting for drawing status to change while drawing is disabled?)
-| Virtual Pro Yakyuu '95 (J) | Crashes when playing a ball
-| V Tetris (J) | VIP crash
-| Waterworld (U) | VIP crash
+| Virtual Pro Yakyuu '95 (J) | ?
+| V Tetris (J) | Falling pieces don't display
+| Waterworld (U) | display stops during intro

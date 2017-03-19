@@ -213,11 +213,11 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             leftRendered.clear();
             rightRendered.clear();
             screen.update(leftRendered, rightRendered, debugDrawer);
+            interrupt(VIPInterruptType.StartFrameProcessing);
         }
         controlRegs.setDisplayProcStart();
         displayState = Waiting;
         controlRegs.setDisplayingFrameBufferPair(0, true, false);
-        interrupt(VIPInterruptType.StartFrameProcessing);
         if (frameCounter % (controlRegs.getFrameRepeat() + 1) == 0) {
             swapBuffers();
             if (controlRegs.isDrawingEnabled()) {

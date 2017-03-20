@@ -78,7 +78,7 @@ public class Debugger implements ExactlyEmulable, Logger {
         breakpoints = new Breakpoints(this);
         this.views.add(breakpoints);
         this.views.add(new VIPView(this));
-        this.views.add(new Logs(log));
+        this.views.add(new Logs(log, terminal, levels));
         this.size = new Size();
         size.copy(terminal.getSize());
         if (size.getRows() == 0) {

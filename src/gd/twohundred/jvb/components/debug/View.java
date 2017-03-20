@@ -45,6 +45,11 @@ public interface View {
         asb.append(s);
     }
 
+    static void rightPad(AttributedStringBuilder asb, int length, String value) {
+        asb.append(value);
+        repeat(asb, length - value.length(), ' ');
+    }
+
     static void padToLength(AttributedStringBuilder asb, int length) {
         padToLength(asb, length, ' ');
     }

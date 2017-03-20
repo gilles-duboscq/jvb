@@ -11,6 +11,7 @@ import static gd.twohundred.jvb.Utils.insert;
 import static gd.twohundred.jvb.Utils.intBit;
 import static gd.twohundred.jvb.Utils.intBits;
 import static gd.twohundred.jvb.Utils.testBit;
+import static gd.twohundred.jvb.Utils.toBinary;
 
 public class GamePad implements ExactlyEmulable, InterruptSource {
     private static final int CONTROL_GAME_PAD_INTERRUPT_DISABLE_POS = 7;
@@ -32,6 +33,10 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
     private boolean interruptEnabled;
     private boolean interruptRaised;
     private int hardwareReadBit;
+    private long hardwareReadCycles;
+    private int softwareReadBit;
+    private boolean softwareReadLatched;
+    private boolean softwareReadBitArmed;
 
     public GamePad(InputProvider inputProvider, Logger logger) {
         this.provider = inputProvider;
@@ -39,6 +44,7 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
     }
 
     public void setControl(byte value) {
+        logger.debug(Logger.Component.GamePad, "Control %s", toBinary(value & 0xff, 8));
         interruptEnabled = !testBit(value, CONTROL_GAME_PAD_INTERRUPT_DISABLE_POS);
         boolean latchInput = testBit(value, CONTROL_LATCH_GAME_PAD_SIGNAL_POS);
         boolean sendBit = !testBit(value, CONTROL_SOFTWARE_INPUT_CLOCK_SIGNAL_POS);
@@ -48,13 +54,44 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
         if (abortRead) {
             hardwareReadBit = -1;
             status &= ~intBit(CONTROL_HARDWARE_INPUT_IN_PROGRESS_POS);
+            softwareReadBit = -1;
+            softwareReadLatched = false;
+            softwareReadBitArmed = false;
+            logger.debug(Logger.Component.GamePad, "Abort read");
+        } else if (latchInput) {
+            softwareReadBit = 0;
+            softwareReadLatched = true;
+            softwareReadBitArmed = false;
+            logger.debug(Logger.Component.GamePad, "Latch input");
         } else if (hardwareRead) {
             hardwareReadBit = 15;
             status |= intBit(CONTROL_HARDWARE_INPUT_IN_PROGRESS_POS);
-        } else if (latchInput || sendBit) {
-            // TODO latch? sendBit?
-            logger.warning(Logger.Component.GamePad, "Ignoring game pad control with latch: %b sendBit: %b", latchInput, sendBit);
+            softwareReadBit = -1;
+            softwareReadLatched = false;
+            softwareReadBitArmed = false;
+            logger.debug(Logger.Component.GamePad, "Start hardware read");
+        } else if (sendBit) {
+            if (softwareReadBitArmed && softwareReadBit >= 0) {
+                logger.debug(Logger.Component.GamePad, "Reading bit %d", softwareReadBit);
+                input = (short) insert(provider.read(Inputs.get(softwareReadBit)), softwareReadBit, input);
+                softwareReadBitArmed = false;
+                softwareReadBit++;
+                if (softwareReadBit > 15) {
+                    softwareReadBit = -1;
+                }
+            } else {
+                logger.warning(Logger.Component.GamePad, "Send bit in wrong state for bit %d, armed: %s", softwareReadBit, softwareReadBitArmed);
+            }
+        } else {
+            if (softwareReadBit > 0 || softwareReadLatched) {
+                logger.debug(Logger.Component.GamePad, "Arming for bit %d", softwareReadBit);
+                softwareReadBitArmed = true;
+                softwareReadLatched = false;
+            } else {
+                logger.warning(Logger.Component.GamePad, "?? bit: %d not latched", softwareReadBit);
+            }
         }
+
         status |= intBit(CONTROL_SOFTWARE_INPUT_CLOCK_SIGNAL_POS, !sendBit);
         status |= intBit(CONTROL_GAME_PAD_INTERRUPT_DISABLE_POS, interruptEnabled);
         status |= intBit(CONTROL_LATCH_GAME_PAD_SIGNAL_POS, latchInput);
@@ -76,19 +113,27 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
     public void reset() {
         setControl((byte) 0x01); // 04??
         interruptRaised = false;
+        hardwareReadCycles = 0;
+        softwareReadBit = -1;
+        softwareReadBitArmed = false;
+        softwareReadLatched = false;
     }
 
     @Override
     public void tickExact(long cycles) {
-        for (long i = 0; i < cycles / HARDWARE_READ_CYCLES_PER_BIT; i++) {
-            if (hardwareReadBit >= 0) {
+        if (hardwareReadBit >= 0) {
+            hardwareReadCycles += cycles;
+            while (hardwareReadCycles >= HARDWARE_READ_CYCLES_PER_BIT) {
                 input = (short) insert(provider.read(Inputs.get(hardwareReadBit)), hardwareReadBit, input);
                 hardwareReadBit--;
+                hardwareReadCycles -= HARDWARE_READ_CYCLES_PER_BIT;
                 if (hardwareReadBit < 0) {
                     status &= ~intBit(CONTROL_HARDWARE_INPUT_IN_PROGRESS_POS);
                     if (interruptEnabled && (status & INTERRUPT_STATUS_MASK) != 0) {
                         interruptRaised = true;
                     }
+                    hardwareReadCycles = 0;
+                    break;
                 }
             }
         }

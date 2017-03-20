@@ -1,7 +1,6 @@
 # TODO
 
 * Test line shift mode (e.g., Insmouse No Yakata)
-* Fix VIP crashes with object window
 * Fix Display Ready bit
 * GamePad manual mode
 * VSU

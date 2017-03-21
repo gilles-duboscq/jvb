@@ -47,7 +47,7 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
         logger.debug(Logger.Component.GamePad, "Control %s", toBinary(value & 0xff, 8));
         interruptEnabled = !testBit(value, CONTROL_GAME_PAD_INTERRUPT_DISABLE_POS);
         boolean latchInput = testBit(value, CONTROL_LATCH_GAME_PAD_SIGNAL_POS);
-        boolean sendBit = !testBit(value, CONTROL_SOFTWARE_INPUT_CLOCK_SIGNAL_POS);
+        boolean clock = testBit(value, CONTROL_SOFTWARE_INPUT_CLOCK_SIGNAL_POS);
         boolean hardwareRead = testBit(value, CONTROL_INITIATE_HARDWARE_READ_POS);
         boolean abortRead = testBit(value, CONTROL_ABORT_HARDWARE_READ_POS);
 
@@ -70,7 +70,7 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
             softwareReadLatched = false;
             softwareReadBitArmed = false;
             logger.debug(Logger.Component.GamePad, "Start hardware read");
-        } else if (sendBit) {
+        } else if (clock) {
             if (softwareReadBitArmed && softwareReadBit >= 0) {
                 logger.debug(Logger.Component.GamePad, "Reading bit %d", softwareReadBit);
                 input = (short) insert(provider.read(Inputs.get(softwareReadBit)), softwareReadBit, input);
@@ -87,18 +87,16 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
                 logger.debug(Logger.Component.GamePad, "Arming for bit %d", softwareReadBit);
                 softwareReadBitArmed = true;
                 softwareReadLatched = false;
-            } else {
-                logger.warning(Logger.Component.GamePad, "?? bit: %d not latched", softwareReadBit);
             }
         }
 
-        status |= intBit(CONTROL_SOFTWARE_INPUT_CLOCK_SIGNAL_POS, !sendBit);
+        status |= intBit(CONTROL_SOFTWARE_INPUT_CLOCK_SIGNAL_POS, clock);
         status |= intBit(CONTROL_GAME_PAD_INTERRUPT_DISABLE_POS, interruptEnabled);
         status |= intBit(CONTROL_LATCH_GAME_PAD_SIGNAL_POS, latchInput);
     }
 
     public int getControl() {
-        return status & 0xff;
+        return (status & 0xff) | intBit(CONTROL_INITIATE_HARDWARE_READ_POS);
     }
 
     public int getInputLow() {

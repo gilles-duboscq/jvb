@@ -2,7 +2,6 @@
 
 * Test line shift mode (e.g., Insmouse No Yakata)
 * Fix Display Ready bit
-* GamePad manual mode
 * VSU
 * Fix exceptions
 * BitString
@@ -51,8 +50,8 @@
 | Space Invaders: Virtual Collection (J) | Glitchy graphcis, seems to wait for interrupt
 | Space Squash (J) | Hangs (VSU)
 | Super Fighter Demo by KR155E (PD) | Displays dead data from fb (waiting for display *not* ready?)
-| Teleroboxer (JU) [T+Ger.4b_KR155E] | Stuck on instructions (manual gamepad input?) (VSU)
-| Teleroboxer (JU) | Stuck on instructions (manual gamepad input?) (VSU)
+| Teleroboxer (JU) [T+Ger.4b_KR155E] | Stuck afers instructions (Waiting for interrupt?) (VSU)
+| Teleroboxer (JU) | Stuck afers instructions (Waiting for interrupt?) (VSU)
 | T&E Virtual Golf (J) | Bitstring
 | Tic Tac Toe by Pat Daderko (PD) | Link
 | Tron VB by Pat Daderko (PD) | Link
@@ -67,7 +66,7 @@
 | Virtual-E Cursor Demo (PD) | Bad rom?
 | Virtual Fishing (J) | Crash/reset after game's splash screen.
 | Virtual Lab (J) | Falling pieces are not displayed
-| Virtual League Baseball (U) [a1] | GamePad used in manual mode in menu does not work
+| Virtual League Baseball (U) [a1] | Controls don't always seem to work in menus
 | Virtual League Baseball (U) | illegal op?
 | Virtual Pong (PD) | Nothing happens (waiting for drawing status to change while drawing is disabled?)
 | Virtual Pro Yakyuu '95 (J) | ?

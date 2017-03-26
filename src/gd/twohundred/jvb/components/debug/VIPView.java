@@ -1,9 +1,11 @@
 package gd.twohundred.jvb.components.debug;
 
 import gd.twohundred.jvb.components.Debugger;
+import gd.twohundred.jvb.components.debug.boxes.Box;
 import gd.twohundred.jvb.components.debug.boxes.Table;
 import gd.twohundred.jvb.components.debug.boxes.Table.Column;
 import gd.twohundred.jvb.components.debug.boxes.VerticalBoxes;
+import gd.twohundred.jvb.components.vip.VIPControlRegisters;
 import gd.twohundred.jvb.components.vip.VirtualImageProcessor;
 import gd.twohundred.jvb.components.vip.WindowAttributes;
 import org.jline.keymap.KeyMap;
@@ -162,10 +164,102 @@ public class VIPView implements View {
         }
     }
 
+    private static class FrameProgress implements Box {
+        private final Debugger debugger;
+
+        private FrameProgress(Debugger debugger) {
+            this.debugger = debugger;
+        }
+
+        @Override
+        public String name() {
+            return "Frame progress";
+        }
+
+        @Override
+        public int minWidth() {
+            return 0;
+        }
+
+        @Override
+        public boolean fixedWidth() {
+            return false;
+        }
+
+        @Override
+        public int minHeight() {
+            return 1;
+        }
+
+        @Override
+        public boolean fixedHeight() {
+            return true;
+        }
+
+        @Override
+        public void line(AttributedStringBuilder asb, int line, int width, int height) {
+            int done = (int) (debugger.getVip().getDisplayCycles() * width / VirtualImageProcessor.FRAME_PERIOD);
+            View.repeat(asb, done, '█');
+        }
+    }
+
+    private static class VIPstatus implements Box {
+        private final Debugger debugger;
+
+        private VIPstatus(Debugger debugger) {
+            this.debugger = debugger;
+        }
+
+        @Override
+        public String name() {
+            return "Status";
+        }
+
+        @Override
+        public int minWidth() {
+            return 0;
+        }
+
+        @Override
+        public boolean fixedWidth() {
+            return false;
+        }
+
+        @Override
+        public int minHeight() {
+            return 2;
+        }
+
+        @Override
+        public boolean fixedHeight() {
+            return true;
+        }
+
+        @Override
+        public void line(AttributedStringBuilder asb, int line, int width, int height) {
+            VirtualImageProcessor vip = debugger.getVip();
+            switch (line) {
+                case 0:
+                    VIPControlRegisters controlRegs = vip.getControlRegs();
+                    asb.append("Display: ").append(controlRegs.isDisplayEnabled() ? "enabled" : "disabled");
+                    asb.append(" Drawing: ").append(controlRegs.isDrawingEnabled() ? "enabled" : "disabled");
+                    break;
+                case 1:
+                    asb.append("Display state: ").append(vip.getDisplayState().toString());
+                    asb.append(" Drawing state: ").append(vip.getDrawingState().toString());
+                    if (vip.getDrawingState() == VirtualImageProcessor.DrawingState.Drawing) {
+                        asb.append(" Y block: ").append(Integer.toString(vip.getControlRegs().getCurrentYBlock()));
+                        asb.append(" Window: ").append(Integer.toString(vip.getCurrentWindow().getId()));
+                    }
+                    break;
+            }
+        }
+    }
+
     public VIPView(Debugger debugger) {
         this.debugger = debugger;
         windowAttributesTable = new WindowAttributesTable(debugger.getTerminal());
-        verticalBoxes = new VerticalBoxes("VIP", Collections.singletonList(windowAttributesTable));
+        verticalBoxes = new VerticalBoxes("VIP", Arrays.asList(new VIPstatus(debugger), new FrameProgress(debugger), windowAttributesTable));
     }
 
     @Override

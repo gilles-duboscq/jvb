@@ -62,7 +62,42 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private final LinearMemoryMirroring chrTable2Mirror = new LinearMemoryMirroring(characterRAM, 0x00016000, 0x4000, 0x2000);
     private final LinearMemoryMirroring chrTable3Mirror = new LinearMemoryMirroring(characterRAM, 0x0001E000, 0x6000, 0x2000);
 
-    public static final boolean DEBUG_GRAPHICS = false;
+    public static final boolean DEBUG_GRAPHICS = true;
+
+    public static final long FRAME_PERIOD = CPU.CLOCK_HZ / Screen.DISPLAY_REFRESH_RATE_HZ;
+
+    // Fake value
+    static final int DRAWING_INIT_CYCLES = 300;
+
+    private static final int MAX_COLUMN_TIME = 0xfe;
+    private static final long FOUR_COLUMN_UNIT_TIME_NS = 200;
+    private static final long COLUMN_UNIT_TIME_NS = FOUR_COLUMN_UNIT_TIME_NS / 4;
+    private static final long MAX_FRAME_BUFFER_DISPLAY_TIME_NS = MAX_COLUMN_TIME * COLUMN_UNIT_TIME_NS * Screen.WIDTH;
+    private static final long MAX_FRAME_BUFFER_DISPLAY_CYCLES = CPU.CLOCK_HZ * MAX_FRAME_BUFFER_DISPLAY_TIME_NS / NANOS_PER_SECOND;
+    private static final long RIGHT_DISPLAY_START_CYCLE = FRAME_PERIOD - (10 + MAX_FRAME_BUFFER_DISPLAY_CYCLES);
+    private static final long LEFT_DISPLAY_START_CYCLE = RIGHT_DISPLAY_START_CYCLE - (10 + MAX_FRAME_BUFFER_DISPLAY_CYCLES);
+
+    static final int DRAWING_WINDOW_COUNT = 32;
+    static final int DRAWING_BLOCK_HEIGHT = 8;
+    static final int DRAWING_BLOCK_COUNT = Screen.HEIGHT / DRAWING_BLOCK_HEIGHT;
+
+    private final RenderedFrame leftRendered = new RenderedFrame();
+    private final RenderedFrame rightRendered = new RenderedFrame();
+    private long displayCycles;
+    private long nextWindowCycles;
+    private long frameCounter;
+    private DrawingState drawingState;
+    private DisplayState displayState;
+    private Screen.DebugDrawer debugDrawer;
+
+    private int currentWindowId;
+    private int latchedClearColor;
+    private int currentObjectGroup;
+
+    private FrameBuffer currentRight = rightFb1;
+    private FrameBuffer currentLeft = leftFb1;
+
+    private boolean interruptRaised;
 
     public VirtualImageProcessor(Screen screen, Logger logger) {
         this.screen = screen;
@@ -100,49 +135,14 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         return frame;
     }
 
-    static final long FRAME_PERIOD = CPU.CLOCK_HZ / Screen.DISPLAY_REFRESH_RATE_HZ;
-
-    // Fake value
-    static final int DRAWING_INIT_CYCLES = 300;
-
-    private static final int MAX_COLUMN_TIME = 0xfe;
-    private static final long FOUR_COLUMN_UNIT_TIME_NS = 200;
-    private static final long COLUMN_UNIT_TIME_NS = FOUR_COLUMN_UNIT_TIME_NS / 4;
-    private static final long MAX_FRAME_BUFFER_DISPLAY_TIME_NS = MAX_COLUMN_TIME * COLUMN_UNIT_TIME_NS * Screen.WIDTH;
-    private static final long MAX_FRAME_BUFFER_DISPLAY_CYCLES = CPU.CLOCK_HZ * MAX_FRAME_BUFFER_DISPLAY_TIME_NS / NANOS_PER_SECOND;
-    private static final long RIGHT_DISPLAY_START_CYCLE = FRAME_PERIOD - (10 + MAX_FRAME_BUFFER_DISPLAY_CYCLES);
-    private static final long LEFT_DISPLAY_START_CYCLE = RIGHT_DISPLAY_START_CYCLE - (10 + MAX_FRAME_BUFFER_DISPLAY_CYCLES);
-
-    static final int DRAWING_WINDOW_COUNT = 32;
-    static final int DRAWING_BLOCK_HEIGHT = 8;
-    static final int DRAWING_BLOCK_COUNT = Screen.HEIGHT / DRAWING_BLOCK_HEIGHT;
-
-    private final RenderedFrame leftRendered = new RenderedFrame();
-    private final RenderedFrame rightRendered = new RenderedFrame();
-    private long displayCycles;
-    private long nextWindowCycles;
-    private long frameCounter;
-    private DrawingState drawingState;
-    private DisplayState displayState;
-    private Screen.DebugDrawer debugDrawer;
-
-    private int currentWindowId;
-    private int latchedClearColor;
-    private int currentObjectGroup;
-
-    private FrameBuffer currentRight = rightFb1;
-    private FrameBuffer currentLeft = leftFb1;
-
-    private boolean interruptRaised;
-
-    protected enum DisplayState {
+    public enum DisplayState {
         Waiting,
         LeftFrameBuffer,
         RightFrameBuffer,
         Finished
     }
 
-    protected enum DrawingState {
+    public enum DrawingState {
         Drawing,
         Finished
     }
@@ -205,10 +205,6 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     }
 
     private void startDisplay() {
-        if (drawingState != DrawingState.Finished) {
-            controlRegs.setDrawingExceedsFramePeriod();
-            interrupt(VIPInterruptType.DrawingExceedsFramePeriod);
-        }
         if (!controlRegs.isDisplayEnabled()) {
             leftRendered.clear();
             rightRendered.clear();
@@ -228,11 +224,16 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     }
 
     private void startDrawing() {
-        interrupt(VIPInterruptType.StartDrawing);
-        drawingState = DrawingState.Drawing;
-        nextWindowCycles = DRAWING_INIT_CYCLES;
-        setCurrentYBlock(0);
-        currentWindowId = DRAWING_WINDOW_COUNT - 1;
+        if (drawingState != DrawingState.Finished) {
+            controlRegs.setDrawingExceedsFramePeriod();
+            interrupt(VIPInterruptType.DrawingExceedsFramePeriod);
+        } else {
+            interrupt(VIPInterruptType.StartDrawing);
+            drawingState = DrawingState.Drawing;
+            nextWindowCycles = DRAWING_INIT_CYCLES;
+            setCurrentYBlock(0);
+            currentWindowId = DRAWING_WINDOW_COUNT - 1;
+        }
     }
 
     private void swapBuffers() {
@@ -292,7 +293,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         interrupt(VIPInterruptType.DrawingFinished);
     }
 
-    private WindowAttributes getCurrentWindow() {
+    public WindowAttributes getCurrentWindow() {
         return windowAttributes[currentWindowId];
     }
 
@@ -375,6 +376,10 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         return null;
     }
 
+    public long getDisplayCycles() {
+        return displayCycles;
+    }
+
     @Override
     public int getStart() {
         return 0x0000_0000;
@@ -452,5 +457,17 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
 
     Logger getLogger() {
         return logger;
+    }
+
+    public DisplayState getDisplayState() {
+        return displayState;
+    }
+
+    public DrawingState getDrawingState() {
+        return drawingState;
+    }
+
+    public VIPControlRegisters getControlRegs() {
+        return controlRegs;
     }
 }

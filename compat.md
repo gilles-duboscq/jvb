@@ -1,11 +1,11 @@
 # TODO
 
 * Test line shift mode (e.g., Insmouse No Yakata)
-* Fix Display Ready bit
 * VSU
 * Fix exceptions
 * BitString
 * General CPU completeness pass
+* Fix Display Ready bit
 
 # ROM compatibility
 
@@ -47,11 +47,11 @@
 | Scaling Demo by Parasyte (PD) | ✓ (Does not initialize window param memory properly, use -Djvb.ram.init=0)
 | SD Gundam Dimension War (J) | Glitchy graphics/hangs
 | Simon by Pat Daderko (PD) | ✓
-| Space Invaders: Virtual Collection (J) | Glitchy graphcis, seems to wait for interrupt
+| Space Invaders: Virtual Collection (J) | Glitchy graphics, seems to wait for interrupt
 | Space Squash (J) | Hangs (VSU)
 | Super Fighter Demo by KR155E (PD) | Displays dead data from fb (waiting for display *not* ready?)
-| Teleroboxer (JU) [T+Ger.4b_KR155E] | Stuck afers instructions (Waiting for interrupt?) (VSU)
-| Teleroboxer (JU) | Stuck afers instructions (Waiting for interrupt?) (VSU)
+| Teleroboxer (JU) [T+Ger.4b_KR155E] | Stuck after instructions (Waiting for interrupt?) (VSU)
+| Teleroboxer (JU) | Stuck after instructions (Waiting for interrupt?) (VSU)
 | T&E Virtual Golf (J) | Bitstring
 | Tic Tac Toe by Pat Daderko (PD) | Link
 | Tron VB by Pat Daderko (PD) | Link
@@ -70,5 +70,5 @@
 | Virtual League Baseball (U) | illegal op?
 | Virtual Pong (PD) | Nothing happens (waiting for drawing status to change while drawing is disabled?)
 | Virtual Pro Yakyuu '95 (J) | ?
-| V Tetris (J) | Falling pieces don't display
+| V Tetris (J) | ✓ (VSU)
 | Waterworld (U) | display stops during intro

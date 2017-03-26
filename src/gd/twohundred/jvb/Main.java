@@ -57,7 +57,7 @@ public class Main {
             while (!Thread.interrupted() && mainWindow.isOpen() && !virtualBoy.isHalted()) {
                 long newT = System.nanoTime();
                 long dt = newT - t;
-                long dCycles = dt * CPU.CLOCK_HZ / Utils.NANOS_PER_SECOND;
+                long dCycles = dt / (Utils.NANOS_PER_SECOND / CPU.CLOCK_HZ);
                 long missingCycles = dCycles - cycles;
 
                 long cyclesDone = virtualBoy.tick(missingCycles);

@@ -7,12 +7,12 @@ import static gd.twohundred.jvb.Utils.extractU;
 import static gd.twohundred.jvb.Utils.testBit;
 
 public abstract class WindowMode {
-    private static final int CELL_CHARACTER_POS = 0;
-    private static final int CELL_CHARACTER_LEN = 11;
-    private static final int CELL_VERTICAL_FLIP_POS = 12;
-    private static final int CELL_HORIZONTAL_FLIP_POS = 13;
-    private static final int CELL_PALETTE_INDEX_POS = 14;
-    private static final int CELL_PALETTE_INDEX_LEN = 2;
+    static final int CELL_CHARACTER_POS = 0;
+    static final int CELL_CHARACTER_LEN = 11;
+    static final int CELL_VERTICAL_FLIP_POS = 12;
+    static final int CELL_HORIZONTAL_FLIP_POS = 13;
+    static final int CELL_PALETTE_INDEX_POS = 14;
+    static final int CELL_PALETTE_INDEX_LEN = 2;
 
     public static WindowMode get(int id) {
         switch (id) {

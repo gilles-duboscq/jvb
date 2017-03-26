@@ -10,6 +10,7 @@ import gd.twohundred.jvb.components.debug.Overview;
 import gd.twohundred.jvb.components.debug.VIPView;
 import gd.twohundred.jvb.components.debug.View;
 import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
+import gd.twohundred.jvb.components.vip.VirtualImageProcessor;
 import gd.twohundred.jvb.components.vip.WindowAttributes;
 import org.jline.keymap.BindingReader;
 import org.jline.keymap.KeyMap;
@@ -332,7 +333,11 @@ public class Debugger implements ExactlyEmulable, Logger {
     }
 
     public WindowAttributes[] getWindowAttributes() {
-        return getBus().getVIP().getWindowAttributes();
+        return getVip().getWindowAttributes();
+    }
+
+    public VirtualImageProcessor getVip() {
+        return getBus().getVIP();
     }
 
     public State getState() {

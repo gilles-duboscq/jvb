@@ -347,7 +347,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                 case OP_XOR_IMM: {
                     int second = bus.getHalfWord(pc + 2);
                     nextPC += 2;
-                    setRegister(reg2, xor(getRegister(reg2), second));
+                    setRegister(reg2, xor(getRegister(reg1), second));
                     break;
                 }
                 case OP_JMP: {

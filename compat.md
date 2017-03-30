@@ -1,6 +1,5 @@
 # TODO
 
-* Test line shift mode (e.g., Insmouse No Yakata)
 * VSU
 * Fix exceptions
 * BitString
@@ -26,10 +25,10 @@
 | Golf (U) | Bitstring
 | Hello, World! Demo V1.0 by Amos Bieler (PD) | Displays dead data from fb (waiting for display *not* ready?)
 | Hello, World! Demo V1.1 by Amos Bieler (PD) | Displays dead data from fb (waiting for display *not* ready?)
-| Insmouse No Yakata (J) / Insane Mouse Mansion (J) | Password screen does not display correctly
+| Insmouse No Yakata (J) / Insane Mouse Mansion (J) | Password screen does not display correctly, bubbles are not working properly
 | Jack Bros (J) | Glitchy/non functional instructions screen (VSU)
 | Jack Bros (U) | Glitchy/non functional instructions screen (VSU)
-| Mario Clash (JU) | Does not register key on instructions screen (manual gamepad reading?)
+| Mario Clash (JU) | No character in game?
 | Mario Flying Demo by Frostgiant (PD) | ✓ (Seems to use uninitialized memory as a "black" char)
 | Mario's Tennis (JU) [a1] | Glitchy graphics (VIP memory corruption?)
 | Mario's Tennis (JU) | illegal instruction?
@@ -56,7 +55,7 @@
 | Tic Tac Toe by Pat Daderko (PD) | Link
 | Tron VB by Pat Daderko (PD) | Link
 | VB Rocks! Demo by KR155E (PD) | Displays dead data from fb (waiting for display *not* ready?)
-| vb_test_2 | Changing OOB char affects other fields
+| vb_test_2 | ✓
 | VeeBee Cursor Demo by David Williamson (PD) | Displays dead data from fb (waiting for display *not* ready?)
 | Vertical Force (J) | Nothing happens (waiting for display *not* ready?) (VSU)
 | Vertical Force (U) | Nothing happens (waiting for display *not* ready?) (VSU)

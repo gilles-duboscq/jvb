@@ -5,6 +5,8 @@ import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.components.interfaces.ReadWriteMemory;
 import gd.twohundred.jvb.components.interfaces.Resetable;
 
+import java.util.EnumSet;
+
 import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
 import static gd.twohundred.jvb.Utils.extractU;
 import static gd.twohundred.jvb.Utils.insert;
@@ -97,7 +99,8 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         StartFrameProcessing(INT_START_OF_FRAME_PROCESSING_POS),
         StartDrawing(INT_START_OF_DRAWING_POS),
         RightDisplayFinished(INT_RIGHT_DISPLAY_FINISHED_POS),
-        LeftDisplayFinished(INT_LEFT_DISPLAY_FINISHED_POS);
+        LeftDisplayFinished(INT_LEFT_DISPLAY_FINISHED_POS),
+        DisplayNotReady(INT_DISPLAY_NOT_READY_POS);
         private final int bit;
 
         VIPInterruptType(int bit) {
@@ -254,17 +257,26 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
             case INTERRUPT_ENABLE_START:
                 enabledInterrupts = value;
                 if (logger.isLevelEnabled(Logger.Component.VIP, Logger.Level.Debug)) {
-                    String msg = "";
+                    StringBuilder msg = new StringBuilder();
                     for (VIPInterruptType t : VIPInterruptType.values()) {
                         if (isInterruptEnabled(t)) {
-                            msg += " " + t;
+                            msg.append(" ").append(t);
                         }
                     }
-                    logger.debug(Logger.Component.VIP, "Enabling VIP interrupts: %s", address);
+                    logger.debug(Logger.Component.VIP, "Enabling VIP interrupts: %s", msg.toString());
                 }
                 return;
             case INTERRUPT_CLEAR_START:
                 pendingInterrupts &= ~value;
+                if (logger.isLevelEnabled(Logger.Component.VIP, Logger.Level.Debug)) {
+                    StringBuilder msg = new StringBuilder();
+                    for (VIPInterruptType t : VIPInterruptType.values()) {
+                        if (testBit(value, t.getBit())) {
+                            msg.append(" ").append(t);
+                        }
+                    }
+                    logger.debug(Logger.Component.VIP, "Clearing VIP interrupts: %s", msg.toString());
+                }
                 return;
             case DRAWING_CONTROL_START:
                 processDrawingControl(value);

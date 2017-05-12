@@ -1,5 +1,6 @@
 # TODO
 
+* Fix VIP timings
 * VSU
 * Fix exceptions
 * BitString
@@ -19,7 +20,7 @@
 | Croach, The (PD) | Nothing happens (waiting for drawing status to change while drawing is disabled?)
 | Etch-A-Sketch by Pat Daderko (PD) | ✓
 | Framebuffer Drawing Demo by Pat Daderko (PD) | Strange band at the top
-| Galactic Pinball (JU) | ✓ (VSU)
+| Galactic Pinball (JU) | glitchy (probably bad VIP timings) (VSU)
 | GLOW Demo by KR155E (PD) [a1] | ✓
 | GLOW Demo by KR155E (PD) | ✓
 | Golf (U) | Bitstring

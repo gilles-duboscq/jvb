@@ -49,12 +49,12 @@ public class ObjectWindowMode extends WindowMode {
 
             // TODO: just find the portion of character to draw and use drawChar rather than drawCharPixel
             for (int characterY = 0; characterY < CharacterRAM.CHARACTER_HEIGHT_PX; characterY++) {
-                int screenY = y + characterY + window.getY();
+                int screenY = y + characterY;
                 if (screenY >= maxY || screenY < minY) {
                     continue;
                 }
                 for (int characterX = 0; characterX < CharacterRAM.CHARACTER_WIDTH_PX; characterX++) {
-                    int screenX = x + characterX + parallaxX + window.getX();
+                    int screenX = x + characterX + parallaxX;
                     if (screenX >= Screen.WIDTH || screenX < 0) {
                         continue;
                     }

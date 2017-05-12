@@ -62,7 +62,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private final LinearMemoryMirroring chrTable2Mirror = new LinearMemoryMirroring(characterRAM, 0x00016000, 0x4000, 0x2000);
     private final LinearMemoryMirroring chrTable3Mirror = new LinearMemoryMirroring(characterRAM, 0x0001E000, 0x6000, 0x2000);
 
-    public static final boolean DEBUG_GRAPHICS = false;
+    public static final boolean DEBUG_GRAPHICS = true;
 
     public static final long FRAME_PERIOD = CPU.CLOCK_HZ / Screen.DISPLAY_REFRESH_RATE_HZ;
 
@@ -196,6 +196,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private void interrupt(VIPInterruptType type) {
         if (controlRegs.isInterruptEnabled(type)) {
             interruptRaised = true;
+            logger.debug(Logger.Component.VIP, "Raising VIP interrupt: %s", type);
             controlRegs.addPendingInterrupt(type);
         }
     }

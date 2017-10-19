@@ -2,6 +2,7 @@ package gd.twohundred.jvb.components;
 
 import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.TestDisplay;
+import gd.twohundred.jvb.Utils;
 import gd.twohundred.jvb.components.Instructions.AccessWidth;
 import gd.twohundred.jvb.components.debug.Breakpoints;
 import gd.twohundred.jvb.components.debug.CPUView;
@@ -31,6 +32,10 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import static java.lang.Long.max;
+import static java.lang.Long.min;
 
 public class Debugger implements ExactlyEmulable, Logger {
     private static final int DISPLAY_REFRESH_RATE_HZ = 2;
@@ -57,6 +62,7 @@ public class Debugger implements ExactlyEmulable, Logger {
     private volatile State state;
     private final InputThread inputThread;
     private boolean displaying;
+    private final TicksStats ticksStats;
 
     public enum State {
         Running,
@@ -65,13 +71,39 @@ public class Debugger implements ExactlyEmulable, Logger {
         Halted
     }
 
+    public static class TicksStats {
+        private long lastUpdate;
+        private long ticksSinceLastUpdate;
+        private long cyclesSinceLastUpdate;
+        public long lastTickPerSecond;
+        public long lastCyclesPerSecond;
+        public long lastCycles;
+
+        void update(long cycles) {
+            final long UPDATE_RATE = Utils.NANOS_PER_SECOND / DISPLAY_REFRESH_RATE_HZ;
+            long currentTime = System.nanoTime();
+            ticksSinceLastUpdate += 1;
+            cyclesSinceLastUpdate += cycles;
+            lastCycles = cycles;
+            if (currentTime - lastUpdate > UPDATE_RATE) {
+                lastTickPerSecond = ticksSinceLastUpdate * Utils.NANOS_PER_SECOND / (currentTime - lastUpdate);
+                lastCyclesPerSecond = cyclesSinceLastUpdate * Utils.NANOS_PER_SECOND / (currentTime - lastUpdate);
+                ticksSinceLastUpdate = 0;
+                cyclesSinceLastUpdate = 0;
+                lastUpdate = currentTime;
+            }
+        }
+    }
+
     public Debugger() throws IOException {
+        this.ticksStats = new TicksStats();
         this.log = new ArrayList<>();
         this.levels = new EnumMap<>(Component.class);
         for (Component c : Component.values()) {
             levels.put(c, Level.Info);
         }
         levels.put(Component.Memory, Level.Warning);
+        levels.put(Component.VSU, Level.Debug);
         state = State.Running;
         this.terminal = TerminalBuilder.terminal();
         this.views = new ArrayList<>();
@@ -289,6 +321,7 @@ public class Debugger implements ExactlyEmulable, Logger {
     @Override
     public void tickExact(long cycles) {
         inputTick();
+        this.ticksStats.update(cycles);
         cyclesDisplay += cycles;
         if (forceRefresh || cyclesDisplay >= DISPLAY_REFRESH_PERIOD) {
             refresh();
@@ -355,6 +388,10 @@ public class Debugger implements ExactlyEmulable, Logger {
 
     public void continueExecution() {
         this.state = State.Running;
+    }
+
+    public TicksStats getTicksStats() {
+        return ticksStats;
     }
 
     private class InputThread extends Thread {

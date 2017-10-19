@@ -1,5 +1,7 @@
 package gd.twohundred.jvb.components.vsu;
 
+import gd.twohundred.jvb.Logger;
+
 import static gd.twohundred.jvb.Utils.extractU;
 import static gd.twohundred.jvb.Utils.testBit;
 
@@ -25,8 +27,8 @@ public class VSUPCMSweepModChannel extends VSUPCMChannel {
     private SweepDirection sweepDirection;
     private byte sweepAmount;
 
-    public VSUPCMSweepModChannel(int start) {
-        super(start);
+    public VSUPCMSweepModChannel(int start, PCMWaveTable[] waveTables, Logger logger) {
+        super(start, waveTables, logger);
     }
 
     public enum ModificationBaseInterval {

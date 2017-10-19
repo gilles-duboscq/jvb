@@ -13,9 +13,16 @@ import java.nio.file.Paths;
 import java.util.concurrent.locks.LockSupport;
 
 import static gd.twohundred.jvb.Logger.Component.Misc;
+import static java.lang.Long.min;
 
 public class Main {
     private Path cartridgePath;
+
+    private static final long NS_PER_CYCLES = Utils.NANOS_PER_SECOND / CPU.CLOCK_HZ;
+    private static final long TARGET_MACRO_TICK_PER_SECOND = 1000;
+    private static final long TARGET_GRANULARITY_NS = Utils.NANOS_PER_SECOND / TARGET_MACRO_TICK_PER_SECOND;
+    private static final long MAX_GRANULARITY_NS = 3 * TARGET_GRANULARITY_NS;
+    private static final long MAX_CYCLES_PER_MACRO_TICK = MAX_GRANULARITY_NS / NS_PER_CYCLES;
 
     public static void main(String... args) throws IOException {
         Main m = new Main();
@@ -46,23 +53,29 @@ public class Main {
             mainWindow.setFocusable(true);
             mainWindow.addKeyListener(inputProvider);
             KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(inputProvider);
-            VirtualBoy virtualBoy = new VirtualBoy(mainWindow.getScreen(), inputProvider, rom, new CartridgeRAM(), logger);
+            DefaultAudioOut audioOut = new DefaultAudioOut(logger);
+            VirtualBoy virtualBoy = new VirtualBoy(mainWindow.getScreen(), audioOut, inputProvider, rom, new CartridgeRAM(), logger);
             virtualBoy.reset();
             if (debugger != null) {
                 debugger.attach(virtualBoy);
                 debugger.refresh();
             }
-            long t = System.nanoTime();
+            long startT = System.nanoTime();
             long cycles = 0;
             while (!Thread.interrupted() && mainWindow.isOpen() && !virtualBoy.isHalted()) {
-                long newT = System.nanoTime();
-                long dt = newT - t;
-                long dCycles = dt / (Utils.NANOS_PER_SECOND / CPU.CLOCK_HZ);
-                long missingCycles = dCycles - cycles;
+                long t = System.nanoTime();
+                long clockT = t - startT;
+                long simulationT = cycles * NS_PER_CYCLES;
 
-                long cyclesDone = virtualBoy.tick(missingCycles);
-                cycles += cyclesDone;
-                LockSupport.parkNanos(100000);
+                long missingCycles = (clockT - simulationT) / NS_PER_CYCLES;
+                missingCycles = min(missingCycles, MAX_CYCLES_PER_MACRO_TICK);
+
+                cycles += virtualBoy.tick(missingCycles);
+
+                long deltaClockT = System.nanoTime() - t;
+                if (deltaClockT < TARGET_GRANULARITY_NS) {
+                    LockSupport.parkNanos(100000);
+                }
             }
             logger.info(Misc, "Bye :)");
         } finally {

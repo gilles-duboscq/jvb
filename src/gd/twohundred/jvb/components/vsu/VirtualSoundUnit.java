@@ -1,17 +1,18 @@
 package gd.twohundred.jvb.components.vsu;
 
-import gd.twohundred.jvb.BusError;
 import gd.twohundred.jvb.Logger;
+import gd.twohundred.jvb.components.CPU;
+import gd.twohundred.jvb.components.interfaces.AudioOut;
 import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
 import gd.twohundred.jvb.components.interfaces.MappedMemory;
 import gd.twohundred.jvb.components.utils.MappedModules;
 import gd.twohundred.jvb.components.utils.WarningMemory;
 
-import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
-import static gd.twohundred.jvb.BusError.Reason.Unmapped;
 import static gd.twohundred.jvb.Utils.testBit;
 
 public class VirtualSoundUnit extends MappedModules implements ExactlyEmulable {
+    public static final long CYCLES_PER_OUTPUT_SAMPLE = CPU.CLOCK_HZ / AudioOut.OUTPUT_SAMPLING_HZ;
+
     public static final int START = 0x01000000;
     public static final int MAPPED_SIZE = 0x01000000;
 
@@ -32,32 +33,49 @@ public class VirtualSoundUnit extends MappedModules implements ExactlyEmulable {
     public static final int CHANNEL_5_START = 0x500;
     public static final int NOISE_CHANNEL_START = 0x540;
 
-    private final VSUPCMChannel channel1 = new VSUPCMChannel(CHANNEL_1_START);
-    private final VSUPCMChannel channel2 = new VSUPCMChannel(CHANNEL_2_START);
-    private final VSUPCMChannel channel3 = new VSUPCMChannel(CHANNEL_3_START);
-    private final VSUPCMChannel channel4 = new VSUPCMChannel(CHANNEL_4_START);
-    private final VSUPCMSweepModChannel channel5 = new VSUPCMSweepModChannel(CHANNEL_5_START);
-    private final VSUNoiseChannel noiseChannel = new VSUNoiseChannel(NOISE_CHANNEL_START);
+    private final PCMWaveTable waveTable0;
+    private final PCMWaveTable waveTable1;
+    private final PCMWaveTable waveTable2;
+    private final PCMWaveTable waveTable3;
+    private final PCMWaveTable waveTable4;
+    private final ModulationTable modulationTable;
+    private final PCMWaveTable[] waveTables;
 
-    private final PCMWaveTable waveTable0 = new PCMWaveTable(WAVE_TABLE_0_START);
-    private final PCMWaveTable waveTable1 = new PCMWaveTable(WAVE_TABLE_1_START);
-    private final PCMWaveTable waveTable2 = new PCMWaveTable(WAVE_TABLE_2_START);
-    private final PCMWaveTable waveTable3 = new PCMWaveTable(WAVE_TABLE_3_START);
-    private final PCMWaveTable waveTable4 = new PCMWaveTable(WAVE_TABLE_4_START);
-    private final ModulationTable modulationTable = new ModulationTable(MODULATION_TABLE_START);
+    private final VSUPCMChannel channel1;
+    private final VSUPCMChannel channel2;
+    private final VSUPCMChannel channel3;
+    private final VSUPCMChannel channel4;
+    private final VSUPCMSweepModChannel channel5;
+    private final VSUNoiseChannel noiseChannel;
+    private final VSUChannel[] channels;
 
     private final WarningMemory unmappedWarning;
+    private final AudioOut audioOut;
+    private final Logger logger;
 
-    private boolean soundEnabled;
-
-    public VirtualSoundUnit(Logger logger) {
+    public VirtualSoundUnit(AudioOut audioOut, Logger logger) {
+        this.audioOut = audioOut;
+        this.logger = logger;
         unmappedWarning = new WarningMemory("VSU unmapped", 0, MAPPED_SIZE, logger);
+        waveTable0 = new PCMWaveTable(WAVE_TABLE_0_START);
+        waveTable1 = new PCMWaveTable(WAVE_TABLE_1_START);
+        waveTable2 = new PCMWaveTable(WAVE_TABLE_2_START);
+        waveTable3 = new PCMWaveTable(WAVE_TABLE_3_START);
+        waveTable4 = new PCMWaveTable(WAVE_TABLE_4_START);
+        modulationTable = new ModulationTable(MODULATION_TABLE_START);
+        waveTables = new PCMWaveTable[]{waveTable0, waveTable1, waveTable2, waveTable3, waveTable4};
+        channel1 = new VSUPCMChannel(CHANNEL_1_START, waveTables, logger);
+        channel2 = new VSUPCMChannel(CHANNEL_2_START, waveTables, logger);
+        channel3 = new VSUPCMChannel(CHANNEL_3_START, waveTables, logger);
+        channel4 = new VSUPCMChannel(CHANNEL_4_START, waveTables, logger);
+        channel5 = new VSUPCMSweepModChannel(CHANNEL_5_START, waveTables, logger);
+        noiseChannel = new VSUNoiseChannel(NOISE_CHANNEL_START, logger);
+        channels = new VSUChannel[]{channel1, channel2, channel3, channel4, channel5, noiseChannel};
     }
 
     @Override
     public void reset() {
         // ??
-        soundEnabled = false;
         channel1.reset();
         channel2.reset();
         channel3.reset();
@@ -70,6 +88,7 @@ public class VirtualSoundUnit extends MappedModules implements ExactlyEmulable {
         waveTable3.reset();
         waveTable4.reset();
         modulationTable.reset();
+        cyclesSinceLastOutputSample = 0;
     }
 
     @Override
@@ -130,14 +149,49 @@ public class VirtualSoundUnit extends MappedModules implements ExactlyEmulable {
     @Override
     public void setByte(int address, byte value) {
         if (address == SOUND_DISABLE_START) {
-            soundEnabled = !testBit(value, SOUND_DISABLE_POS);
+            if (testBit(value, SOUND_DISABLE_POS)) {
+                logger.debug(Logger.Component.VSU, "Sound disabled");
+                for (VSUChannel channel : channels) {
+                    channel.setEnabled(false);
+                }
+            }
             return;
         }
         super.setByte(address, value);
     }
 
+    private long cyclesSinceLastOutputSample;
+
     @Override
     public void tickExact(long cycles) {
         // TODO
+        for (VSUChannel channel : channels) {
+            channel.tickExact(cycles);
+        }
+        cyclesSinceLastOutputSample += cycles;
+        while (cyclesSinceLastOutputSample > CYCLES_PER_OUTPUT_SAMPLE) {
+            sample();
+            cyclesSinceLastOutputSample -= CYCLES_PER_OUTPUT_SAMPLE;
+        }
+    }
+
+    enum OutputChannel {
+        Left,
+        Right
+    }
+
+    private void sample() {
+        int sampleLeft = 0;
+        int sampleRight = 0;
+        for (VSUChannel channel : channels) {
+            if (!channel.isEnabled()) {
+                continue;
+            }
+            sampleLeft += channel.outputSample(OutputChannel.Left);
+            sampleRight += channel.outputSample(OutputChannel.Right);
+        }
+        sampleLeft >>= 3;
+        sampleRight >>= 3;
+        audioOut.update(sampleLeft, sampleRight);
     }
 }

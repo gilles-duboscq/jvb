@@ -1,6 +1,5 @@
 package gd.twohundred.jvb.components.debug;
 
-import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.Logger.Component;
 import gd.twohundred.jvb.Logger.Level;
 import gd.twohundred.jvb.components.debug.boxes.Box;
@@ -39,7 +38,7 @@ public class Logs implements View {
         this.levels = levels;
         state = State.Default;
         settingsComponent = Component.values()[0];
-        logBox = new LogBox(messages, terminal,levels);
+        logBox = new LogBox(messages, terminal, levels);
         boxes = new VerticalBoxes("Logs", Collections.singletonList(logBox));
         logBox.getKeyMap().bind(() -> state = State.Settings, "s");
         logBox.getKeyMap().bind(logBox::trimLogs, "t");
@@ -247,6 +246,8 @@ public class Logs implements View {
                 asb.style(AttributedStyle.INVERSE);
             }
             asb.append('[');
+            asb.append(Integer.toString(messageIndex));
+            asb.append("][");
             asb.append(message.getLevel().name(), AttributedStyle.DEFAULT.foreground(levelColor(message.getLevel())));
             asb.append("][");
             asb.append(message.getSource().name());

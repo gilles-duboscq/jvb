@@ -1,6 +1,7 @@
 package gd.twohundred.jvb.components;
 
 import gd.twohundred.jvb.Logger;
+import gd.twohundred.jvb.components.interfaces.AudioOut;
 import gd.twohundred.jvb.components.interfaces.Emulable;
 import gd.twohundred.jvb.components.interfaces.InputProvider;
 import gd.twohundred.jvb.components.interfaces.Interrupt;
@@ -32,11 +33,11 @@ public class VirtualBoy implements Emulable {
 
     private ExecutionMode executionMode;
 
-    public VirtualBoy(Screen screen, InputProvider inputProvider, CartridgeROM rom, CartridgeRAM ram, Logger logger) {
+    public VirtualBoy(Screen screen, AudioOut audioOut, InputProvider inputProvider, CartridgeROM rom, CartridgeRAM ram, Logger logger) {
         this.logger = logger;
         timer = new HardwareTimer(logger);
         vip = new VirtualImageProcessor(screen, logger);
-        vsu = new VirtualSoundUnit(logger);
+        vsu = new VirtualSoundUnit(audioOut, logger);
         gamePad = new GamePad(inputProvider, logger);
         HardwareControlRegisters controlRegisters = new HardwareControlRegisters(timer, gamePad, logger);
         Bus bus = new Bus(rom, ram, vip, controlRegisters, vsu, logger);
@@ -55,14 +56,14 @@ public class VirtualBoy implements Emulable {
             vip.tickExact(actualCycles);
             vsu.tickExact(actualCycles);
             gamePad.tickExact(actualCycles);
-            if (this.debugger != null) {
-                this.debugger.tickExact(actualCycles);
-            }
             cycles += actualCycles;
             handleInterrupts();
             if (isHalted()) {
-                return cycles;
+                break;
             }
+        }
+        if (this.debugger != null) {
+            this.debugger.tickExact(cycles);
         }
         return cycles;
     }

@@ -9,8 +9,9 @@ import static gd.twohundred.jvb.Utils.mask;
 
 public class PCMWaveTable implements WriteOnlyMemory, Resetable {
     public static final int SAMPLE_BIT_WIDTH = 6;
+    public static final int SAMPLE_COUNT = 0x20;
     private final int start;
-    private final byte[] data = new byte[0x20];
+    private final byte[] data = new byte[SAMPLE_COUNT];
 
     public PCMWaveTable(int start) {
         this.start = start;
@@ -47,5 +48,9 @@ public class PCMWaveTable implements WriteOnlyMemory, Resetable {
         while (bb.hasRemaining()) {
             bb.putInt(0xdeadbeef);
         }
+    }
+
+    byte getSample(int index) {
+        return (byte) (data[index] & mask(SAMPLE_BIT_WIDTH));
     }
 }

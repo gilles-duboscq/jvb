@@ -1,17 +1,23 @@
 package gd.twohundred.jvb.components.vsu;
 
+import gd.twohundred.jvb.Logger;
+
 import static gd.twohundred.jvb.Utils.extractU;
+import static gd.twohundred.jvb.Utils.log2;
+import static gd.twohundred.jvb.Utils.mask;
 
 public class VSUPCMChannel extends VSUChannel {
     private static final int PCM_WAVE_START = 0x18;
 
     private static final int WAVE_INDEX_POS = 0;
     private static final int WAVE_INDEX_LEN = 3;
-
+    private final PCMWaveTable[] waveTables;
     private byte waveIndex;
+    private int currentSampleIndex;
 
-    public VSUPCMChannel(int start) {
-        super(start);
+    public VSUPCMChannel(int start, PCMWaveTable[] waveTables, Logger logger) {
+        super(start, logger);
+        this.waveTables = waveTables;
     }
 
     @Override
@@ -21,6 +27,15 @@ public class VSUPCMChannel extends VSUChannel {
             return;
         }
         super.setByte(address, value);
+    }
+
+    @Override
+    protected byte sample() {
+        PCMWaveTable waveTable = waveTables[getWaveIndex()];
+        byte out = waveTable.getSample(currentSampleIndex);
+        currentSampleIndex++;
+        currentSampleIndex &= mask(log2(PCMWaveTable.SAMPLE_COUNT));
+        return out;
     }
 
     @Override

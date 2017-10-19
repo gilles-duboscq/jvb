@@ -33,6 +33,17 @@ public class Overview implements View {
         lines.add(new AttributedString(" Game code:  " + cartridgeRom.getGameCode()));
         lines.add(new AttributedString(" Version:    1." + cartridgeRom.getGameVersion()));
         lines.add(new AttributedString(" Maker code: " + cartridgeRom.getMakerCode()));
+        lines.add(new AttributedString(""));
+        lines.add(new AttributedString(" Emulation Stats:"));
+        Debugger.TicksStats ticksStats = debugger.getTicksStats();
+        lines.add(new AttributedString("  cycles/s: " + ticksStats.lastCyclesPerSecond));
+        lines.add(new AttributedString("  ticks/s: " + ticksStats.lastTickPerSecond));
+        long cyclesPerTick = -1;
+        if (ticksStats.lastTickPerSecond != 0) {
+            cyclesPerTick = ticksStats.lastCyclesPerSecond / ticksStats.lastTickPerSecond;
+        }
+        lines.add(new AttributedString("  cycles/tick: " + cyclesPerTick));
+        lines.add(new AttributedString("  last cycles/tick: " + ticksStats.lastCycles));
     }
 
     @Override

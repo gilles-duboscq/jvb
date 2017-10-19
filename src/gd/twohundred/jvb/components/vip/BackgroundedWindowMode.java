@@ -68,8 +68,8 @@ public abstract class BackgroundedWindowMode extends WindowMode {
                     int cellIndex = segmentXCell + segmentYCell * BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_WIDTH_CELLS;
                     cellAddr = segmentAddr + cellIndex * BackgroundSegmentsAndParametersRAM.BACKGROUND_SEGMENT_CELL_SIZE;
                 }
-                int characterX = backgroundX % CharacterRAM.CHARACTER_HEIGHT_PX;
-                int characterY = backgroundY % CharacterRAM.CHARACTER_WIDTH_PX;
+                int characterX = backgroundX & (CharacterRAM.CHARACTER_HEIGHT_PX - 1);
+                int characterY = backgroundY & (CharacterRAM.CHARACTER_WIDTH_PX - 1);
                 int cell = backgroundSegments.getHalfWord(cellAddr);
                 drawCharacterPixel(x, y, characterX, characterY, cell, backgroundPalettes, vip, left);
             }

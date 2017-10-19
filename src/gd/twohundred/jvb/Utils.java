@@ -16,8 +16,8 @@ public class Utils {
     }
 
     public static int extractU(int v, int pos, int len) {
-        assert pos >= 0 && pos < 32;
-        assert len > 0 && len + pos < 32;
+        assert pos >= 0 && pos < 32 : pos;
+        assert len > 0 && len + pos < 32 : pos + ", " + len;
         return (v >> pos) & mask(len);
     }
 
@@ -114,7 +114,7 @@ public class Utils {
     }
 
     public static int repeat(int v, int patternLength, int targetLength) {
-        assert (v & mask(patternLength)) == 0;
+        assert (v & ~mask(patternLength)) == 0 : toBinary(v, Integer.SIZE) + " l=" + patternLength;
         int shift = 0;
         int result = 0;
         for (int i = 0; i < targetLength / patternLength; i++) {
@@ -128,5 +128,17 @@ public class Utils {
             return x / y;
         }
         return 1 + (x - 1) / y;
+    }
+
+    public static int log2(int x) {
+        assert Integer.bitCount(x) == 1;
+        return Integer.numberOfTrailingZeros(x);
+    }
+
+    public static int gcd(int a, int b) {
+        if (b == 0) {
+            return a;
+        }
+        return gcd(b, a % b);
     }
 }

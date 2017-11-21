@@ -58,8 +58,8 @@
 | VB Rocks! Demo by KR155E (PD) | Displays dead data from fb (waiting for display *not* ready?)
 | vb_test_2 | ✓
 | VeeBee Cursor Demo by David Williamson (PD) | Displays dead data from fb (waiting for display *not* ready?)
-| Vertical Force (J) | Nothing happens (waiting for display *not* ready?) (VSU)
-| Vertical Force (U) | Nothing happens (waiting for display *not* ready?) (VSU)
+| Vertical Force (J) | Stuck after instructions (waiting for display *not* ready?) (VSU)
+| Vertical Force (U) | Stuck after instructions (waiting for display *not* ready?) (VSU)
 | Virtual Bowling (J) | VIP crash (oob read in bg/param ram)
 | Virtual Boy Wario Land (JU) | Nothing happens after instruction & focus screen
 | Virtual-E Cursor Demo (PD) [a1] | Nothing happens (waiting for display *not* ready?) 

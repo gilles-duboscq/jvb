@@ -9,8 +9,9 @@ import static gd.twohundred.jvb.Utils.mask;
 
 public class ModulationTable implements WriteOnlyMemory, Resetable {
     public static final int SAMPLE_BIT_WIDTH = 8;
+    public static final int SAMPLE_COUNT = 0x20;
     private final int start;
-    private final byte[] data = new byte[0x20];
+    private final byte[] data = new byte[SAMPLE_COUNT];
 
     public ModulationTable(int start) {
         this.start = start;

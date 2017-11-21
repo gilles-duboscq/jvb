@@ -34,7 +34,7 @@ public class Utils {
     }
 
     public static int maskedMerge(int v, int mask, int into) {
-        return ((into | v) & (~mask | v));
+        return ((into | (v & mask)) & (~mask | v));
     }
 
     public static int insertNth(int v, int n, int len, int into) {

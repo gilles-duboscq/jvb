@@ -2,11 +2,14 @@ package gd.twohundred.jvb.components.vsu;
 
 import gd.twohundred.jvb.BusError;
 import gd.twohundred.jvb.Logger;
+import gd.twohundred.jvb.components.CPU;
+import gd.twohundred.jvb.components.interfaces.AudioOut;
 import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
 import gd.twohundred.jvb.components.interfaces.WriteOnlyMemory;
 
 import static gd.twohundred.jvb.Utils.extractU;
 import static gd.twohundred.jvb.Utils.insert;
+import static gd.twohundred.jvb.Utils.mask;
 import static gd.twohundred.jvb.Utils.testBit;
 
 public abstract class VSUChannel implements WriteOnlyMemory, ExactlyEmulable {
@@ -35,8 +38,11 @@ public abstract class VSUChannel implements WriteOnlyMemory, ExactlyEmulable {
     public static final int ENVELOPE_CONTROL_ENABLE_POS = 0;
     public static final int ENVELOPE_CONTROL_REPEAT_POS = 1;
 
+    public static final long ENVELOPE_STEP_UNIT_FREQUENCY_DECIHZ = 651;
+    public static final long ENVELOPE_STEP_UNIT_CYCLES = (CPU.CLOCK_HZ * 10L) / ENVELOPE_STEP_UNIT_FREQUENCY_DECIHZ;
+
     private final int start;
-    private final Logger logger;
+    protected final Logger logger;
 
     private byte volumeLeft;
     private byte volumeRight;
@@ -57,7 +63,18 @@ public abstract class VSUChannel implements WriteOnlyMemory, ExactlyEmulable {
 
     public enum Direction {
         Decay,
-        Grow
+        Grow;
+
+        public int delta() {
+            switch (this) {
+                case Grow:
+                    return 1;
+                case Decay:
+                    return -1;
+                default:
+                    throw new RuntimeException();
+            }
+        }
     }
 
     public VSUChannel(int start, Logger logger) {
@@ -105,9 +122,11 @@ public abstract class VSUChannel implements WriteOnlyMemory, ExactlyEmulable {
                 return;
             case FREQUENCY_LOW_START:
                 frequencyData = (short) insert(value, 0, 8, frequencyData);
+                assert frequencyData >= 0 : value;
                 return;
             case FREQUENCY_HIGH_START:
                 frequencyData = (short) insert(value, 8, 3, frequencyData);
+                assert frequencyData >= 0;
                 return;
         }
         if (IGNORE_UNMAPPED_WRITES) {
@@ -162,12 +181,17 @@ public abstract class VSUChannel implements WriteOnlyMemory, ExactlyEmulable {
         return repeatEnvelope;
     }
 
-    protected short getFrequencyData() {
+    public short getFrequencyData() {
         return frequencyData;
     }
 
+    protected void addFrequencyDelta(short delta) {
+        this.frequencyData = (short) ((frequencyData + delta) & mask(11));
+    }
+
     public int outputSample(VirtualSoundUnit.OutputChannel outputChannel) {
-        int sample = getVolume(outputChannel) * currentSample;
+        assert (mask(6) & (currentSample & 0xff)) == (currentSample & 0xff);
+        int sample = getVolume(outputChannel) * (currentSample & 0xff);
         sample >>= 1;
         return sample;
     }
@@ -203,7 +227,13 @@ public abstract class VSUChannel implements WriteOnlyMemory, ExactlyEmulable {
             cyclesSinceLastEnvelopeStep += cycles;
             long cyclesPerEnvelopeStep = getCyclesPerEnvelopeStep();
             while (cyclesSinceLastEnvelopeStep > cyclesPerEnvelopeStep) {
-
+                if (currentEnvelope == 0) {
+                    if (repeatEnvelope) {
+                        currentEnvelope = reloadValue;
+                    }
+                } else {
+                    currentEnvelope = (byte) ((currentEnvelope + direction.delta()) & mask(ENVELOPE_DATA_RELOAD_VALUE_LEN));
+                }
                 cyclesSinceLastEnvelopeStep -= cyclesPerEnvelopeStep;
             }
         }
@@ -219,12 +249,12 @@ public abstract class VSUChannel implements WriteOnlyMemory, ExactlyEmulable {
 
     protected abstract byte sample();
 
-    protected long getCyclesPerSample() {
+    public long getCyclesPerSample() {
         return 128L * (2048L - frequencyData);
     }
 
     private long getCyclesPerEnvelopeStep() {
-        return 307220L * (stepInterval + 1L);
+        return ENVELOPE_STEP_UNIT_CYCLES * (stepInterval + 1L);
     }
 
     @Override

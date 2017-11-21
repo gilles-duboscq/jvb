@@ -8,6 +8,7 @@ import gd.twohundred.jvb.components.interfaces.MappedMemory;
 import gd.twohundred.jvb.components.utils.MappedModules;
 import gd.twohundred.jvb.components.utils.WarningMemory;
 
+import static gd.twohundred.jvb.Utils.mask;
 import static gd.twohundred.jvb.Utils.testBit;
 
 public class VirtualSoundUnit extends MappedModules implements ExactlyEmulable {
@@ -47,6 +48,7 @@ public class VirtualSoundUnit extends MappedModules implements ExactlyEmulable {
     private final VSUPCMChannel channel4;
     private final VSUPCMSweepModChannel channel5;
     private final VSUNoiseChannel noiseChannel;
+    private final DebugChannel debugChannel;
     private final VSUChannel[] channels;
 
     private final WarningMemory unmappedWarning;
@@ -68,9 +70,10 @@ public class VirtualSoundUnit extends MappedModules implements ExactlyEmulable {
         channel2 = new VSUPCMChannel(CHANNEL_2_START, waveTables, logger);
         channel3 = new VSUPCMChannel(CHANNEL_3_START, waveTables, logger);
         channel4 = new VSUPCMChannel(CHANNEL_4_START, waveTables, logger);
-        channel5 = new VSUPCMSweepModChannel(CHANNEL_5_START, waveTables, logger);
+        channel5 = new VSUPCMSweepModChannel(CHANNEL_5_START, waveTables, modulationTable, logger);
         noiseChannel = new VSUNoiseChannel(NOISE_CHANNEL_START, logger);
-        channels = new VSUChannel[]{channel1, channel2, channel3, channel4, channel5, noiseChannel};
+        debugChannel = new DebugChannel(NOISE_CHANNEL_START, logger);
+        channels = new VSUChannel[]{channel1, channel2, channel3, channel4, channel5, noiseChannel, /*debugChannel*/};
     }
 
     @Override
@@ -187,11 +190,27 @@ public class VirtualSoundUnit extends MappedModules implements ExactlyEmulable {
             if (!channel.isEnabled()) {
                 continue;
             }
-            sampleLeft += channel.outputSample(OutputChannel.Left);
-            sampleRight += channel.outputSample(OutputChannel.Right);
+            int left = channel.outputSample(OutputChannel.Left);
+            int right = channel.outputSample(OutputChannel.Right);
+            assert (mask(AudioOut.OUTPUT_BITS) & left) == left;
+            assert (mask(AudioOut.OUTPUT_BITS) & right) == right;
+            sampleLeft += left;
+            sampleRight += right;
         }
         sampleLeft >>= 3;
         sampleRight >>= 3;
         audioOut.update(sampleLeft, sampleRight);
+    }
+
+    public VSUChannel[] getChannels() {
+        return channels;
+    }
+
+    public PCMWaveTable[] getWaveTables() {
+        return waveTables;
+    }
+
+    public ModulationTable getModulationTable() {
+        return modulationTable;
     }
 }

@@ -1,8 +1,11 @@
 package gd.twohundred.jvb.components.vsu;
 
 import gd.twohundred.jvb.Logger;
+import gd.twohundred.jvb.components.CPU;
 
 import static gd.twohundred.jvb.Utils.extractU;
+import static gd.twohundred.jvb.Utils.log2;
+import static gd.twohundred.jvb.Utils.mask;
 import static gd.twohundred.jvb.Utils.testBit;
 
 public class VSUPCMSweepModChannel extends VSUPCMChannel {
@@ -18,6 +21,7 @@ public class VSUPCMSweepModChannel extends VSUPCMChannel {
     private static final int DATA_MODIFICATION_INTERVAL_LEN = 3;
     private static final int DATA_DIRECTION_POS = 3;
     private static final int DATA_MODIFICATION_BASE_INTERVAL_POS = 7;
+    private final ModulationTable modulationTable;
 
     private boolean sweepModEnabled;
     private boolean repeatModulation;
@@ -26,22 +30,25 @@ public class VSUPCMSweepModChannel extends VSUPCMChannel {
     private byte modificationInterval;
     private SweepDirection sweepDirection;
     private byte sweepAmount;
+    private long cyclesSinceLastModification;
+    private int currenModulationTableIndex;
 
-    public VSUPCMSweepModChannel(int start, PCMWaveTable[] waveTables, Logger logger) {
+    public VSUPCMSweepModChannel(int start, PCMWaveTable[] waveTables, ModulationTable modulationTable, Logger logger) {
         super(start, waveTables, logger);
+        this.modulationTable = modulationTable;
     }
 
     public enum ModificationBaseInterval {
         I0(10416),
         I1(1302);
-        private final int modificationBasewIntervalDeciHz;
+        private final long modificationBaseIntervalCycles;
 
-        ModificationBaseInterval(int modificationBasewIntervalDeciHz) {
-            this.modificationBasewIntervalDeciHz = modificationBasewIntervalDeciHz;
+        ModificationBaseInterval(int modificationBaseIntervalDeciHz) {
+            this.modificationBaseIntervalCycles = (CPU.CLOCK_HZ * 10L) / modificationBaseIntervalDeciHz;
         }
 
-        public int getModificationBasewIntervalDeciHz() {
-            return modificationBasewIntervalDeciHz;
+        public long getModificationBaseIntervalCycles() {
+            return modificationBaseIntervalCycles;
         }
     }
 
@@ -100,6 +107,41 @@ public class VSUPCMSweepModChannel extends VSUPCMChannel {
     }
 
     @Override
+    public void tickExact(long cycles) {
+        super.tickExact(cycles);
+        if (modificationInterval != 0) {
+            long cyclesPerModification = modificationInterval * modificationBaseInterval.getModificationBaseIntervalCycles();
+            cyclesSinceLastModification += cycles;
+            while (cyclesSinceLastModification > cyclesPerModification) {
+                short delta;
+                switch (mode) {
+                    case Sweep:
+                        switch (sweepDirection) {
+                            case Up:
+                                delta = sweepAmount;
+                                break;
+                            case Down:
+                                delta = (short) -sweepAmount;
+                                break;
+                            default:
+                                throw new RuntimeException();
+                        }
+                        break;
+                    case Modulation:
+                        delta = modulationTable.getSample(currenModulationTableIndex);
+                        currenModulationTableIndex++;
+                        currenModulationTableIndex &= mask(log2(ModulationTable.SAMPLE_COUNT));
+                        break;
+                    default:
+                        throw new RuntimeException();
+                }
+                addFrequencyDelta(delta);
+                cyclesSinceLastModification -= cyclesPerModification;
+            }
+        }
+    }
+
+    @Override
     public void reset() {
         super.reset();
         sweepModEnabled = true;
@@ -109,6 +151,7 @@ public class VSUPCMSweepModChannel extends VSUPCMChannel {
         modificationInterval = 3;
         sweepDirection = SweepDirection.Down;
         sweepAmount = 2;
-
+        cyclesSinceLastModification = 0;
+        currenModulationTableIndex = 0;
     }
 }

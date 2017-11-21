@@ -24,6 +24,7 @@ public class VSUPCMChannel extends VSUChannel {
     public void setByte(int address, byte value) {
         if (address == PCM_WAVE_START) {
             waveIndex = (byte) extractU(value, WAVE_INDEX_POS, WAVE_INDEX_LEN);
+            logger.warning(Logger.Component.VSU, "Writing wave index=%d (v=%d)", waveIndex, value);
             return;
         }
         super.setByte(address, value);

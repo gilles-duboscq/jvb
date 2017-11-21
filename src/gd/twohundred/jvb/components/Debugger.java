@@ -10,10 +10,12 @@ import gd.twohundred.jvb.components.debug.LogMessage;
 import gd.twohundred.jvb.components.debug.Logs;
 import gd.twohundred.jvb.components.debug.Overview;
 import gd.twohundred.jvb.components.debug.VIPView;
+import gd.twohundred.jvb.components.debug.VSUView;
 import gd.twohundred.jvb.components.debug.View;
 import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
 import gd.twohundred.jvb.components.vip.VirtualImageProcessor;
 import gd.twohundred.jvb.components.vip.WindowAttributes;
+import gd.twohundred.jvb.components.vsu.VirtualSoundUnit;
 import org.jline.keymap.BindingReader;
 import org.jline.keymap.KeyMap;
 import org.jline.terminal.Attributes;
@@ -38,7 +40,7 @@ import static java.lang.Long.max;
 import static java.lang.Long.min;
 
 public class Debugger implements ExactlyEmulable, Logger {
-    private static final int DISPLAY_REFRESH_RATE_HZ = 2;
+    private static final int DISPLAY_REFRESH_RATE_HZ = 4;
     private static final long DISPLAY_REFRESH_PERIOD = CPU.CLOCK_HZ / DISPLAY_REFRESH_RATE_HZ;
     private static final String APP_NAME = "JVB";
 
@@ -112,6 +114,7 @@ public class Debugger implements ExactlyEmulable, Logger {
         breakpoints = new Breakpoints(this);
         this.views.add(breakpoints);
         this.views.add(new VIPView(this));
+        this.views.add(new VSUView(this));
         this.views.add(new Logs(log, terminal, levels));
         this.size = new Size();
         size.copy(terminal.getSize());
@@ -372,6 +375,10 @@ public class Debugger implements ExactlyEmulable, Logger {
 
     public VirtualImageProcessor getVip() {
         return getBus().getVIP();
+    }
+
+    public VirtualSoundUnit getVsu() {
+        return getBus().getVSU();
     }
 
     public State getState() {

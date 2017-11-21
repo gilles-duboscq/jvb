@@ -49,4 +49,8 @@ public class ModulationTable implements WriteOnlyMemory, Resetable {
             bb.putInt(0xdeadbeef);
         }
     }
+
+    public byte getSample(int index) {
+        return (byte) (data[index] & mask(SAMPLE_BIT_WIDTH));
+    }
 }

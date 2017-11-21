@@ -139,4 +139,8 @@ public class Bus extends MappedModules {
     VirtualImageProcessor getVIP() {
         return vip;
     }
+
+    VirtualSoundUnit getVSU() {
+        return vsu;
+    }
 }

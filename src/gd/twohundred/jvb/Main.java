@@ -19,10 +19,9 @@ public class Main {
     private Path cartridgePath;
 
     private static final long NS_PER_CYCLES = Utils.NANOS_PER_SECOND / CPU.CLOCK_HZ;
-    private static final long TARGET_MACRO_TICK_PER_SECOND = 1000;
+    private static final long TARGET_MACRO_TICK_PER_SECOND = 100;
     private static final long TARGET_GRANULARITY_NS = Utils.NANOS_PER_SECOND / TARGET_MACRO_TICK_PER_SECOND;
-    private static final long MAX_GRANULARITY_NS = 3 * TARGET_GRANULARITY_NS;
-    private static final long MAX_CYCLES_PER_MACRO_TICK = MAX_GRANULARITY_NS / NS_PER_CYCLES;
+    private static final long MAX_CYCLES_PER_MACRO_TICK = TARGET_GRANULARITY_NS / NS_PER_CYCLES;
 
     public static void main(String... args) throws IOException {
         Main m = new Main();
@@ -41,6 +40,7 @@ public class Main {
         Logger logger;
         try {
             debugger = new Debugger();
+            //debugger.pause();
             logger = debugger;
         } catch (RuntimeException re) {
             logger = new StdLogger();
@@ -67,16 +67,21 @@ public class Main {
                 long clockT = t - startT;
                 long simulationT = cycles * NS_PER_CYCLES;
 
-                long missingCycles = (clockT - simulationT) / NS_PER_CYCLES;
-                missingCycles = min(missingCycles, MAX_CYCLES_PER_MACRO_TICK);
-
-                cycles += virtualBoy.tick(missingCycles);
-
-                long deltaClockT = System.nanoTime() - t;
-                if (deltaClockT < TARGET_GRANULARITY_NS) {
-                    LockSupport.parkNanos(100000);
+                long missingTime = clockT - simulationT;
+                if (missingTime > 0) {
+                    long missingCycles = missingTime / NS_PER_CYCLES;
+                    missingCycles = min(missingCycles, MAX_CYCLES_PER_MACRO_TICK);
+                    //logger.warning(Misc, "Missing cycles: %d", missingCycles);
+                    //System.out.println(missingCycles + " " +  missingTime / NS_PER_CYCLES);
+                    long cyclesDone = virtualBoy.tick(missingCycles);
+                    cycles += cyclesDone;
+                } else if (-missingTime > 10000){
+                    LockSupport.parkNanos(-missingTime);
                 }
             }
+//            while (!Thread.interrupted() && mainWindow.isOpen() && !virtualBoy.isHalted()) {
+//                virtualBoy.tick(20000);
+//            }
             logger.info(Misc, "Bye :)");
         } finally {
             if (debugger != null) {

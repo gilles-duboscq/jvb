@@ -2,6 +2,7 @@ package gd.twohundred.jvb.components.debug;
 
 import gd.twohundred.jvb.components.Debugger;
 import gd.twohundred.jvb.components.debug.boxes.Box;
+import gd.twohundred.jvb.components.debug.boxes.SimpleColumn;
 import gd.twohundred.jvb.components.debug.boxes.Table;
 import gd.twohundred.jvb.components.debug.boxes.Table.Column;
 import gd.twohundred.jvb.components.debug.boxes.VerticalBoxes;
@@ -24,39 +25,24 @@ public class VIPView implements View {
     private final WindowAttributesTable windowAttributesTable;
     private final VerticalBoxes verticalBoxes;
 
-    private abstract class WindowAttributesColumn implements Column {
-        private final String name;
-        private final int width;
+    private abstract class WindowAttributesColumn extends SimpleColumn<WindowAttributes> {
+        private WindowAttributes[] attributes;
 
-        protected WindowAttributesColumn(String name, int width) {
-            this.name = name;
-            this.width = width;
+        public WindowAttributesColumn(String name, int width) {
+            super(name, width);
         }
 
         @Override
-        public String name() {
-            return name;
-        }
-
-        @Override
-        public int minWidth() {
-            return width;
-        }
-
-        @Override
-        public boolean fixedWidth() {
-            return true;
-        }
-
-        @Override
-        public void cell(AttributedStringBuilder asb, int row, int width) {
-            WindowAttributes[] windowAttributes = debugger.getWindowAttributes();
-            if (row < VirtualImageProcessor.WINDOW_ATTRIBUTE_COUNT) {
-                cell(asb, windowAttributes[VirtualImageProcessor.WINDOW_ATTRIBUTE_COUNT - row - 1]);
+        protected WindowAttributes[] getObjects() {
+            if (attributes == null) {
+                WindowAttributes[] windowAttributes = debugger.getWindowAttributes();
+                attributes = new WindowAttributes[windowAttributes.length];
+                for (int i = 0; i < attributes.length; i++) {
+                    attributes[i] = windowAttributes[windowAttributes.length - i - 1];
+                }
             }
+            return attributes;
         }
-
-        protected abstract void cell(AttributedStringBuilder asb, WindowAttributes attributes);
     }
 
     private class IDColumn extends WindowAttributesColumn {
@@ -161,6 +147,16 @@ public class VIPView implements View {
     private class WindowAttributesTable extends Table {
         private WindowAttributesTable(Terminal terminal) {
             super("Windows", Arrays.asList(new IDColumn(), new StopColumn(), new ModeColumn(), new XColumn(), new YColumn(), new WidthColumn(), new HeightColumn(), new BaseSegmentColumn(), new ParamIndexColumn()), terminal);
+        }
+
+        @Override
+        public boolean fixedHeight() {
+            return true;
+        }
+
+        @Override
+        public int minHeight() {
+            return VirtualImageProcessor.WINDOW_ATTRIBUTE_COUNT + 2;
         }
     }
 

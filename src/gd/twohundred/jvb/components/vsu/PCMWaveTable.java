@@ -50,7 +50,7 @@ public class PCMWaveTable implements WriteOnlyMemory, Resetable {
         }
     }
 
-    byte getSample(int index) {
+    public byte getSample(int index) {
         return (byte) (data[index] & mask(SAMPLE_BIT_WIDTH));
     }
 }

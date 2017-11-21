@@ -13,7 +13,7 @@ public class VSUNoiseChannel extends VSUChannel {
         return 0;
     }
 
-    protected long getCyclesPerSample() {
+    public long getCyclesPerSample() {
         return 4 * (2048 - getFrequencyData());
     }
 }

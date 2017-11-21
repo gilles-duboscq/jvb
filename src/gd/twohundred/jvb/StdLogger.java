@@ -18,13 +18,15 @@ public class StdLogger implements Logger {
 
     @Override
     public void log(Component component, Level level, String format, Object... args) {
-        PrintStream stream = level.ordinal() <= Error.ordinal() ? System.err : System.out;
-        StringBuilder sb = new StringBuilder();
-        Formatter formatter = new Formatter(sb);
-        formatter.format("[%7s][%6s] ", level, component);
-        formatter.format(format, args);
-        sb.append(System.lineSeparator());
-        stream.print(sb);
+        if (isLevelEnabled(component, level)) {
+            PrintStream stream = level.ordinal() <= Error.ordinal() ? System.err : System.out;
+            StringBuilder sb = new StringBuilder();
+            Formatter formatter = new Formatter(sb);
+            formatter.format("[%7s][%6s] ", level, component);
+            formatter.format(format, args);
+            sb.append(System.lineSeparator());
+            stream.print(sb);
+        }
     }
 
     @Override

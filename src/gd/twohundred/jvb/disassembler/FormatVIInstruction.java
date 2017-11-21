@@ -127,7 +127,7 @@ public class FormatVIInstruction implements Instruction {
         public static FormatVIInstructionType decode(int top6) {
             assert (top6 & 0b111111) == top6;
             assert topU(top6, 2, 6) == 0b11 && top6 != 111110;
-            return TABLE[top6 & 0b111];
+            return TABLE[top6 & 0b1111];
         }
     }
 }

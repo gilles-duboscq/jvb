@@ -113,6 +113,7 @@ import static gd.twohundred.jvb.components.Instructions.SUBOP_XB;
 import static gd.twohundred.jvb.components.Instructions.SUBOP_XH;
 import static gd.twohundred.jvb.components.Instructions.SUB_OPCODE_LEN;
 import static gd.twohundred.jvb.components.Instructions.SUB_OPCODE_POS;
+import static gd.twohundred.jvb.components.ProgramStatusWord.PSW_MASK;
 import static java.lang.Math.abs;
 
 public class CPU implements Emulable, Resetable, InterruptSource {
@@ -136,6 +137,9 @@ public class CPU implements Emulable, Resetable, InterruptSource {
     private static final int ECR_EICC_LEN = 16;
     private static final int ECR_FECC_POS = 16;
     private static final int ECR_FECC_LEN = 16;
+
+
+    private static final int PC_MASK = ~0b1;
 
 
     public static final int REGISTER_COUNT = 32;
@@ -183,16 +187,16 @@ public class CPU implements Emulable, Resetable, InterruptSource {
     private void setSystemRegister(int r, int value) {
         switch (r) {
             case EIPC_REG:
-                eipc = value;
+                eipc = value & PC_MASK;
                 break;
             case EIPSW_REG:
-                eipsw = value;
+                eipsw = value & PSW_MASK;
                 break;
             case FEPC_REG:
-                fepc = value;
+                fepc = value & PC_MASK;
                 break;
             case FEPSW_REG:
-                fepsw = value;
+                fepsw = value & PSW_MASK;
                 break;
             case PSW_REG:
                 psw.set(value);
@@ -284,9 +288,9 @@ public class CPU implements Emulable, Resetable, InterruptSource {
 
         Arrays.fill(registers, 1, REGISTER_COUNT - 1, 0xdeadbeef);
         eipc = 0xdeadbeef;
-        eipsw = 0xdeadbeef;
+        eipsw = 0xdeadbeef & PSW_MASK;
         fepc = 0xdeadbeef;
-        fepsw = 0xdeadbeef;
+        fepsw = 0xdeadbeef & PSW_MASK;
         adtre = 0xdeadbeef;
         chcw = 0xdeadbeef;
     }
@@ -568,9 +572,13 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     if (psw.getNP()) {
                         nextPC = fepc;
                         psw.set(fepsw);
+                        psw.setExecutionMode(ProgramStatusWord.ExecutionMode.Exception);
+                        logger.debug(Logger.Component.CPU, "RETI: Duplex -> Exception");
                     } else {
                         nextPC = eipc;
                         psw.set(eipsw);
+                        psw.setExecutionMode(ProgramStatusWord.ExecutionMode.Normal);
+                        logger.debug(Logger.Component.CPU, "RETI: Exception -> Normal");
                     }
                     break;
                 }
@@ -915,11 +923,11 @@ public class CPU implements Emulable, Resetable, InterruptSource {
     }
 
     public void setFepc(int fepc) {
-        this.fepc = fepc;
+        this.fepc = fepc & PC_MASK;
     }
 
     public void setFepsw(int fepsw) {
-        this.fepsw = fepsw;
+        this.fepsw = fepsw & PSW_MASK;
     }
 
     public void setFecc(short fecc) {
@@ -927,15 +935,15 @@ public class CPU implements Emulable, Resetable, InterruptSource {
     }
 
     public void setPc(int pc) {
-        this.pc = pc;
+        this.pc = pc & PC_MASK;
     }
 
     public void setEipc(int eipc) {
-        this.eipc = eipc;
+        this.eipc = eipc & PC_MASK;
     }
 
     public void setEipsw(int eipsw) {
-        this.eipsw = eipsw;
+        this.eipsw = eipsw & PSW_MASK;
     }
 
     public void setEicc(short eicc) {

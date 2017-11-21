@@ -16,12 +16,12 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
     public static final int START = 0x18;
     public static final int SIZE = 12;
 
-    private static final double LARGE_INTERVAL_MICROS_PER_CYCLE = 100.0;
-    private static final double SMALL_INTERVAL_MICROS_PER_CYCLE = 20.0;
+    private static final double LARGE_INTERVAL_MICROS = 100.0;
+    private static final double SMALL_INTERVAL_MICROS = 20.0;
 
     private static final int MICROS_PER_SECOND = 1_000_000;
-    private static final long LARGE_INTERVAL_PERIOD = (long) (CPU.CLOCK_HZ * LARGE_INTERVAL_MICROS_PER_CYCLE / MICROS_PER_SECOND);
-    private static final long SMALL_INTERVAL_PERIOD = (long) (CPU.CLOCK_HZ * SMALL_INTERVAL_MICROS_PER_CYCLE / MICROS_PER_SECOND);
+    private static final long LARGE_INTERVAL_PERIOD = (long) (CPU.CLOCK_HZ * LARGE_INTERVAL_MICROS / MICROS_PER_SECOND);
+    private static final long SMALL_INTERVAL_PERIOD = (long) (CPU.CLOCK_HZ * SMALL_INTERVAL_MICROS / MICROS_PER_SECOND);
 
     private static final int LOW_REGISTER = 0;
     private static final int HIGH_REGISTER = 4;
@@ -37,8 +37,8 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
     private final Logger logger;
     private byte status;
 
-    private short counter;
-    private short reloadValue;
+    private char counter;
+    private char reloadValue;
     private long cycleCounter;
     private boolean interruptRaised;
 
@@ -73,25 +73,30 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
     public void setByte(int address, byte value) {
         switch (address) {
             case CONTROL_REGISTER:
-                int effectiveValue = value & WRITE_MASK;
+                int effectiveValue = (value & WRITE_MASK) | (status & ~WRITE_MASK);
                 if (testBit(effectiveValue, CLEAR_ZERO_POS)) {
                     effectiveValue &= ~intBits(CLEAR_ZERO_POS, ZERO_POS);
                     logger.debug(Logger.Component.Timer, "Clearing zero status");
                 }
-                if (testBit(effectiveValue, ENABLE_INT_POS) && !isInterruptEnabled()) {
-                    logger.debug(Logger.Component.Timer, "Enabling timer interrupts");
+                if (testBit(effectiveValue, ENABLE_INT_POS) != isInterruptEnabled()) {
+                    logger.debug(Logger.Component.Timer, "%s timer interrupts", testBit(effectiveValue, ENABLE_INT_POS) ? "Enabling" : "Disabling");
                 }
-                if (testBit(effectiveValue, ENABLE_POS) && !isTimerEnabled()) {
-                    logger.debug(Logger.Component.Timer, "Enabling timer");
+                if (testBit(effectiveValue, ENABLE_POS) != isTimerEnabled()) {
+                    logger.debug(Logger.Component.Timer, "%s timer", testBit(effectiveValue, ENABLE_POS) ? "Enabling" : "Disabling");
+                }
+                if (testBit(effectiveValue, INTERVAL_POS) != testBit(status, INTERVAL_POS) ) {
+                    logger.debug(Logger.Component.Timer, "Period:", testBit(effectiveValue, INTERVAL_POS) ? "Small" : "Large");
                 }
                 status = (byte) effectiveValue;
                 return;
             case LOW_REGISTER:
-                reloadValue = (short) ((reloadValue & 0xff00) | (value & 0xff));
+                reloadValue = (char) ((reloadValue & 0xff00) | (value & 0xff));
+                logger.debug(Logger.Component.Timer, "new reload value: 0x%04x", (int) reloadValue);
                 counter = reloadValue;
                 return;
             case HIGH_REGISTER:
-                reloadValue = (short) ((reloadValue & 0xff) | ((value << 8) & 0xff));
+                reloadValue = (char) ((reloadValue & 0xff) | ((value << 8) & 0xff));
+                logger.debug(Logger.Component.Timer, "new reload value: 0x%04x", (int) reloadValue);
                 counter = reloadValue;
                 return;
         }
@@ -113,7 +118,7 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
     @Override
     public void reset() {
         status = 0x04;
-        counter = (short) 0xffff;
+        counter = 0xffff;
         reloadValue = 0x0000;
         interruptRaised = false;
     }
@@ -130,7 +135,9 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
                     counter--;
                     if (counter == 0) {
                         status |= intBit(ZERO_POS);
+                        logger.debug(Logger.Component.Timer, "Timer zero!!");
                         if (isInterruptEnabled()) {
+                            logger.debug(Logger.Component.Timer, "Raising timer interrupt");
                             interruptRaised = true;
                         }
                         counter = reloadValue;

@@ -1,6 +1,7 @@
 package gd.twohundred.jvb.components;
 
 import gd.twohundred.jvb.Logger;
+import gd.twohundred.jvb.components.ProgramStatusWord.ExecutionMode;
 import gd.twohundred.jvb.components.interfaces.AudioOut;
 import gd.twohundred.jvb.components.interfaces.Emulable;
 import gd.twohundred.jvb.components.interfaces.InputProvider;
@@ -11,9 +12,6 @@ import gd.twohundred.jvb.components.interfaces.Screen;
 import gd.twohundred.jvb.components.vip.VirtualImageProcessor;
 import gd.twohundred.jvb.components.vsu.VirtualSoundUnit;
 
-import static gd.twohundred.jvb.components.VirtualBoy.ExecutionMode.DuplexedException;
-import static gd.twohundred.jvb.components.VirtualBoy.ExecutionMode.Halt;
-
 public class VirtualBoy implements Emulable {
     public static final String VERSION = "0.1.0";
     private final CPU cpu;
@@ -23,15 +21,6 @@ public class VirtualBoy implements Emulable {
     private final GamePad gamePad;
     private final Logger logger;
     private Debugger debugger;
-
-    enum ExecutionMode {
-        Normal,
-        Exception,
-        DuplexedException,
-        Halt
-    }
-
-    private ExecutionMode executionMode;
 
     public VirtualBoy(Screen screen, AudioOut audioOut, InputProvider inputProvider, CartridgeROM rom, CartridgeRAM ram, Logger logger) {
         this.logger = logger;
@@ -69,7 +58,7 @@ public class VirtualBoy implements Emulable {
     }
 
     public boolean isHalted() {
-        return executionMode == ExecutionMode.Halt;
+        return cpu.getPsw().getExecutionMode() == ExecutionMode.Halt;
     }
 
     private static class InterruptChain {
@@ -96,20 +85,26 @@ public class VirtualBoy implements Emulable {
     }
 
     private Interrupt collectInterrupts() {
-        InterruptChain chain = new InterruptChain();
-        collectInterrupts(cpu, chain);
-        collectInterrupts(timer, chain);
-        collectInterrupts(vip, chain);
-        collectInterrupts(gamePad, chain);
-        return chain.head;
+        InterruptChain chain = collectInterrupts(cpu, null);
+        chain = collectInterrupts(timer, chain);
+        chain = collectInterrupts(vip, chain);
+        chain = collectInterrupts(gamePad, chain);
+        if (chain != null) {
+            return chain.head;
+        }
+        return null;
     }
 
 
-    private void collectInterrupts(InterruptSource source, InterruptChain chain) {
+    private InterruptChain collectInterrupts(InterruptSource source, InterruptChain chain) {
         Interrupt raised = source.raised();
         if (raised != null) {
+            if (chain == null) {
+                chain = new InterruptChain();
+            }
             chain.append(raised);
         }
+        return chain;
     }
 
     private boolean handleInterrupts() {
@@ -126,11 +121,13 @@ public class VirtualBoy implements Emulable {
 
     private boolean processInterrupt(Interrupt interrupt) {
         if (interrupt.getType().isMaskable()) {
-            if (executionMode != ExecutionMode.Normal) {
+            if (cpu.getPsw().getExecutionMode() != ExecutionMode.Normal) {
+                logger.debug(Logger.Component.Debugger, "Ignoring maskable interrupt: %s", interrupt);
                 return false;
             }
             int interruptLevel = interrupt.getType().getInterruptLevel();
             if (cpu.getPsw().getID() || interruptLevel < cpu.getPsw().getInt()) {
+                logger.debug(Logger.Component.Debugger, "Ignoring interrupt (ID:%s, level: %d < %d): %s", cpu.getPsw().getID(), interruptLevel, cpu.getPsw().getInt(), interrupt);
                 return false;
             }
             cpu.setEipc(cpu.getPc());
@@ -142,13 +139,13 @@ public class VirtualBoy implements Emulable {
     }
 
     private void handleInterrupt(Interrupt interrupt) {
-        if (executionMode == DuplexedException) {
+        if (cpu.getPsw().getExecutionMode() == ExecutionMode.DuplexedException) {
             logger.warning(Logger.Component.Interrupts, "Fatal interrupt!!");
             cpu.getBus().setWord(0, interrupt.getExceptionCode());
             cpu.getBus().setWord(4, cpu.getPc());
             cpu.getBus().setWord(8, cpu.getPsw().getValue());
-            executionMode = ExecutionMode.Halt;
-        } else if (executionMode == ExecutionMode.Exception) {
+            cpu.getPsw().setExecutionMode(ExecutionMode.Halt);
+        } else if (cpu.getPsw().getExecutionMode() == ExecutionMode.Exception) {
             logger.warning(Logger.Component.Interrupts, "Duplexed Exception! %s", interrupt);
             cpu.setFepc(cpu.getPc());
             cpu.setFepsw(cpu.getPsw().getValue());
@@ -157,7 +154,7 @@ public class VirtualBoy implements Emulable {
             cpu.getPsw().setInterruptDisable(true);
             cpu.getPsw().setAddressTrapEnable(false);
             cpu.setPc(InterruptType.DuplexedException.getHandlerAddress());
-            executionMode = DuplexedException;
+            cpu.getPsw().setExecutionMode(ExecutionMode.DuplexedException);
         } else {
             logger.debug(Logger.Component.Interrupts, "Interrupt: %s", interrupt);
             cpu.setEipc(cpu.getPc());
@@ -167,6 +164,7 @@ public class VirtualBoy implements Emulable {
             cpu.getPsw().setInterruptDisable(true);
             cpu.getPsw().setAddressTrapEnable(false);
             cpu.setPc(interrupt.getType().getHandlerAddress());
+            cpu.getPsw().setExecutionMode(ExecutionMode.Exception);
         }
     }
 
@@ -177,7 +175,7 @@ public class VirtualBoy implements Emulable {
         vip.reset();
         vsu.reset();
         gamePad.reset();
-        executionMode = ExecutionMode.Normal;
+        cpu.getPsw().setExecutionMode(ExecutionMode.Normal);
     }
 
     public void attach(Debugger debugger) {
@@ -186,7 +184,7 @@ public class VirtualBoy implements Emulable {
     }
 
     void halt() {
-        executionMode = Halt;
+        cpu.getPsw().setExecutionMode(ExecutionMode.Halt);
     }
 
     CPU getCpu() {

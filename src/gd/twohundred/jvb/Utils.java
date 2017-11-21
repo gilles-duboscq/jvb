@@ -69,7 +69,7 @@ public class Utils {
 
     public static int zeroExtend(int v, int bits) {
         assert bits <= 32 && bits > 0;
-        return v & mask(bits, bits - 1);
+        return v & mask(bits);
     }
 
     public static boolean testBits(int v, int bits, int pos, int len) {

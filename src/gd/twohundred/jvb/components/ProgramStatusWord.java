@@ -4,9 +4,9 @@ import static gd.twohundred.jvb.Utils.extractU;
 import static gd.twohundred.jvb.Utils.insert;
 import static gd.twohundred.jvb.Utils.intBit;
 import static gd.twohundred.jvb.Utils.intBits;
+import static gd.twohundred.jvb.Utils.mask;
 import static gd.twohundred.jvb.Utils.maskedMerge;
 import static gd.twohundred.jvb.Utils.testBit;
-import static gd.twohundred.jvb.Utils.testBits;
 
 public class ProgramStatusWord {
     private static final int Z_POS = 0;
@@ -19,16 +19,28 @@ public class ProgramStatusWord {
     private static final int FZD_POS = 7;
     private static final int FIV_POS = 8;
     private static final int FRO_POS = 9;
-    private static final int ID_POS = 11;
+    private static final int ID_POS = 12;
     private static final int AE_POS = 13;
     private static final int EP_POS = 14;
     private static final int NP_POS = 15;
     private static final int INT_POS = 16;
     private static final int INT_LEN = 2;
+    static final int PSW_MASK = intBits(Z_POS, S_POS, OV_POS, CY_POS, FPR_POS, FUD_POS, FOV_POS, FZD_POS, FIV_POS, FRO_POS, ID_POS, AE_POS, EP_POS, NP_POS) | mask(INT_POS, INT_LEN);
+
     private int psw;
 
+    enum ExecutionMode {
+        Normal,
+        Exception,
+        DuplexedException,
+        Halt
+    }
+
+    private ExecutionMode executionMode;
+
+
     public void set(int value) {
-        this.psw = value;
+        this.psw = value & PSW_MASK;
     }
 
     public void setZeroSignOveflowCarry(boolean zero, boolean sign, boolean overflow, boolean carry) {
@@ -87,8 +99,8 @@ public class ProgramStatusWord {
         return extractU(psw, INT_POS, INT_LEN);
     }
 
-    public void setInterruptLevel(int interruptlevel) {
-        this.psw = insert(interruptlevel, INT_POS, INT_LEN, psw);
+    public void setInterruptLevel(int interruptLevel) {
+        this.psw = insert(interruptLevel, INT_POS, INT_LEN, psw);
     }
 
     public void setExceptionPending(boolean set) {
@@ -105,5 +117,13 @@ public class ProgramStatusWord {
 
     public void accumulateFPUDivByZero() {
         psw |= intBit(FZD_POS);
+    }
+
+    public ExecutionMode getExecutionMode() {
+        return executionMode;
+    }
+
+    public void setExecutionMode(ExecutionMode executionMode) {
+        this.executionMode = executionMode;
     }
 }

@@ -183,8 +183,16 @@ public class Logs implements View {
                 selectedLine = max(0, selectedLine - lastHeight);
                 scrolling = false;
             }, KeyMap.key(terminal, InfoCmp.Capability.key_ppage));
-            keyMap.bind(() -> selectedLine = min(max(0, messages.size() - 1), selectedLine + lastHeight), KeyMap.key(terminal, InfoCmp.Capability.key_npage));
-            keyMap.bind(() -> scrolling = true, KeyMap.key(terminal, InfoCmp.Capability.key_end));
+            keyMap.bind(() -> {
+                selectedLine = min(max(0, messages.size() - 1), selectedLine + lastHeight);
+            }, KeyMap.key(terminal, InfoCmp.Capability.key_npage));
+            keyMap.bind(() -> {
+                scrolling = true;
+            }, KeyMap.key(terminal, InfoCmp.Capability.key_end));
+            keyMap.bind(() -> {
+                selectedLine = 0;
+                scrolling = false;
+            }, KeyMap.key(terminal, InfoCmp.Capability.key_home));
         }
 
         public KeyMap<Runnable> getKeyMap() {

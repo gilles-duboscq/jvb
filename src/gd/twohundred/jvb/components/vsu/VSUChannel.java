@@ -177,6 +177,10 @@ public abstract class VSUChannel implements WriteOnlyMemory, ExactlyEmulable {
         return enableEnvelope;
     }
 
+    public boolean isEnvelopeEnabled() {
+        return enableEnvelope;
+    }
+
     public boolean repeatEnvelope() {
         return repeatEnvelope;
     }
@@ -217,7 +221,6 @@ public abstract class VSUChannel implements WriteOnlyMemory, ExactlyEmulable {
     }
 
     private int getEnvelope() {
-        // TODO
         return currentEnvelope;
     }
 
@@ -250,10 +253,10 @@ public abstract class VSUChannel implements WriteOnlyMemory, ExactlyEmulable {
     protected abstract byte sample();
 
     public long getCyclesPerSample() {
-        return 128L * (2048L - frequencyData);
+        return 4L * (2048L - frequencyData);
     }
 
-    private long getCyclesPerEnvelopeStep() {
+    public long getCyclesPerEnvelopeStep() {
         return ENVELOPE_STEP_UNIT_CYCLES * (stepInterval + 1L);
     }
 

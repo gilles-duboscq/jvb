@@ -28,7 +28,7 @@ public class DebugChannel extends VSUChannel {
             long ticksPerSecond = t * NANOS_PER_SECOND / drt;
             logger.warning(Logger.Component.VSU, "outputSample / s: %d", ticksPerSecond);
         }
-        byte s = (byte) (((Math.sin(2.0 * Math.PI * t * 5700 / AudioOut.OUTPUT_SAMPLING_HZ ) + 1) / 2) * 0b111_1111);
+        byte s = (byte) (((Math.sin(2.0 * Math.PI * t * 440 / AudioOut.OUTPUT_SAMPLING_HZ ) + 1) / 2) * 0b111_1111);
         //logger.warning(Logger.Component.VSU, "Debug sample %d", s);
         if (outputChannel == VirtualSoundUnit.OutputChannel.Left) {
             t++;

@@ -12,6 +12,8 @@ import gd.twohundred.jvb.components.vsu.VSUChannel;
 import gd.twohundred.jvb.components.vsu.VSUNoiseChannel;
 import gd.twohundred.jvb.components.vsu.VSUPCMChannel;
 import gd.twohundred.jvb.components.vsu.VSUPCMSweepModChannel;
+import gd.twohundred.jvb.components.vsu.VirtualSoundUnit;
+import gd.twohundred.jvb.components.vsu.VirtualSoundUnit.OutputChannel;
 import org.jline.keymap.KeyMap;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Size;
@@ -161,9 +163,48 @@ public class VSUView implements View {
         }
     }
 
+    private class ChannelVolumeColumn extends VSUChannelColumn {
+        private final OutputChannel leftRight;
+
+        public ChannelVolumeColumn(OutputChannel leftRight) {
+            super("V " + leftRight.name().charAt(0), 3);
+            this.leftRight = leftRight;
+        }
+
+        @Override
+        protected void cell(AttributedStringBuilder asb, VSUChannel channel) {
+            int v;
+            switch (leftRight) {
+                case Right:
+                    v = channel.getVolumeRight();
+                    break;
+                case Left:
+                    v= channel.getVolumeLeft();
+                    break;
+                default:
+                    throw new RuntimeException();
+            }
+            asb.append(Integer.toString(v));
+        }
+    }
+
+    private class ChannelEnvelopeColumn extends VSUChannelColumn {
+        public ChannelEnvelopeColumn() {
+            super("env Hz - r", 10);
+        }
+
+        @Override
+        protected void cell(AttributedStringBuilder asb, VSUChannel channel) {
+            asb.append(channel.isEnvelopeEnabled() ? "✔ " : "  ");
+            asb.append(Long.toString(CPU.CLOCK_HZ / channel.getCyclesPerEnvelopeStep()));
+            asb.append('-');
+            asb.append(Long.toString(channel.getStepInterval()));
+        }
+    }
+
     private class ChannelAttributesTable extends Table {
         private ChannelAttributesTable(Terminal terminal) {
-            super("Channels", Arrays.asList(new ChannelIDColumn(), new ChannelTypeColumn(), new ChannelEnabledColumn(), new ChannelDurationColumn(), new ChannelWaveIndexColumn(), new ChannelFrequencyColumn()), terminal);
+            super("Channels", Arrays.asList(new ChannelIDColumn(), new ChannelTypeColumn(), new ChannelEnabledColumn(), new ChannelDurationColumn(), new ChannelWaveIndexColumn(), new ChannelFrequencyColumn(), new ChannelVolumeColumn(OutputChannel.Left), new ChannelVolumeColumn(OutputChannel.Right), new ChannelEnvelopeColumn()), terminal);
         }
 
         @Override

@@ -73,7 +73,7 @@ public class VirtualSoundUnit extends MappedModules implements ExactlyEmulable {
         channel5 = new VSUPCMSweepModChannel(CHANNEL_5_START, waveTables, modulationTable, logger);
         noiseChannel = new VSUNoiseChannel(NOISE_CHANNEL_START, logger);
         debugChannel = new DebugChannel(NOISE_CHANNEL_START, logger);
-        channels = new VSUChannel[]{channel1, channel2, channel3, channel4, channel5, noiseChannel, /*debugChannel*/};
+        channels = new VSUChannel[]{channel1, channel2, channel3, channel4, channel5, noiseChannel/*, debugChannel*/};
     }
 
     @Override
@@ -178,7 +178,7 @@ public class VirtualSoundUnit extends MappedModules implements ExactlyEmulable {
         }
     }
 
-    enum OutputChannel {
+    public enum OutputChannel {
         Left,
         Right
     }

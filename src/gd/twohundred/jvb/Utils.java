@@ -93,6 +93,22 @@ public class Utils {
         return 1 << pos;
     }
 
+    public static int intBits(int pos1) {
+        return intBit(pos1);
+    }
+
+    public static int intBits(int pos1, int pos2) {
+        return intBit(pos1) | intBit(pos2);
+    }
+
+    public static int intBits(int pos1, int pos2, int pos3) {
+        return intBit(pos1) | intBit(pos2) | intBit(pos3);
+    }
+
+    public static int intBits(int pos1, int pos2, int pos3, int pos4) {
+        return intBit(pos1) | intBit(pos2) | intBit(pos3) | intBit(pos4);
+    }
+
     public static int intBits(int... positions) {
         int v = 0;
         for (int pos : positions) {

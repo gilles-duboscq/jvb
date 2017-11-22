@@ -12,7 +12,7 @@
 | Title | Notes
 | --- | ---
 | 3D Tetris (U) | Bitstring (VSU)
-| affine_demo_1 | ✓ (read from uninitialized?)
+| affine_demo_1 | ✓
 | affine_demo_2 | ✓
 | Blox V1.0 by KR155E (PD) | Too fast, some missing graphics?
 | Blox V1.1 by KR155E (PD) | ✓ (VSU)
@@ -44,7 +44,7 @@
 | Reality Boy Demo 2 (PD) | Link
 | Red Alarm (J) | Hangs after some intro screens (waiting for an interrupt?) (VSU)
 | Red Alarm (U) | Hangs after some intro screens (waiting for an interrupt?) (VSU)
-| Scaling Demo by Parasyte (PD) | ✓ (Does not initialize window param memory properly, use -Djvb.ram.init=0)
+| Scaling Demo by Parasyte (PD) | ✓ (Does not initialize window param memory properly, use `-Djvb.ram.init=0`)
 | SD Gundam Dimension War (J) | Glitchy graphics/hangs
 | Simon by Pat Daderko (PD) | ✓
 | Space Invaders: Virtual Collection (J) | Glitchy graphics, seems to wait for interrupt
@@ -69,6 +69,6 @@
 | Virtual League Baseball (U) [a1] | Controls don't always seem to work in menus
 | Virtual League Baseball (U) | illegal op?
 | Virtual Pong (PD) | Nothing happens (waiting for drawing status to change while drawing is disabled?)
-| Virtual Pro Yakyuu '95 (J) | ?
+| Virtual Pro Yakyuu '95 (J) | Controls don't always seem to work in menus
 | V Tetris (J) | ✓ (VSU)
 | Waterworld (U) | display stops during intro

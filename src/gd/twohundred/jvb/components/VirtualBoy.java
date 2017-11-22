@@ -125,12 +125,12 @@ public class VirtualBoy implements Emulable {
     private boolean processInterrupt(Interrupt interrupt) {
         if (interrupt.getType().isMaskable()) {
             if (cpu.getPsw().getExecutionMode() != ExecutionMode.Normal) {
-                logger.debug(Logger.Component.Debugger, "Ignoring maskable interrupt: %s", interrupt);
+                logger.debug(Logger.Component.Interrupts, "Ignoring maskable interrupt: %s", interrupt);
                 return false;
             }
             int interruptLevel = interrupt.getType().getInterruptLevel();
             if (cpu.getPsw().getID() || interruptLevel < cpu.getPsw().getInt()) {
-                logger.debug(Logger.Component.Debugger, "Ignoring interrupt (ID:%s, level: %d < %d): %s", cpu.getPsw().getID(), interruptLevel, cpu.getPsw().getInt(), interrupt);
+                logger.debug(Logger.Component.Interrupts, "Ignoring interrupt (ID:%s, level: %d < %d): %s", cpu.getPsw().getID(), interruptLevel, cpu.getPsw().getInt(), interrupt);
                 return false;
             }
             cpu.setEipc(cpu.getPc());

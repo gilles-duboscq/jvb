@@ -105,7 +105,6 @@ public class Debugger implements ExactlyEmulable, Logger {
             levels.put(c, Level.Info);
         }
         levels.put(Component.Memory, Level.Warning);
-        levels.put(Component.VSU, Level.Debug);
         state = State.Running;
         this.terminal = TerminalBuilder.terminal();
         this.views = new ArrayList<>();

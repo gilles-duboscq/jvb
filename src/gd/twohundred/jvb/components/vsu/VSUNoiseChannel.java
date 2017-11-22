@@ -35,7 +35,7 @@ public class VSUNoiseChannel extends VSUChannel {
     protected byte sample() {
         boolean temp = testBit(state, 7) ^ testBit(state, tapBit);
         state = (short) (((state << 1) | (temp ? 1 : 0)) & mask(STATE_BITS));
-        return (byte) (temp ? 0 : 1);
+        return (byte) (temp ? 0 : 63);
     }
 
     public long getCyclesPerSample() {

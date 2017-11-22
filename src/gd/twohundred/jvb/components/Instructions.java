@@ -73,6 +73,17 @@ public class Instructions {
     public static final int OP_SETF = 0b010010;
     public static final int OP_CAXI = 0b111010;
 
+    public static final int OP_BITSTRING = 0b011111;
+
+    public static final int BITSTRING_ANDBSU = 0b001;
+    public static final int BITSTRING_ANDNBSU = 0b101;
+    public static final int BITSTRING_MOVBSU = 0b011;
+    public static final int BITSTRING_NOTBSU = 0b111;
+    public static final int BITSTRING_ORBSU = 0b000;
+    public static final int BITSTRING_ORNBSU = 0b100;
+    public static final int BITSTRING_XORBSU = 0b010;
+    public static final int BITSTRING_XORNBSU = 0b110;
+
     public static final int BCOND_BNE = 0b1010;
     public static final int BCOND_BL = 0b0001;
     public static final int BCOND_BNL = 0b1001;

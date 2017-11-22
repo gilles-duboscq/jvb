@@ -6,13 +6,20 @@ import gd.twohundred.jvb.components.interfaces.Interrupt;
 import gd.twohundred.jvb.components.interfaces.InterruptSource;
 import gd.twohundred.jvb.components.interfaces.Resetable;
 
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.function.IntBinaryOperator;
 
+import static gd.twohundred.jvb.Utils.extractS;
+import static gd.twohundred.jvb.Utils.extractU;
 import static gd.twohundred.jvb.Utils.insert;
-import static gd.twohundred.jvb.Utils.signStr;
+import static gd.twohundred.jvb.Utils.intBit;
+import static gd.twohundred.jvb.Utils.mask;
+import static gd.twohundred.jvb.Utils.maskedMerge;
+import static gd.twohundred.jvb.Utils.signExtend;
 import static gd.twohundred.jvb.Utils.testBit;
+import static gd.twohundred.jvb.Utils.testBits;
+import static gd.twohundred.jvb.Utils.toBinary;
+import static gd.twohundred.jvb.Utils.topU;
 import static gd.twohundred.jvb.Utils.zeroExtend;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BE;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BGE;
@@ -20,15 +27,23 @@ import static gd.twohundred.jvb.components.Instructions.BCOND_BGT;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BH;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BL;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BLE;
+import static gd.twohundred.jvb.components.Instructions.BCOND_BLT;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BN;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BNE;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BNH;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BNL;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BP;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BR;
-import static gd.twohundred.jvb.components.Instructions.BCOND_BLT;
 import static gd.twohundred.jvb.components.Instructions.BCOND_BV;
 import static gd.twohundred.jvb.components.Instructions.BCOND_NOP;
+import static gd.twohundred.jvb.components.Instructions.BITSTRING_ANDBSU;
+import static gd.twohundred.jvb.components.Instructions.BITSTRING_ANDNBSU;
+import static gd.twohundred.jvb.components.Instructions.BITSTRING_MOVBSU;
+import static gd.twohundred.jvb.components.Instructions.BITSTRING_NOTBSU;
+import static gd.twohundred.jvb.components.Instructions.BITSTRING_ORBSU;
+import static gd.twohundred.jvb.components.Instructions.BITSTRING_ORNBSU;
+import static gd.twohundred.jvb.components.Instructions.BITSTRING_XORBSU;
+import static gd.twohundred.jvb.components.Instructions.BITSTRING_XORNBSU;
 import static gd.twohundred.jvb.components.Instructions.COND_LEN;
 import static gd.twohundred.jvb.components.Instructions.COND_POS;
 import static gd.twohundred.jvb.components.Instructions.DISP26_LEN;
@@ -37,24 +52,21 @@ import static gd.twohundred.jvb.components.Instructions.DISP9_POS;
 import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX;
 import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX_LEN;
 import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX_POS;
-import static gd.twohundred.jvb.components.Instructions.OP_CAXI;
-import static gd.twohundred.jvb.components.Instructions.OP_SETF;
-import static gd.twohundred.jvb.components.Instructions.OP_SHR_REG;
-import static gd.twohundred.jvb.components.Instructions.SUBOP_ADDF_S;
 import static gd.twohundred.jvb.components.Instructions.IMM5_LEN;
 import static gd.twohundred.jvb.components.Instructions.OPCODE_LEN;
 import static gd.twohundred.jvb.components.Instructions.OPCODE_POS;
 import static gd.twohundred.jvb.components.Instructions.OP_ADDI;
 import static gd.twohundred.jvb.components.Instructions.OP_ADD_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_ADD_REG;
-import static gd.twohundred.jvb.components.Instructions.OP_AND_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_AND_IMM;
+import static gd.twohundred.jvb.components.Instructions.OP_AND_REG;
+import static gd.twohundred.jvb.components.Instructions.OP_BITSTRING;
+import static gd.twohundred.jvb.components.Instructions.OP_CAXI;
 import static gd.twohundred.jvb.components.Instructions.OP_CLI;
 import static gd.twohundred.jvb.components.Instructions.OP_CMP_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_CMP_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_DIV;
 import static gd.twohundred.jvb.components.Instructions.OP_DIVU;
-import static gd.twohundred.jvb.components.Instructions.OP_SUBOP;
 import static gd.twohundred.jvb.components.Instructions.OP_ILL_1;
 import static gd.twohundred.jvb.components.Instructions.OP_INB;
 import static gd.twohundred.jvb.components.Instructions.OP_INH;
@@ -82,26 +94,24 @@ import static gd.twohundred.jvb.components.Instructions.OP_RETI;
 import static gd.twohundred.jvb.components.Instructions.OP_SAR_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_SAR_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_SEI;
+import static gd.twohundred.jvb.components.Instructions.OP_SETF;
 import static gd.twohundred.jvb.components.Instructions.OP_SHL_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_SHL_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_SHR_IMM;
+import static gd.twohundred.jvb.components.Instructions.OP_SHR_REG;
 import static gd.twohundred.jvb.components.Instructions.OP_STB;
 import static gd.twohundred.jvb.components.Instructions.OP_STH;
 import static gd.twohundred.jvb.components.Instructions.OP_STSR;
 import static gd.twohundred.jvb.components.Instructions.OP_STW;
 import static gd.twohundred.jvb.components.Instructions.OP_SUB;
+import static gd.twohundred.jvb.components.Instructions.OP_SUBOP;
 import static gd.twohundred.jvb.components.Instructions.OP_XOR_IMM;
 import static gd.twohundred.jvb.components.Instructions.OP_XOR_REG;
 import static gd.twohundred.jvb.components.Instructions.REG1_LEN;
 import static gd.twohundred.jvb.components.Instructions.REG1_POS;
 import static gd.twohundred.jvb.components.Instructions.REG2_LEN;
 import static gd.twohundred.jvb.components.Instructions.REG2_POS;
-import static gd.twohundred.jvb.Utils.extractS;
-import static gd.twohundred.jvb.Utils.extractU;
-import static gd.twohundred.jvb.Utils.intBit;
-import static gd.twohundred.jvb.Utils.signExtend;
-import static gd.twohundred.jvb.Utils.testBits;
-import static gd.twohundred.jvb.Utils.toBinary;
+import static gd.twohundred.jvb.components.Instructions.SUBOP_ADDF_S;
 import static gd.twohundred.jvb.components.Instructions.SUBOP_CMPF_S;
 import static gd.twohundred.jvb.components.Instructions.SUBOP_CVT_SW;
 import static gd.twohundred.jvb.components.Instructions.SUBOP_CVT_WS;
@@ -115,7 +125,7 @@ import static gd.twohundred.jvb.components.Instructions.SUBOP_XH;
 import static gd.twohundred.jvb.components.Instructions.SUB_OPCODE_LEN;
 import static gd.twohundred.jvb.components.Instructions.SUB_OPCODE_POS;
 import static gd.twohundred.jvb.components.ProgramStatusWord.PSW_MASK;
-import static java.lang.Math.abs;
+import static java.lang.Integer.min;
 
 public class CPU implements Emulable, Resetable, InterruptSource {
     public static final long CLOCK_HZ = 20_000_000L;
@@ -274,6 +284,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
     }
 
     private static final int CHCW_ICE_POS = 1;
+
     private void processCacheControlCommand(int value) {
         chcw = value & intBit(CHCW_ICE_POS);
         if (DEBUG_CC) {
@@ -609,6 +620,10 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     }
                     break;
                 }
+                case OP_BITSTRING: {
+                    cycles = bitstring(imm5);
+                    break;
+                }
                 case OP_ILL_1: {
                     logger.warning(Logger.Component.CPU, "Illegal instruction @ %#08x!", pc);
                     pendingInterrupt = new SimpleInterrupt(Interrupt.InterruptType.IllegalOpcode);
@@ -620,6 +635,103 @@ public class CPU implements Emulable, Resetable, InterruptSource {
         }
         pc = nextPC;
         return cycles;
+    }
+
+    private int bitstring(int op) {
+        int sourceAddr = getRegister(30) & ~0b11;
+        int destinationAddr = getRegister(29) & ~0b11;
+        int length = getRegister(28);
+        int sourceOffset = getRegister(27) & 0b11111;
+        int destinationOffset = getRegister(26) & 0b11111;
+        switch (topU(op, 2, 5)) {
+            case 0b00: // search
+                if (testBit(op, 3)) {
+                    logger.warning(Logger.Component.CPU, "Illegal bit string opcode 0b%s @ %#08x!", toBinary(op, 5), pc);
+                    pendingInterrupt = new SimpleInterrupt(Interrupt.InterruptType.IllegalOpcode);
+                    return 1;
+                }
+                return bitStringSearch(op & mask(2), sourceAddr, sourceOffset, length);
+            case 0b01: //arithmetic
+                return bitStringArithmetic(op & mask(3), sourceAddr, sourceOffset, destinationAddr, destinationOffset, length);
+            default:
+                logger.warning(Logger.Component.CPU, "Illegal bitstring opcode 0b%s @ %#08x!", toBinary(op, 5), pc);
+                pendingInterrupt = new SimpleInterrupt(Interrupt.InterruptType.IllegalOpcode);
+                return 1;
+        }
+    }
+
+    private int bitStringArithmetic(int op, int sourceAddr, int sourceOffset, int destinationAddr, int destinationOffset, int length) {
+        IntBinaryOperator operator;
+        switch (op) {
+            case BITSTRING_ANDBSU:
+                operator = (src, dst) -> src & dst;
+                break;
+            case BITSTRING_ANDNBSU:
+                operator = (src, dst) -> ~src & dst;
+                break;
+            case BITSTRING_MOVBSU:
+                operator = (src, dst) -> src;
+                break;
+            case BITSTRING_NOTBSU:
+                operator = (src, dst) -> ~src;
+                break;
+            case BITSTRING_ORBSU:
+                operator = (src, dst) -> src | dst;
+                break;
+            case BITSTRING_ORNBSU:
+                operator = (src, dst) -> ~src | dst;
+                break;
+            case BITSTRING_XORBSU:
+                operator = (src, dst) -> src ^ dst;
+                break;
+            case BITSTRING_XORNBSU:
+                operator = (src, dst) -> ~src ^ dst;
+                break;
+            default:
+                throw new RuntimeException(String.format("Bit string arithmetic opcode 0b%s not implemented @ %08x", toBinary(op, 3), pc));
+        }
+        if (sourceOffset == destinationOffset) {
+            int startSourceAddress = sourceAddr;
+            int startDestinationAddress = destinationAddr;
+            int remainingLength = length;
+            if (sourceOffset != 0) {
+                startSourceAddress += Integer.BYTES;
+                startDestinationAddress += Integer.BYTES;
+                int firstLength = min(Integer.SIZE - sourceOffset, length);
+                remainingLength -= firstLength;
+                int src = bus.getWord(sourceAddr);
+                int dst = bus.getWord(destinationAddr);
+                int mask = mask(sourceOffset, firstLength);
+                int result = operator.applyAsInt(src & mask, dst & mask);
+                bus.setWord(destinationAddr, maskedMerge(result, mask, dst));
+            }
+            if (remainingLength > 0) {
+                bitStringArithmeticAlignedWords(operator, startSourceAddress, startDestinationAddress, remainingLength / Integer.SIZE);
+                remainingLength %= Integer.SIZE;
+                if (remainingLength > 0) {
+                    int src = bus.getWord(sourceAddr + (length + sourceOffset) / Byte.SIZE);
+                    int dst = bus.getWord(destinationAddr + (length + sourceOffset) / Byte.SIZE);
+                    int mask = mask(remainingLength);
+                    int result = operator.applyAsInt(src & mask, dst & mask);
+                    bus.setWord(destinationAddr + (length + sourceOffset) / Byte.SIZE, maskedMerge(result, mask, dst));
+                }
+            }
+        } else {
+            throw new RuntimeException(String.format("Bit string arithmetic: unimplemented case: %d, %d <- %d, %d : %d", destinationAddr, destinationOffset, sourceAddr, sourceOffset, length));
+        }
+        return 12 * (length / Integer.SIZE) + 36;
+    }
+
+    private void bitStringArithmeticAlignedWords(IntBinaryOperator op, int sourceAddr, int destinationAddr, int length) {
+        for (int i = 0; i < length; i++) {
+            int src = bus.getWord(sourceAddr + i * Integer.BYTES);
+            int dst = bus.getWord(destinationAddr + i * Integer.BYTES);
+            bus.setWord(destinationAddr + i * Integer.BYTES, op.applyAsInt(src, dst));
+        }
+    }
+
+    private int bitStringSearch(int op, int address, int offset, int length) {
+        throw new RuntimeException(String.format("Bit string search opcode 0b%s not implemented @ %08x", toBinary(op, 2), pc));
     }
 
     private boolean testCondition(int cond) {

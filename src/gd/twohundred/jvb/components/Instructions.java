@@ -71,6 +71,7 @@ public class Instructions {
     public static final int OP_ILL_1 = 0b110010;
     public static final int OP_SUBOP = 0b111110;
     public static final int OP_SETF = 0b010010;
+    public static final int OP_CAXI = 0b111010;
 
     public static final int BCOND_BNE = 0b1010;
     public static final int BCOND_BL = 0b0001;

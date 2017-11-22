@@ -37,6 +37,7 @@ import static gd.twohundred.jvb.components.Instructions.DISP9_POS;
 import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX;
 import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX_LEN;
 import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX_POS;
+import static gd.twohundred.jvb.components.Instructions.OP_CAXI;
 import static gd.twohundred.jvb.components.Instructions.OP_SETF;
 import static gd.twohundred.jvb.components.Instructions.OP_SHR_REG;
 import static gd.twohundred.jvb.components.Instructions.SUBOP_ADDF_S;
@@ -592,6 +593,21 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                 case OP_SETF: {
                     int cond = imm5;
                     setRegister(reg2, testCondition(cond) ? 1 : 0);
+                    break;
+                }
+                case OP_CAXI: {
+                    int second = bus.getHalfWord(pc + 2);
+                    nextPC += 2;
+                    cycles = 26;
+                    int disp16 = signExtend(second, 16);
+                    int lockAddr = (getRegister(reg1) + disp16) & ~0b11;
+                    int lock = bus.getWord(lockAddr);
+                    sub(getRegister(reg2), lock);
+                    setRegister(reg2, lock);
+                    if (psw.getZ()) {
+                        bus.setWord(lockAddr, getRegister(30));
+                    }
+                    break;
                 }
                 case OP_ILL_1: {
                     logger.warning(Logger.Component.CPU, "Illegal instruction @ %#08x!", pc);

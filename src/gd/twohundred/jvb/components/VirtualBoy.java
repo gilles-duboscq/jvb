@@ -68,7 +68,7 @@ public class VirtualBoy implements Emulable {
             Interrupt previous = null;
             Interrupt current = head;
             while (inserting != null) {
-                while (current != null && i.compareTo(current) <= 0) {
+                while (current != null && i.compareTo(current) >= 0) {
                     previous = current;
                     current = current.getNext();
                 }
@@ -90,6 +90,9 @@ public class VirtualBoy implements Emulable {
         chain = collectInterrupts(vip, chain);
         chain = collectInterrupts(gamePad, chain);
         if (chain != null) {
+            if (chain.head != null && chain.head.getNext() != null) {
+                logger.debug(Logger.Component.Interrupts, "Ignoring %s (priority)", chain.head.getNext());
+            }
             return chain.head;
         }
         return null;

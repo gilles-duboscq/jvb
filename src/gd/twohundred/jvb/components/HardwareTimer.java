@@ -16,12 +16,12 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
     public static final int START = 0x18;
     public static final int SIZE = 12;
 
-    private static final double LARGE_INTERVAL_MICROS = 100.0;
-    private static final double SMALL_INTERVAL_MICROS = 20.0;
+    private static final long LARGE_INTERVAL_MICROS = 100;
+    private static final long SMALL_INTERVAL_MICROS = 20;
 
     private static final int MICROS_PER_SECOND = 1_000_000;
-    private static final long LARGE_INTERVAL_PERIOD = (long) (CPU.CLOCK_HZ * LARGE_INTERVAL_MICROS / MICROS_PER_SECOND);
-    private static final long SMALL_INTERVAL_PERIOD = (long) (CPU.CLOCK_HZ * SMALL_INTERVAL_MICROS / MICROS_PER_SECOND);
+    private static final long LARGE_INTERVAL_PERIOD = CPU.CLOCK_HZ * LARGE_INTERVAL_MICROS / MICROS_PER_SECOND;
+    private static final long SMALL_INTERVAL_PERIOD = CPU.CLOCK_HZ * SMALL_INTERVAL_MICROS / MICROS_PER_SECOND;
 
     private static final int LOW_REGISTER = 0;
     private static final int HIGH_REGISTER = 4;
@@ -88,6 +88,9 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
                     logger.debug(Logger.Component.Timer, "Period:", testBit(effectiveValue, INTERVAL_POS) ? "Small" : "Large");
                 }
                 status = (byte) effectiveValue;
+                if (!isInterruptEnabled() || !testBit(status, ZERO_POS)) {
+                    interruptRaised = false;
+                }
                 return;
             case LOW_REGISTER:
                 reloadValue = (char) ((reloadValue & 0xff00) | (value & 0xff));
@@ -127,26 +130,19 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
     public void tickExact(long cycles) {
         if (isTimerEnabled()) {
             long period = getPeriod();
-            long cyclesToConsume = cycles;
-            while (cyclesToConsume > 0) {
-                long remaining = period - cycleCounter;
-                if (cyclesToConsume >= remaining) {
-                    cycleCounter = 0;
-                    counter--;
-                    if (counter == 0) {
-                        status |= intBit(ZERO_POS);
-                        logger.debug(Logger.Component.Timer, "Timer zero!!");
-                        if (isInterruptEnabled()) {
-                            logger.debug(Logger.Component.Timer, "Raising timer interrupt");
-                            interruptRaised = true;
-                        }
-                        counter = reloadValue;
+            cycleCounter += cycles;
+            while (cycleCounter > period) {
+                if (counter == 0) {
+                    status |= intBit(ZERO_POS);
+                    logger.debug(Logger.Component.Timer, "Timer zero!!");
+                    if (isInterruptEnabled()) {
+                        logger.debug(Logger.Component.Timer, "Raising timer interrupt");
+                        interruptRaised = true;
                     }
-                    cyclesToConsume -= remaining;
-                } else {
-                    cycleCounter += cyclesToConsume;
-                    break;
+                    counter = reloadValue;
                 }
+                counter--;
+                cycleCounter -= period;
             }
         }
     }
@@ -154,7 +150,6 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
     @Override
     public Interrupt raised() {
         if (interruptRaised) {
-            interruptRaised = false;
             return new SimpleInterrupt(Interrupt.InterruptType.TimerZero);
         }
         return null;

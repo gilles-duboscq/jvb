@@ -223,7 +223,7 @@ public class VIPView implements View {
 
         @Override
         public int minHeight() {
-            return 2;
+            return 3;
         }
 
         @Override
@@ -248,6 +248,8 @@ public class VIPView implements View {
                         asb.append(" Window: ").append(Integer.toString(vip.getCurrentWindow().getId()));
                     }
                     break;
+                case 2:
+                    asb.append("Frame repeat: ").append(Integer.toString(vip.getControlRegs().getFrameRepeat()));
             }
         }
     }

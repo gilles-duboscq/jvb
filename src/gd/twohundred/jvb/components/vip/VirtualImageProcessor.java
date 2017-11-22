@@ -198,6 +198,8 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             interruptRaised = true;
             logger.debug(Logger.Component.VIP, "Raising VIP interrupt: %s", type);
             controlRegs.addPendingInterrupt(type);
+        } else {
+            logger.debug(Logger.Component.VIP, "_Not_ raising VIP interrupt: %s", type);
         }
     }
 

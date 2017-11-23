@@ -12,7 +12,6 @@ import gd.twohundred.jvb.components.vsu.VSUChannel;
 import gd.twohundred.jvb.components.vsu.VSUNoiseChannel;
 import gd.twohundred.jvb.components.vsu.VSUPCMChannel;
 import gd.twohundred.jvb.components.vsu.VSUPCMSweepModChannel;
-import gd.twohundred.jvb.components.vsu.VirtualSoundUnit;
 import gd.twohundred.jvb.components.vsu.VirtualSoundUnit.OutputChannel;
 import org.jline.keymap.KeyMap;
 import org.jline.terminal.Cursor;
@@ -127,12 +126,14 @@ public class VSUView implements View {
 
     private class ChannelDurationColumn extends VSUChannelColumn {
         public ChannelDurationColumn() {
-            super("Duration", 4);
+            super("D (ms)", 7);
         }
 
         @Override
         protected void cell(AttributedStringBuilder asb, VSUChannel channel) {
-            asb.append(Integer.toString(channel.getDuration()), channel.useDuration() ? AttributedStyle.DEFAULT : AttributedStyle.DEFAULT.faint());
+            AttributedStyle style = channel.useDuration() ? AttributedStyle.DEFAULT : AttributedStyle.DEFAULT.faint();
+            double durationMS = (double) channel.getDurationCycles() * 1000.0 / CPU.CLOCK_HZ;
+            asb.append(String.format("%.1f", durationMS), style);
         }
     }
 
@@ -152,14 +153,12 @@ public class VSUView implements View {
 
     private class ChannelFrequencyColumn extends VSUChannelColumn {
         public ChannelFrequencyColumn() {
-            super("f(Hz) - f(r)", 10);
+            super("f (Hz)", 7);
         }
 
         @Override
         protected void cell(AttributedStringBuilder asb, VSUChannel channel) {
             asb.append(Long.toString(CPU.CLOCK_HZ / channel.getCyclesPerSample()));
-            asb.append('-');
-            asb.append(Long.toString(channel.getFrequencyData()));
         }
     }
 
@@ -179,7 +178,7 @@ public class VSUView implements View {
                     v = channel.getVolumeRight();
                     break;
                 case Left:
-                    v= channel.getVolumeLeft();
+                    v = channel.getVolumeLeft();
                     break;
                 default:
                     throw new RuntimeException();
@@ -190,15 +189,14 @@ public class VSUView implements View {
 
     private class ChannelEnvelopeColumn extends VSUChannelColumn {
         public ChannelEnvelopeColumn() {
-            super("env Hz - r", 10);
+            super("env (ms)", 7);
         }
 
         @Override
         protected void cell(AttributedStringBuilder asb, VSUChannel channel) {
-            asb.append(channel.isEnvelopeEnabled() ? "✔ " : "  ");
-            asb.append(Long.toString(CPU.CLOCK_HZ / channel.getCyclesPerEnvelopeStep()));
-            asb.append('-');
-            asb.append(Long.toString(channel.getStepInterval()));
+            AttributedStyle style = channel.isEnvelopeEnabled() ? AttributedStyle.DEFAULT : AttributedStyle.DEFAULT.faint();
+            double durationMS = (double) channel.getCyclesPerEnvelopeStep() * 1000.0 / CPU.CLOCK_HZ;
+            asb.append(String.format("%.1f", durationMS), style);
         }
     }
 

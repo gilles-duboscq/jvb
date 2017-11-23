@@ -41,6 +41,9 @@ public abstract class VSUChannel implements WriteOnlyMemory, ExactlyEmulable {
     public static final long ENVELOPE_STEP_UNIT_FREQUENCY_DECIHZ = 651;
     public static final long ENVELOPE_STEP_UNIT_CYCLES = (CPU.CLOCK_HZ * 10L) / ENVELOPE_STEP_UNIT_FREQUENCY_DECIHZ;
 
+    public static final long DURATION_BASE_UNIT_DECIHZ = 2604;
+    public static final long DURATION_BASE_UNIT_CYCLES = (CPU.CLOCK_HZ * 10L) / DURATION_BASE_UNIT_DECIHZ;
+
     private final int start;
     protected final Logger logger;
 
@@ -60,6 +63,7 @@ public abstract class VSUChannel implements WriteOnlyMemory, ExactlyEmulable {
     private byte currentEnvelope;
     private long cyclesSinceLastSample;
     private long cyclesSinceLastEnvelopeStep;
+    private long durationCyclesRemaining;
 
     public enum Direction {
         Decay,
@@ -105,6 +109,9 @@ public abstract class VSUChannel implements WriteOnlyMemory, ExactlyEmulable {
                 }
                 useDuration = testBit(value, CONTROL_USE_DURATION_POS);
                 duration = (byte) extractU(value, CONTROL_DURATION_POS, CONTROL_DURATION_LEN);
+                if (enabled && useDuration) {
+                    durationCyclesRemaining = getDurationCycles();
+                }
                 return;
             case VOLUME_START:
                 volumeRight = (byte) extractU(value, VOLUME_RIGHT_POS, VOLUME_LEN);
@@ -159,6 +166,10 @@ public abstract class VSUChannel implements WriteOnlyMemory, ExactlyEmulable {
 
     public int getDuration() {
         return duration;
+    }
+
+    public long getDurationCycles() {
+        return (duration + 1L) * DURATION_BASE_UNIT_CYCLES;
     }
 
     public int getStepInterval() {
@@ -246,6 +257,12 @@ public abstract class VSUChannel implements WriteOnlyMemory, ExactlyEmulable {
             while (cyclesSinceLastSample > cyclesPerSample) {
                 currentSample = sample();
                 cyclesSinceLastSample -= cyclesPerSample;
+            }
+            if (useDuration()) {
+                durationCyclesRemaining -= cycles;
+                if (durationCyclesRemaining <= 0) {
+                    enabled = false;
+                }
             }
         }
     }

@@ -38,10 +38,6 @@ public class VSUNoiseChannel extends VSUChannel {
         return (byte) (temp ? 0 : 63);
     }
 
-    public long getCyclesPerSample() {
-        return 4 * (2048 - getFrequencyData());
-    }
-
     @Override
     public void reset() {
         super.reset();

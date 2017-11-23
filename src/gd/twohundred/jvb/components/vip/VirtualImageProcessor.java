@@ -17,7 +17,6 @@ import gd.twohundred.jvb.components.vip.VIPControlRegisters.VIPInterruptType;
 
 import java.awt.*;
 
-import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
 import static gd.twohundred.jvb.BusError.Reason.Unmapped;
 import static gd.twohundred.jvb.Utils.NANOS_PER_SECOND;
 import static gd.twohundred.jvb.Utils.repeat;

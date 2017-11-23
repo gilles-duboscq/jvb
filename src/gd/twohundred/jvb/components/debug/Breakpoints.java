@@ -20,9 +20,6 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Breakpoints implements View {
-    private static final String ADDRESS_PROMPT = "Address: ";
-    private static final int ADDRESS_PROMPT_LEN = ADDRESS_PROMPT.length();
-    private static final char DEL = '\177';
 
     private final Debugger debugger;
     private final List<Breakpoint> execBreakpoints;
@@ -34,11 +31,94 @@ public class Breakpoints implements View {
     private Table selectedTable;
 
     private final KeyMap<Runnable> addingKeyMap;
-    private final StringBuffer addressBuffer;
-    private volatile int addressCursor;
+    private final AddressField addressField;
     private boolean addingExec = true;
     private boolean addingRead;
     private boolean addingWrite;
+
+    public static class AddressField {
+        private static final String ADDRESS_PROMPT = "Address: ";
+        private static final int ADDRESS_PROMPT_LEN = ADDRESS_PROMPT.length();
+        private static final char DEL = '\177';
+
+        private final StringBuffer addressBuffer;
+        private volatile int addressCursor;
+
+        public AddressField(KeyMap<Runnable> keyMap, Terminal terminal) {
+            addressBuffer = new StringBuffer();
+            for (char i = '0'; i <= '9'; i++) {
+                keyMap.bind(insertAddressChar(i), Character.toString(i));
+            }
+            for (char i = 'A'; i <= 'F'; i++) {
+                keyMap.bind(insertAddressChar(Character.toLowerCase(i)), Character.toString(i));
+            }
+            for (char i = 'a'; i <= 'f'; i++) {
+                keyMap.bind(insertAddressChar(i), Character.toString(i));
+            }
+            keyMap.bind(insertAddressChar(DEL), KeyMap.key(terminal, InfoCmp.Capability.key_dc));
+            // this should be KeyMap.key(debugger.getTerminal(), InfoCmp.Capability.key_backspace) but jline does not support it
+            keyMap.bind(insertAddressChar('\b'), "\177");
+            keyMap.bind(this::moveCursorRight, KeyMap.key(terminal, InfoCmp.Capability.key_right));
+            keyMap.bind(this::moveCursorLeft, KeyMap.key(terminal, InfoCmp.Capability.key_left));
+        }
+
+        public int getCursorX() {
+            return 1 + ADDRESS_PROMPT_LEN + addressCursor;
+        }
+
+        public String getAddressPrompt() {
+            return ADDRESS_PROMPT;
+        }
+
+        public String getCurrentInput() {
+            return addressBuffer.toString();
+        }
+
+        public int getCurrentValue() {
+            return (int) Long.parseLong(addressBuffer.toString(), 16);
+        }
+
+        public boolean isCurrentInputValid() {
+            int length = addressBuffer.length();
+            return length <= 8 && length > 0;
+        }
+
+        private Runnable insertAddressChar(char c) {
+            return () -> {
+                assert addressCursor <= addressBuffer.length();
+                if (c == DEL) {
+                    if (addressCursor < addressBuffer.length()) {
+                        addressBuffer.deleteCharAt(addressCursor);
+                    }
+                } else if (c == '\b') {
+                    if (addressCursor > 0) {
+                        addressBuffer.deleteCharAt(addressCursor - 1);
+                        addressCursor--;
+                    }
+                } else {
+                    addressBuffer.insert(addressCursor, c);
+                    addressCursor++;
+                }
+            };
+        }
+
+        private void moveCursorRight() {
+            if (addressCursor < addressBuffer.length()) {
+                addressCursor++;
+            }
+        }
+
+        private void moveCursorLeft() {
+            if (addressCursor > 0) {
+                addressCursor--;
+            }
+        }
+
+        public void reset() {
+            addressBuffer.setLength(0);
+            addressCursor = 0;
+        }
+    }
 
     private static class Breakpoint {
         private final int address;
@@ -273,7 +353,6 @@ public class Breakpoints implements View {
     public Breakpoints(Debugger debugger) {
         this.debugger = debugger;
         this.state = State.Idle;
-        addressBuffer = new StringBuffer();
         execBreakpoints = new ArrayList<>();
         memBreakpoints = new ArrayList<>();
         execBreakpointsTable = new ExecBreakpointsTable(debugger.getTerminal());
@@ -286,24 +365,11 @@ public class Breakpoints implements View {
         addTableKeyBindings(memBreakpointsTable, memBreakpoints, debugger.getTerminal());
         addingKeyMap = new KeyMap<>();
         addingKeyMap.bind(this::finishAddBreakpoint, "\r");
-        for (char i = '0'; i <= '9'; i++) {
-            addingKeyMap.bind(insertAddressChar(i), Character.toString(i));
-        }
-        for (char i = 'A'; i <= 'F'; i++) {
-            addingKeyMap.bind(insertAddressChar(Character.toLowerCase(i)), Character.toString(i));
-        }
-        for (char i = 'a'; i <= 'f'; i++) {
-            addingKeyMap.bind(insertAddressChar(i), Character.toString(i));
-        }
-        addingKeyMap.bind(insertAddressChar(DEL), KeyMap.key(debugger.getTerminal(), InfoCmp.Capability.key_dc));
-        // this should be KeyMap.key(debugger.getTerminal(), InfoCmp.Capability.key_backspace) but jline does not support it
-        addingKeyMap.bind(insertAddressChar('\b'), "\177");
-        addingKeyMap.bind(this::moveCursorRight, KeyMap.key(debugger.getTerminal(), InfoCmp.Capability.key_right));
-        addingKeyMap.bind(this::moveCursorLeft, KeyMap.key(debugger.getTerminal(), InfoCmp.Capability.key_left));
         addingKeyMap.bind(this::abortAddBreakpoint, "q");
         addingKeyMap.bind(() -> this.addingExec = !this.addingExec, "x");
         addingKeyMap.bind(() -> this.addingRead = !this.addingRead, "r");
         addingKeyMap.bind(() -> this.addingWrite = !this.addingWrite, "w");
+        addressField = new AddressField(addingKeyMap, debugger.getTerminal());
         verticalBoxes = new VerticalBoxes("Breakpoints", Arrays.asList(execBreakpointsTable, memBreakpointsTable));
     }
 
@@ -341,7 +407,7 @@ public class Breakpoints implements View {
             case Idle:
                 return null;
             case Adding:
-                return new Cursor(1 + ADDRESS_PROMPT_LEN + addressCursor, 0);
+                return new Cursor(addressField.getCursorX(), 0);
             default:
                 throw new RuntimeException("Should not reach here");
         }
@@ -358,12 +424,12 @@ public class Breakpoints implements View {
         if (state == State.Adding) {
             AttributedStringBuilder addrPromptLine = new AttributedStringBuilder();
             addrPromptLine.append('│');
-            addrPromptLine.append(ADDRESS_PROMPT);
+            addrPromptLine.append(addressField.getAddressPrompt());
             AttributedStyle style = AttributedStyle.DEFAULT;
-            if (!validateAddress()) {
+            if (!addressField.isCurrentInputValid()) {
                 style = style.foreground(AttributedStyle.RED);
             }
-            addrPromptLine.append(addressBuffer.toString(), style);
+            addrPromptLine.append(addressField.getCurrentInput(), style);
             View.padToLength(addrPromptLine, width - 1);
             addrPromptLine.append('│');
             lines.add(addrPromptLine.toAttributedString());
@@ -405,7 +471,7 @@ public class Breakpoints implements View {
             actionsLine.append(" └Abort(");
             actionsLine.append("q", AttributedStyle.DEFAULT.underline());
             actionsLine.append(")┘ └Accept(");
-            actionsLine.append("⏎", validateAddress() ? AttributedStyle.DEFAULT.underline() : AttributedStyle.DEFAULT);
+            actionsLine.append("⏎", addressField.isCurrentInputValid() ? AttributedStyle.DEFAULT.underline() : AttributedStyle.DEFAULT);
             actionsLine.append(")┘");
             lines.add(actionsLine.toAttributedString());
         } else {
@@ -441,24 +507,18 @@ public class Breakpoints implements View {
     }
 
     private void startAddBreakpoint() {
-        addressBuffer.setLength(0);
-        addressCursor = 0;
+        addressField.reset();
         state = State.Adding;
         debugger.log(Logger.Component.Debugger, Logger.Level.Debug, "Starting bp add..");
         debugger.markRefreshNeeded();
     }
 
-    private boolean validateAddress() {
-        int length = addressBuffer.length();
-        return length <= 8 && length > 0;
-    }
-
     private void finishAddBreakpoint() {
-        if (!validateAddress()) {
+        if (!addressField.isCurrentInputValid()) {
             return;
         }
         state = State.Idle;
-        int addr = (int) Long.parseLong(addressBuffer.toString(), 16);
+        int addr = addressField.getCurrentValue();
         debugger.log(Logger.Component.Debugger, Logger.Level.Info, "Adding bp at %#010x", addr);
         if (addingExec) {
             execBreakpoints.add(new Breakpoint(addr, ""));
@@ -473,41 +533,6 @@ public class Breakpoints implements View {
         state = State.Idle;
         debugger.log(Logger.Component.Debugger, Logger.Level.Debug, "Abort add bp");
         debugger.markRefreshNeeded();
-    }
-
-    private Runnable insertAddressChar(char c) {
-        return () -> {
-            assert state == State.Adding;
-            assert addressCursor <= addressBuffer.length();
-            if (c == DEL) {
-                if (addressCursor < addressBuffer.length()) {
-                    addressBuffer.deleteCharAt(addressCursor);
-                }
-            } else if (c == '\b') {
-                if (addressCursor > 0) {
-                    addressBuffer.deleteCharAt(addressCursor - 1);
-                    addressCursor--;
-                }
-            } else {
-                addressBuffer.insert(addressCursor, c);
-                addressCursor++;
-            }
-        };
-    }
-
-    private void moveCursorRight() {
-        assert state == State.Adding;
-        if (addressCursor < addressBuffer.length()) {
-            addressCursor++;
-        }
-    }
-
-    private void moveCursorLeft() {
-        assert state == State.Adding;
-        if (addressCursor > 0) {
-            addressCursor--;
-        }
-
     }
 
     public boolean shouldBreakOnExec(int pc) {

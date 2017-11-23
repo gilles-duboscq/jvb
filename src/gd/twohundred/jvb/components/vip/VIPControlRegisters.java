@@ -1,13 +1,9 @@
 package gd.twohundred.jvb.components.vip;
 
-import gd.twohundred.jvb.BusError;
 import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.components.interfaces.ReadWriteMemory;
 import gd.twohundred.jvb.components.interfaces.Resetable;
 
-import java.util.EnumSet;
-
-import static gd.twohundred.jvb.BusError.Reason.Unimplemented;
 import static gd.twohundred.jvb.Utils.extractU;
 import static gd.twohundred.jvb.Utils.insert;
 import static gd.twohundred.jvb.Utils.intBit;
@@ -566,7 +562,7 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
     public void setDrawingFrameBufferPair(int pair, boolean drawing) {
         int affected = intBits(DRAWING_STATUS_WRITING_TO_FRAME_BUFFER_0_POS, DRAWING_STATUS_WRITING_TO_FRAME_BUFFER_1_POS);
         int set = intBit(DRAWING_STATUS_WRITING_TO_FRAME_BUFFER_0_POS, drawing && pair == 0)
-                | intBit(DRAWING_STATUS_WRITING_TO_FRAME_BUFFER_1_POS, drawing && pair == 1) ;
+                | intBit(DRAWING_STATUS_WRITING_TO_FRAME_BUFFER_1_POS, drawing && pair == 1);
         drawingStatus = (short) maskedMerge(set, affected, drawingStatus);
     }
 

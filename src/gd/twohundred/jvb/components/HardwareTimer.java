@@ -88,7 +88,7 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
                     logger.debug(Logger.Component.Timer, "Period:", testBit(effectiveValue, INTERVAL_POS) ? "Small" : "Large");
                 }
                 status = (byte) effectiveValue;
-                if (!isInterruptEnabled() || !testBit(status, ZERO_POS)) {
+                if (!isInterruptEnabled() || !hasZeroStatus()) {
                     interruptRaised = false;
                 }
                 return;
@@ -120,6 +120,10 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
 
     public char getReloadValue() {
         return reloadValue;
+    }
+
+    public boolean hasZeroStatus() {
+        return testBit(status, ZERO_POS);
     }
 
     @Override

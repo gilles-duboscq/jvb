@@ -133,9 +133,6 @@ public class VirtualBoy implements Emulable {
                 logger.debug(Logger.Component.Interrupts, "Ignoring interrupt (ID:%s, level: %d < %d): %s", cpu.getPsw().getID(), interruptLevel, cpu.getPsw().getInt(), interrupt);
                 return false;
             }
-            cpu.setEipc(cpu.getPc());
-            cpu.setEipsw(cpu.getPsw().getValue());
-            cpu.getPsw().setInterruptLevel((interruptLevel + 1) & 0xf);
             return true;
         }
         return true;
@@ -156,6 +153,7 @@ public class VirtualBoy implements Emulable {
             cpu.getPsw().setNMIPending(true);
             cpu.getPsw().setInterruptDisable(true);
             cpu.getPsw().setAddressTrapEnable(false);
+            cpu.getPsw().setInterruptLevel((interrupt.getType().getInterruptLevel() + 1) & 0xf);
             cpu.setPc(InterruptType.DuplexedException.getHandlerAddress());
             cpu.getPsw().setExecutionMode(ExecutionMode.DuplexedException);
         } else {
@@ -166,6 +164,7 @@ public class VirtualBoy implements Emulable {
             cpu.getPsw().setExceptionPending(true);
             cpu.getPsw().setInterruptDisable(true);
             cpu.getPsw().setAddressTrapEnable(false);
+            cpu.getPsw().setInterruptLevel((interrupt.getType().getInterruptLevel() + 1) & 0xf);
             cpu.setPc(interrupt.getType().getHandlerAddress());
             cpu.getPsw().setExecutionMode(ExecutionMode.Exception);
         }

@@ -31,7 +31,11 @@ public class VSUPCMChannel extends VSUChannel {
 
     @Override
     protected byte sample() {
-        PCMWaveTable waveTable = waveTables[getWaveIndex()];
+        int waveIndex = getWaveIndex();
+        if (waveIndex >= waveTables.length) {
+            return 0;
+        }
+        PCMWaveTable waveTable = waveTables[waveIndex];
         byte out = waveTable.getSample(currentSampleIndex);
         currentSampleIndex++;
         currentSampleIndex &= mask(log2(PCMWaveTable.SAMPLE_COUNT));

@@ -45,7 +45,7 @@ public class OthersView implements View {
 
     @Override
     public char getAccelerator() {
-        return 'o';
+        return 't';
     }
 
     private class TimerBox implements Box {
@@ -67,7 +67,7 @@ public class OthersView implements View {
 
         @Override
         public int minHeight() {
-            return 4;
+            return 5;
         }
 
         @Override
@@ -90,6 +90,9 @@ public class OthersView implements View {
                     break;
                 case 3:
                     asb.append("Reload value: ").append(Integer.toString(timer.getReloadValue()));
+                    break;
+                case 4:
+                    asb.append("Zero Status: ").append(timer.hasZeroStatus() ? "1" : "0");
                     break;
             }
         }

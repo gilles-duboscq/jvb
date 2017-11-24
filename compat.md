@@ -11,12 +11,12 @@
 
 | Title | Notes
 | --- | ---
-| 3D Tetris (U) | hangs
+| 3D Tetris (U) | Hangs on instructions screen
 | affine_demo_1 | ✓
 | affine_demo_2 | ✓
 | Blox V1.0 by KR155E (PD) | Too fast, some missing graphics?
 | Blox V1.1 by KR155E (PD) | ✓ (VSU)
-| Bound High! (JU) | Glitchy game screens. Sound too slow. Execution goes wrong for demo mode and when dying in game
+| Bound High! (JU) | Glitchy game screens. Execution goes wrong for demo mode and when dying in game
 | Croach, The (PD) | Nothing happens (waiting for drawing status to change while drawing is disabled?)
 | Etch-A-Sketch by Pat Daderko (PD) | ✓
 | Framebuffer Drawing Demo by Pat Daderko (PD) | Strange band at the top
@@ -50,9 +50,9 @@
 | Space Invaders: Virtual Collection (J) | Glitchy graphics, seems to wait for interrupt
 | Space Squash (J) | Hangs (VSU)
 | Super Fighter Demo by KR155E (PD) | Displays dead data from fb (waiting for display *not* ready?)
-| Teleroboxer (JU) [T+Ger.4b_KR155E] |Hangs
-| Teleroboxer (JU) | Hangs
-| T&E Virtual Golf (J) | Hangs (timer issue?)
+| Teleroboxer (JU) [T+Ger.4b_KR155E] | ✓
+| Teleroboxer (JU) | ✓
+| T&E Virtual Golf (J) | Unimplemented bitstring cases
 | Tic Tac Toe by Pat Daderko (PD) | Link
 | Tron VB by Pat Daderko (PD) | Link
 | VB Rocks! Demo by KR155E (PD) | Displays dead data from fb (waiting for display *not* ready?)
@@ -66,7 +66,7 @@
 | Virtual-E Cursor Demo (PD) | Bad rom?
 | Virtual Fishing (J) | ✓
 | Virtual Lab (J) | Falling pieces are not displayed
-| Virtual League Baseball (U) [a1] | Controls don't always seem to work in menus
+| Virtual League Baseball (U) [a1] | Controls are a bit strange, keeps on auto-pausing
 | Virtual League Baseball (U) | illegal op?
 | Virtual Pong (PD) | Nothing happens (waiting for drawing status to change while drawing is disabled?)
 | Virtual Pro Yakyuu '95 (J) | Controls don't always seem to work in menus

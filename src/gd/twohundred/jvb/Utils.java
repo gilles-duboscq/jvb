@@ -135,6 +135,7 @@ public class Utils {
         int result = 0;
         for (int i = 0; i < targetLength / patternLength; i++) {
             result |= v << shift;
+            shift += patternLength;
         }
         return result & mask(targetLength);
     }

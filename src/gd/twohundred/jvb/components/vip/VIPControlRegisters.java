@@ -465,7 +465,8 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         objectPalette[1] = (byte) (0xad & PALETTE_MASK);
         objectPalette[2] = (byte) (0xbe & PALETTE_MASK);
         objectPalette[3] = (byte) (0xef & PALETTE_MASK);
-        clearColor = (byte) (0xde & CLEAR_COLOR_MASK);
+        // it seems that some games don't set the clear color and expect 0
+        clearColor = 0;
         objectGroupIndexes[0] = (short) (0xdead & mask(OBJECT_GROUP_LEN));
         objectGroupIndexes[1] = (short) (0xbeef & mask(OBJECT_GROUP_LEN));
         objectGroupIndexes[2] = (short) (0xdead & mask(OBJECT_GROUP_LEN));

@@ -111,6 +111,7 @@ public class Instructions {
     public static final int SUBOP_XB = 0b001000;
     public static final int SUBOP_XH = 0b001001;
     public static final int SUBOP_MPYHW = 0b001100;
+    public static final int SUBOP_TRNC_SW = 0b001011;
 
     public enum AccessWidth {
         Byte(java.lang.Byte.BYTES),

@@ -120,6 +120,7 @@ import static gd.twohundred.jvb.components.Instructions.SUBOP_MPYHW;
 import static gd.twohundred.jvb.components.Instructions.SUBOP_MULF_S;
 import static gd.twohundred.jvb.components.Instructions.SUBOP_REV;
 import static gd.twohundred.jvb.components.Instructions.SUBOP_SUBF_S;
+import static gd.twohundred.jvb.components.Instructions.SUBOP_TRNC_SW;
 import static gd.twohundred.jvb.components.Instructions.SUBOP_XB;
 import static gd.twohundred.jvb.components.Instructions.SUBOP_XH;
 import static gd.twohundred.jvb.components.Instructions.SUB_OPCODE_LEN;
@@ -832,6 +833,10 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                 setRegister(reg2, signExtend(getRegister(reg2), Short.SIZE) * signExtend(getRegister(reg1), Short.SIZE));
                 return 9;
             }
+            case SUBOP_TRNC_SW: {
+                setRegister(reg2, trnc(getFloatRegister(reg1)));
+                return 14;
+            }
             default:
                 throw new RuntimeException(String.format("Unknown subop opcode: 0b%s @ %08X", toBinary(subOp, SUB_OPCODE_LEN), pc));
         }
@@ -862,6 +867,13 @@ public class CPU implements Emulable, Resetable, InterruptSource {
 
     private int cvt(float a) {
         int value = (int) a;
+        psw.accumulateReservedUnderFlowOverflowPrecisionDegradation(isReserved(a), false, false, false);
+        // TODO precision / invalid
+        return value;
+    }
+
+    private int trnc(float a) {
+        int value = (int) (a >= 0 ? Math.floor(a) : Math.ceil(a));
         psw.accumulateReservedUnderFlowOverflowPrecisionDegradation(isReserved(a), false, false, false);
         // TODO precision / invalid
         return value;

@@ -34,7 +34,7 @@
 | Mario's Tennis (JU) [a1] | Very glitchy graphics (VIP memory corruption?)
 | Mario's Tennis (JU) | illegal instruction?
 | Matrix, The by Cooler (PD) | Glitchy, way too fast
-| Nester's Funky Bowling (U) [a1] | TRNC.SW
+| Nester's Funky Bowling (U) [a1] | Crashes when throwing the ball
 | Nester's Funky Bowling (U) | bad rom?
 | OBJ Pointer Demo by Dan Bergman (PD) | ✓
 | Panic Bomber (J) | Sound does not work: wave index is never set. Writes in read-only memory.
@@ -58,8 +58,8 @@
 | VB Rocks! Demo by KR155E (PD) | Displays dead data from fb (waiting for display *not* ready?)
 | vb_test_2 | ✓
 | VeeBee Cursor Demo by David Williamson (PD) | Displays dead data from fb (waiting for display *not* ready?)
-| Vertical Force (J) | Sound is wrong (VSU state doesn't seem to be set properly). TRNC.SW
-| Vertical Force (U) | Sound is wrong (VSU state doesn't seem to be set properly). TRNC.SW
+| Vertical Force (J) | Sound is wrong (VSU state doesn't seem to be set properly).
+| Vertical Force (U) | Sound is wrong (VSU state doesn't seem to be set properly).
 | Virtual Bowling (J) | VIP crash (oob read in bg/param ram)
 | Virtual Boy Wario Land (JU) | Nothing happens after instruction & focus screen (timer issue?)
 | Virtual-E Cursor Demo (PD) [a1] | Nothing happens (waiting for display *not* ready?) 

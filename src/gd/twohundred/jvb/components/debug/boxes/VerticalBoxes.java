@@ -1,6 +1,7 @@
 package gd.twohundred.jvb.components.debug.boxes;
 
 import gd.twohundred.jvb.components.debug.View;
+import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 
 import java.util.Collections;
@@ -86,6 +87,32 @@ public class VerticalBoxes implements Box {
             }
         }
         return nonFixed == 0 ? Integer.MIN_VALUE : max(0, remainingHeight / nonFixed);
+    }
+
+    public void appendLines(List<AttributedString> lines, int width, int height) {
+        int nonFixedHeight = getNonFixedHeight(height, boxes);
+        Iterator<Box> iterator = boxes.iterator();
+        int currentBoxStart = -1;
+        Box currentBox = null;
+        for (int line = 0; line < height; line++) {
+            AttributedStringBuilder asb = new AttributedStringBuilder();
+            if (currentBox == null) {
+                if (iterator.hasNext()) {
+                    currentBox = iterator.next();
+                    currentBoxStart = line + 1;
+                    HorizontalBoxes.top(width, Collections.singletonList(currentBox), new int[]{max(0, width - 2)}, asb);
+                }
+            } else {
+                int boxHeight = currentBox.fixedHeight() ? currentBox.minHeight() : nonFixedHeight;
+                if (line == currentBoxStart + boxHeight) {
+                    HorizontalBoxes.bottom(new int[]{max(0, width - 2)}, width, asb);
+                    currentBox = null;
+                } else {
+                    boxLine(asb, currentBox, line - currentBoxStart, boxHeight, width);
+                }
+            }
+            lines.add(asb.toAttributedString());
+        }
     }
 
     private void boxLine(AttributedStringBuilder asb, Box box, int line, int height, int width) {

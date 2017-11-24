@@ -132,11 +132,7 @@ public class Logs implements View {
             lines.add(addLine.toAttributedString());
         }
         int remainingHeight = height - (lines.size() - startLines);
-        for (int i = 0; i < remainingHeight; i++) {
-            AttributedStringBuilder asb = new AttributedStringBuilder();
-            boxes.line(asb, i, width, remainingHeight);
-            lines.add(asb.toAttributedString());
-        }
+        boxes.appendLines(lines, width, remainingHeight);
     }
 
     @Override

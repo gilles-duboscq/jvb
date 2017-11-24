@@ -482,11 +482,7 @@ public class Breakpoints implements View {
             lines.add(addLine.toAttributedString());
         }
         int remainingHeight = height - (lines.size() - startLines);
-        for (int i = 0; i < remainingHeight; i++) {
-            AttributedStringBuilder asb = new AttributedStringBuilder();
-            verticalBoxes.line(asb, i, width, remainingHeight);
-            lines.add(asb.toAttributedString());
-        }
+        verticalBoxes.appendLines(lines, width, remainingHeight);
     }
 
     @Override

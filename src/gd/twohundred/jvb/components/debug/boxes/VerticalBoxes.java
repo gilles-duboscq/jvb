@@ -4,6 +4,7 @@ import gd.twohundred.jvb.components.debug.View;
 import org.jline.utils.AttributedStringBuilder;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 import static java.lang.Integer.max;
@@ -48,49 +49,28 @@ public class VerticalBoxes implements Box {
 
     @Override
     public void line(AttributedStringBuilder asb, int line, int width, int height) {
-        if (line == 0) {
-            HorizontalBoxes.top(width, Collections.singletonList(boxes.get(0)), new int[]{max(0, width - 2)}, asb);
-        } else if (line == height - 1) {
-            HorizontalBoxes.bottom(new int[]{max(0, width - 2)}, width, asb);
-        } else {
-            int nonFixedHeight = getNonFixedHeight(height, boxes);
-            int currentHeight = 1;
-            int i = -1;
-            Box box;
-            int boxStart;
-            int boxHeight;
-            do {
-                i++;
-                boxStart = currentHeight;
-                if (i >= boxes.size()) {
-                    return;
-                }
-                box = boxes.get(i);
-                boxHeight = box.fixedHeight() ? box.minHeight() : nonFixedHeight;
-                currentHeight += boxHeight + 2;
-            } while (currentHeight <= line);
-            if (line == boxStart + boxHeight) {
-                HorizontalBoxes.bottom(new int[]{max(0, width - 2)}, width, asb);
-            }  else if (line == boxStart + boxHeight + 1) {
-                if (i + 1 < boxes.size()) {
-                    box = boxes.get(i + 1);
-                    HorizontalBoxes.top(width, Collections.singletonList(box), new int[]{max(0, width - 2)}, asb);
-                }
-            } else {
-                int startLen = asb.length();
-                if (width > 0) {
-                    asb.append('║');
-                }
-                box.line(asb, line - boxStart, max(0, width - 2), boxHeight);
-                if (asb.length() - startLen > width - 1) {
-                    asb.setLength(startLen + width - 1);
-                } else {
-                    View.repeat(asb, width - 1 - (asb.length() - startLen), ' ');
-                }
-                if (width > 1) {
-                    asb.append('║');
-                }
+        int nonFixedHeight = getNonFixedHeight(height, boxes);
+        int currentHeight = 0;
+        int i = -1;
+        Box box;
+        int boxStart;
+        int boxHeight;
+        do {
+            i++;
+            boxStart = currentHeight;
+            if (i >= boxes.size()) {
+                return;
             }
+            box = boxes.get(i);
+            boxHeight = box.fixedHeight() ? box.minHeight() : nonFixedHeight;
+            currentHeight += boxHeight + 2;
+        } while (currentHeight <= line);
+        if (line == boxStart + boxHeight + 1) {
+            HorizontalBoxes.bottom(new int[]{max(0, width - 2)}, width, asb);
+        }  else if (line == boxStart) {
+            HorizontalBoxes.top(width, Collections.singletonList(box), new int[]{max(0, width - 2)}, asb);
+        } else {
+            boxLine(asb, box, line - (boxStart + 1), boxHeight, width);
         }
     }
 
@@ -106,5 +86,21 @@ public class VerticalBoxes implements Box {
             }
         }
         return nonFixed == 0 ? Integer.MIN_VALUE : max(0, remainingHeight / nonFixed);
+    }
+
+    private void boxLine(AttributedStringBuilder asb, Box box, int line, int height, int width) {
+        int startLen = asb.length();
+        if (width > 0) {
+            asb.append('║');
+        }
+        box.line(asb, line, max(0, width - 2), height);
+        if (asb.length() - startLen > width - 1) {
+            asb.setLength(startLen + width - 1);
+        } else {
+            View.repeat(asb, width - 1 - (asb.length() - startLen), ' ');
+        }
+        if (width > 1) {
+            asb.append('║');
+        }
     }
 }

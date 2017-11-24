@@ -17,7 +17,7 @@ public class Utils {
 
     public static int extractU(int v, int pos, int len) {
         assert pos >= 0 && pos < 32 : pos;
-        assert len > 0 && len + pos < 32 : pos + ", " + len;
+        assert len > 0 && len + pos <= 32 : pos + ", " + len;
         return (v >> pos) & mask(len);
     }
 

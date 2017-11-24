@@ -301,8 +301,8 @@ public class WindowAttributes implements ReadWriteMemory, Resetable {
         return parameterIndex & 0xffff;
     }
 
-    public short getOutOfBoundsCharacter() {
-        return outOfBoundsCharacter;
+    public int getOutOfBoundsCharacter() {
+        return outOfBoundsCharacter & 0xffff;
     }
 
     public short getParallax() {

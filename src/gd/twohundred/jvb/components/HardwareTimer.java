@@ -106,16 +106,20 @@ public class HardwareTimer implements ReadWriteMemory, ExactlyEmulable, Interrup
         throw new BusError(address, Unmapped);
     }
 
-    private boolean isTimerEnabled() {
+    public boolean isTimerEnabled() {
         return testBit(status, ENABLE_POS);
     }
 
-    private boolean isInterruptEnabled() {
+    public boolean isInterruptEnabled() {
         return testBit(status, ENABLE_INT_POS);
     }
 
-    private long getPeriod() {
+    public long getPeriod() {
         return testBit(status, INTERVAL_POS) ? SMALL_INTERVAL_PERIOD : LARGE_INTERVAL_PERIOD;
+    }
+
+    public char getReloadValue() {
+        return reloadValue;
     }
 
     @Override

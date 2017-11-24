@@ -143,4 +143,8 @@ public class Bus extends MappedModules {
     VirtualSoundUnit getVSU() {
         return vsu;
     }
+
+    HardwareTimer getTimer() {
+        return controlRegisters.getTimer();
+    }
 }

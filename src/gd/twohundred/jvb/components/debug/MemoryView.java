@@ -170,7 +170,7 @@ public class MemoryView implements View {
 
     @Override
     public char getAccelerator() {
-        return 'm';
+        return 'y';
     }
 
     private class MemoryBox implements Box {

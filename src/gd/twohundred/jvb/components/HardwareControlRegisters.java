@@ -122,4 +122,8 @@ public class HardwareControlRegisters implements Resetable, ReadWriteMemory {
         }
         throw new BusError(address, Unimplemented);
     }
+
+    HardwareTimer getTimer() {
+        return timer;
+    }
 }

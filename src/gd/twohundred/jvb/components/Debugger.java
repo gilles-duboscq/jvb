@@ -9,6 +9,7 @@ import gd.twohundred.jvb.components.debug.CPUView;
 import gd.twohundred.jvb.components.debug.LogMessage;
 import gd.twohundred.jvb.components.debug.Logs;
 import gd.twohundred.jvb.components.debug.MemoryView;
+import gd.twohundred.jvb.components.debug.OthersView;
 import gd.twohundred.jvb.components.debug.Overview;
 import gd.twohundred.jvb.components.debug.VIPView;
 import gd.twohundred.jvb.components.debug.VSUView;
@@ -116,6 +117,7 @@ public class Debugger implements ExactlyEmulable, Logger {
         this.views.add(new VIPView(this));
         this.views.add(new VSUView(this));
         this.views.add(new MemoryView(this));
+        this.views.add(new OthersView(this));
         this.views.add(new Logs(log, terminal, levels));
         this.size = new Size();
         size.copy(terminal.getSize());
@@ -380,6 +382,10 @@ public class Debugger implements ExactlyEmulable, Logger {
 
     public VirtualSoundUnit getVsu() {
         return getBus().getVSU();
+    }
+
+    public HardwareTimer getTimer() {
+        return getBus().getTimer();
     }
 
     public State getState() {

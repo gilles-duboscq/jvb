@@ -37,15 +37,7 @@ public class Main {
     private void run() throws IOException {
         MainWindow mainWindow = new MainWindow();
         Debugger debugger = null;
-        Logger logger;
-        try {
-            debugger = new Debugger();
-            //debugger.pause();
-            logger = debugger;
-        } catch (RuntimeException re) {
-            logger = new StdLogger();
-            logger.error(Misc, re, "Could not create debugger");
-        }
+        ForwardingLogger logger = new ForwardingLogger();
         try {
             mainWindow.setVisible(true);
             CartridgeROM rom = new CartridgeROM(cartridgePath, logger);
@@ -56,6 +48,14 @@ public class Main {
             DefaultAudioOut audioOut = new DefaultAudioOut(logger);
             VirtualBoy virtualBoy = new VirtualBoy(mainWindow.getScreen(), audioOut, inputProvider, rom, new CartridgeRAM(), logger);
             virtualBoy.reset();
+            try {
+                debugger = new Debugger();
+                //debugger.pause();
+                logger.setDestination(debugger);
+            } catch (RuntimeException re) {
+                logger.setDestination(new StdLogger());
+                logger.error(Misc, re, "Could not create debugger");
+            }
             if (debugger != null) {
                 debugger.attach(virtualBoy);
                 debugger.refresh();

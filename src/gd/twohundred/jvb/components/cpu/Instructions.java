@@ -1,4 +1,4 @@
-package gd.twohundred.jvb.components;
+package gd.twohundred.jvb.components.cpu;
 
 public class Instructions {
     public static final int OPCODE_POS = 10;

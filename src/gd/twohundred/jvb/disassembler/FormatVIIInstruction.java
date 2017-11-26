@@ -3,15 +3,12 @@ package gd.twohundred.jvb.disassembler;
 import java.util.Arrays;
 
 import static gd.twohundred.jvb.Utils.extractU;
-import static gd.twohundred.jvb.Utils.signExtend;
-import static gd.twohundred.jvb.components.Instructions.OPCODE_LEN;
-import static gd.twohundred.jvb.components.Instructions.OPCODE_POS;
-import static gd.twohundred.jvb.components.Instructions.REG1_LEN;
-import static gd.twohundred.jvb.components.Instructions.REG1_POS;
-import static gd.twohundred.jvb.components.Instructions.REG2_LEN;
-import static gd.twohundred.jvb.components.Instructions.REG2_POS;
-import static gd.twohundred.jvb.components.Instructions.SUB_OPCODE_LEN;
-import static gd.twohundred.jvb.components.Instructions.SUB_OPCODE_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG1_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG1_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG2_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG2_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUB_OPCODE_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUB_OPCODE_POS;
 
 public class FormatVIIInstruction implements Instruction{
     private final FormatVIIInstructionType type;

@@ -1,6 +1,6 @@
 package gd.twohundred.jvb.disassembler;
 
-import gd.twohundred.jvb.components.CPU;
+import gd.twohundred.jvb.components.cpu.CPU;
 import gd.twohundred.jvb.disassembler.FormatIIIInstruction.FormatIIIInstructionType;
 
 import java.util.Arrays;
@@ -8,12 +8,12 @@ import java.util.Arrays;
 import static gd.twohundred.jvb.Utils.extractU;
 import static gd.twohundred.jvb.Utils.signExtend;
 import static gd.twohundred.jvb.Utils.topU;
-import static gd.twohundred.jvb.components.Instructions.OPCODE_LEN;
-import static gd.twohundred.jvb.components.Instructions.OPCODE_POS;
-import static gd.twohundred.jvb.components.Instructions.REG1_LEN;
-import static gd.twohundred.jvb.components.Instructions.REG1_POS;
-import static gd.twohundred.jvb.components.Instructions.REG2_LEN;
-import static gd.twohundred.jvb.components.Instructions.REG2_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.OPCODE_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.OPCODE_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG1_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG1_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG2_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG2_POS;
 
 public class FormatIIInstruction implements Instruction {
     private final FormatIIInstructionType type;

@@ -1,9 +1,7 @@
 # TODO
 
 * Fix VIP timings
-* VSU
 * Fix exceptions
-* BitString
 * General CPU completeness pass
 * Fix Display Ready bit
 

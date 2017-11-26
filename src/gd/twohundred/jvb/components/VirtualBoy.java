@@ -1,7 +1,8 @@
 package gd.twohundred.jvb.components;
 
 import gd.twohundred.jvb.Logger;
-import gd.twohundred.jvb.components.ProgramStatusWord.ExecutionMode;
+import gd.twohundred.jvb.components.cpu.CPU;
+import gd.twohundred.jvb.components.cpu.ProgramStatusWord.ExecutionMode;
 import gd.twohundred.jvb.components.interfaces.AudioOut;
 import gd.twohundred.jvb.components.interfaces.Emulable;
 import gd.twohundred.jvb.components.interfaces.InputProvider;

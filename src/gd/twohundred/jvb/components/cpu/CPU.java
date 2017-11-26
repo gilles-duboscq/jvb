@@ -1,6 +1,9 @@
-package gd.twohundred.jvb.components;
+package gd.twohundred.jvb.components.cpu;
 
 import gd.twohundred.jvb.Logger;
+import gd.twohundred.jvb.components.Bus;
+import gd.twohundred.jvb.components.Debugger;
+import gd.twohundred.jvb.components.SimpleInterrupt;
 import gd.twohundred.jvb.components.interfaces.Emulable;
 import gd.twohundred.jvb.components.interfaces.Interrupt;
 import gd.twohundred.jvb.components.interfaces.InterruptSource;
@@ -21,111 +24,111 @@ import static gd.twohundred.jvb.Utils.testBits;
 import static gd.twohundred.jvb.Utils.toBinary;
 import static gd.twohundred.jvb.Utils.topU;
 import static gd.twohundred.jvb.Utils.zeroExtend;
-import static gd.twohundred.jvb.components.Instructions.BCOND_BE;
-import static gd.twohundred.jvb.components.Instructions.BCOND_BGE;
-import static gd.twohundred.jvb.components.Instructions.BCOND_BGT;
-import static gd.twohundred.jvb.components.Instructions.BCOND_BH;
-import static gd.twohundred.jvb.components.Instructions.BCOND_BL;
-import static gd.twohundred.jvb.components.Instructions.BCOND_BLE;
-import static gd.twohundred.jvb.components.Instructions.BCOND_BLT;
-import static gd.twohundred.jvb.components.Instructions.BCOND_BN;
-import static gd.twohundred.jvb.components.Instructions.BCOND_BNE;
-import static gd.twohundred.jvb.components.Instructions.BCOND_BNH;
-import static gd.twohundred.jvb.components.Instructions.BCOND_BNL;
-import static gd.twohundred.jvb.components.Instructions.BCOND_BP;
-import static gd.twohundred.jvb.components.Instructions.BCOND_BR;
-import static gd.twohundred.jvb.components.Instructions.BCOND_BV;
-import static gd.twohundred.jvb.components.Instructions.BCOND_NOP;
-import static gd.twohundred.jvb.components.Instructions.BITSTRING_ANDBSU;
-import static gd.twohundred.jvb.components.Instructions.BITSTRING_ANDNBSU;
-import static gd.twohundred.jvb.components.Instructions.BITSTRING_MOVBSU;
-import static gd.twohundred.jvb.components.Instructions.BITSTRING_NOTBSU;
-import static gd.twohundred.jvb.components.Instructions.BITSTRING_ORBSU;
-import static gd.twohundred.jvb.components.Instructions.BITSTRING_ORNBSU;
-import static gd.twohundred.jvb.components.Instructions.BITSTRING_XORBSU;
-import static gd.twohundred.jvb.components.Instructions.BITSTRING_XORNBSU;
-import static gd.twohundred.jvb.components.Instructions.COND_LEN;
-import static gd.twohundred.jvb.components.Instructions.COND_POS;
-import static gd.twohundred.jvb.components.Instructions.DISP26_LEN;
-import static gd.twohundred.jvb.components.Instructions.DISP9_LEN;
-import static gd.twohundred.jvb.components.Instructions.DISP9_POS;
-import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX;
-import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX_LEN;
-import static gd.twohundred.jvb.components.Instructions.FORMAT_III_PREFIX_POS;
-import static gd.twohundred.jvb.components.Instructions.IMM5_LEN;
-import static gd.twohundred.jvb.components.Instructions.OPCODE_LEN;
-import static gd.twohundred.jvb.components.Instructions.OPCODE_POS;
-import static gd.twohundred.jvb.components.Instructions.OP_ADDI;
-import static gd.twohundred.jvb.components.Instructions.OP_ADD_IMM;
-import static gd.twohundred.jvb.components.Instructions.OP_ADD_REG;
-import static gd.twohundred.jvb.components.Instructions.OP_AND_IMM;
-import static gd.twohundred.jvb.components.Instructions.OP_AND_REG;
-import static gd.twohundred.jvb.components.Instructions.OP_BITSTRING;
-import static gd.twohundred.jvb.components.Instructions.OP_CAXI;
-import static gd.twohundred.jvb.components.Instructions.OP_CLI;
-import static gd.twohundred.jvb.components.Instructions.OP_CMP_IMM;
-import static gd.twohundred.jvb.components.Instructions.OP_CMP_REG;
-import static gd.twohundred.jvb.components.Instructions.OP_DIV;
-import static gd.twohundred.jvb.components.Instructions.OP_DIVU;
-import static gd.twohundred.jvb.components.Instructions.OP_ILL_1;
-import static gd.twohundred.jvb.components.Instructions.OP_INB;
-import static gd.twohundred.jvb.components.Instructions.OP_INH;
-import static gd.twohundred.jvb.components.Instructions.OP_INW;
-import static gd.twohundred.jvb.components.Instructions.OP_JAL;
-import static gd.twohundred.jvb.components.Instructions.OP_JMP;
-import static gd.twohundred.jvb.components.Instructions.OP_JR;
-import static gd.twohundred.jvb.components.Instructions.OP_LDB;
-import static gd.twohundred.jvb.components.Instructions.OP_LDH;
-import static gd.twohundred.jvb.components.Instructions.OP_LDSR;
-import static gd.twohundred.jvb.components.Instructions.OP_LDW;
-import static gd.twohundred.jvb.components.Instructions.OP_MOVEA;
-import static gd.twohundred.jvb.components.Instructions.OP_MOVHI;
-import static gd.twohundred.jvb.components.Instructions.OP_MOV_IMM;
-import static gd.twohundred.jvb.components.Instructions.OP_MOV_REG;
-import static gd.twohundred.jvb.components.Instructions.OP_MUL;
-import static gd.twohundred.jvb.components.Instructions.OP_MULU;
-import static gd.twohundred.jvb.components.Instructions.OP_NOT;
-import static gd.twohundred.jvb.components.Instructions.OP_OR_IMM;
-import static gd.twohundred.jvb.components.Instructions.OP_OR_REG;
-import static gd.twohundred.jvb.components.Instructions.OP_OUTB;
-import static gd.twohundred.jvb.components.Instructions.OP_OUTH;
-import static gd.twohundred.jvb.components.Instructions.OP_OUTW;
-import static gd.twohundred.jvb.components.Instructions.OP_RETI;
-import static gd.twohundred.jvb.components.Instructions.OP_SAR_IMM;
-import static gd.twohundred.jvb.components.Instructions.OP_SAR_REG;
-import static gd.twohundred.jvb.components.Instructions.OP_SEI;
-import static gd.twohundred.jvb.components.Instructions.OP_SETF;
-import static gd.twohundred.jvb.components.Instructions.OP_SHL_IMM;
-import static gd.twohundred.jvb.components.Instructions.OP_SHL_REG;
-import static gd.twohundred.jvb.components.Instructions.OP_SHR_IMM;
-import static gd.twohundred.jvb.components.Instructions.OP_SHR_REG;
-import static gd.twohundred.jvb.components.Instructions.OP_STB;
-import static gd.twohundred.jvb.components.Instructions.OP_STH;
-import static gd.twohundred.jvb.components.Instructions.OP_STSR;
-import static gd.twohundred.jvb.components.Instructions.OP_STW;
-import static gd.twohundred.jvb.components.Instructions.OP_SUB;
-import static gd.twohundred.jvb.components.Instructions.OP_SUBOP;
-import static gd.twohundred.jvb.components.Instructions.OP_XOR_IMM;
-import static gd.twohundred.jvb.components.Instructions.OP_XOR_REG;
-import static gd.twohundred.jvb.components.Instructions.REG1_LEN;
-import static gd.twohundred.jvb.components.Instructions.REG1_POS;
-import static gd.twohundred.jvb.components.Instructions.REG2_LEN;
-import static gd.twohundred.jvb.components.Instructions.REG2_POS;
-import static gd.twohundred.jvb.components.Instructions.SUBOP_ADDF_S;
-import static gd.twohundred.jvb.components.Instructions.SUBOP_CMPF_S;
-import static gd.twohundred.jvb.components.Instructions.SUBOP_CVT_SW;
-import static gd.twohundred.jvb.components.Instructions.SUBOP_CVT_WS;
-import static gd.twohundred.jvb.components.Instructions.SUBOP_DIVF_S;
-import static gd.twohundred.jvb.components.Instructions.SUBOP_MPYHW;
-import static gd.twohundred.jvb.components.Instructions.SUBOP_MULF_S;
-import static gd.twohundred.jvb.components.Instructions.SUBOP_REV;
-import static gd.twohundred.jvb.components.Instructions.SUBOP_SUBF_S;
-import static gd.twohundred.jvb.components.Instructions.SUBOP_TRNC_SW;
-import static gd.twohundred.jvb.components.Instructions.SUBOP_XB;
-import static gd.twohundred.jvb.components.Instructions.SUBOP_XH;
-import static gd.twohundred.jvb.components.Instructions.SUB_OPCODE_LEN;
-import static gd.twohundred.jvb.components.Instructions.SUB_OPCODE_POS;
-import static gd.twohundred.jvb.components.ProgramStatusWord.PSW_MASK;
+import static gd.twohundred.jvb.components.cpu.Instructions.BCOND_BE;
+import static gd.twohundred.jvb.components.cpu.Instructions.BCOND_BGE;
+import static gd.twohundred.jvb.components.cpu.Instructions.BCOND_BGT;
+import static gd.twohundred.jvb.components.cpu.Instructions.BCOND_BH;
+import static gd.twohundred.jvb.components.cpu.Instructions.BCOND_BL;
+import static gd.twohundred.jvb.components.cpu.Instructions.BCOND_BLE;
+import static gd.twohundred.jvb.components.cpu.Instructions.BCOND_BLT;
+import static gd.twohundred.jvb.components.cpu.Instructions.BCOND_BN;
+import static gd.twohundred.jvb.components.cpu.Instructions.BCOND_BNE;
+import static gd.twohundred.jvb.components.cpu.Instructions.BCOND_BNH;
+import static gd.twohundred.jvb.components.cpu.Instructions.BCOND_BNL;
+import static gd.twohundred.jvb.components.cpu.Instructions.BCOND_BP;
+import static gd.twohundred.jvb.components.cpu.Instructions.BCOND_BR;
+import static gd.twohundred.jvb.components.cpu.Instructions.BCOND_BV;
+import static gd.twohundred.jvb.components.cpu.Instructions.BCOND_NOP;
+import static gd.twohundred.jvb.components.cpu.Instructions.BITSTRING_ANDBSU;
+import static gd.twohundred.jvb.components.cpu.Instructions.BITSTRING_ANDNBSU;
+import static gd.twohundred.jvb.components.cpu.Instructions.BITSTRING_MOVBSU;
+import static gd.twohundred.jvb.components.cpu.Instructions.BITSTRING_NOTBSU;
+import static gd.twohundred.jvb.components.cpu.Instructions.BITSTRING_ORBSU;
+import static gd.twohundred.jvb.components.cpu.Instructions.BITSTRING_ORNBSU;
+import static gd.twohundred.jvb.components.cpu.Instructions.BITSTRING_XORBSU;
+import static gd.twohundred.jvb.components.cpu.Instructions.BITSTRING_XORNBSU;
+import static gd.twohundred.jvb.components.cpu.Instructions.COND_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.COND_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.DISP26_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.DISP9_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.DISP9_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.FORMAT_III_PREFIX;
+import static gd.twohundred.jvb.components.cpu.Instructions.FORMAT_III_PREFIX_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.FORMAT_III_PREFIX_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.IMM5_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.OPCODE_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.OPCODE_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_ADDI;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_ADD_IMM;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_ADD_REG;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_AND_IMM;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_AND_REG;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_BITSTRING;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_CAXI;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_CLI;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_CMP_IMM;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_CMP_REG;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_DIV;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_DIVU;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_ILL_1;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_INB;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_INH;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_INW;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_JAL;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_JMP;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_JR;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_LDB;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_LDH;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_LDSR;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_LDW;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_MOVEA;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_MOVHI;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_MOV_IMM;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_MOV_REG;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_MUL;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_MULU;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_NOT;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_OR_IMM;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_OR_REG;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_OUTB;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_OUTH;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_OUTW;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_RETI;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_SAR_IMM;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_SAR_REG;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_SEI;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_SETF;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_SHL_IMM;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_SHL_REG;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_SHR_IMM;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_SHR_REG;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_STB;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_STH;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_STSR;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_STW;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_SUB;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_SUBOP;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_XOR_IMM;
+import static gd.twohundred.jvb.components.cpu.Instructions.OP_XOR_REG;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG1_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG1_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG2_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG2_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUBOP_ADDF_S;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUBOP_CMPF_S;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUBOP_CVT_SW;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUBOP_CVT_WS;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUBOP_DIVF_S;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUBOP_MPYHW;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUBOP_MULF_S;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUBOP_REV;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUBOP_SUBF_S;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUBOP_TRNC_SW;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUBOP_XB;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUBOP_XH;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUB_OPCODE_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.SUB_OPCODE_POS;
+import static gd.twohundred.jvb.components.cpu.ProgramStatusWord.PSW_MASK;
 import static java.lang.Integer.min;
 
 public class CPU implements Emulable, Resetable, InterruptSource {
@@ -1050,15 +1053,15 @@ public class CPU implements Emulable, Resetable, InterruptSource {
         return value;
     }
 
-    Bus getBus() {
+    public Bus getBus() {
         return bus;
     }
 
-    int getPc() {
+    public int getPc() {
         return pc;
     }
 
-    ProgramStatusWord getPsw() {
+    public ProgramStatusWord getPsw() {
         return psw;
     }
 
@@ -1097,7 +1100,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
         return interrupt;
     }
 
-    void attach(Debugger debugger) {
+    public void attach(Debugger debugger) {
         this.debugger = debugger;
         this.bus.attach(debugger);
     }

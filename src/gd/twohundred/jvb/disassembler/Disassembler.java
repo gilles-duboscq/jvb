@@ -3,8 +3,8 @@ package gd.twohundred.jvb.disassembler;
 import gd.twohundred.jvb.components.interfaces.ReadOnlyMemory;
 
 import static gd.twohundred.jvb.Utils.extractU;
-import static gd.twohundred.jvb.components.Instructions.OPCODE_LEN;
-import static gd.twohundred.jvb.components.Instructions.OPCODE_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.OPCODE_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.OPCODE_POS;
 
 public class Disassembler {
     public static Instruction disassemble(ReadOnlyMemory src, int pc) {

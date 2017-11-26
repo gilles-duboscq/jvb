@@ -3,9 +3,9 @@ package gd.twohundred.jvb.disassembler;
 import static gd.twohundred.jvb.Utils.extractU;
 import static gd.twohundred.jvb.Utils.signExtend;
 import static gd.twohundred.jvb.Utils.topU;
-import static gd.twohundred.jvb.components.Instructions.DISP26_LEN;
-import static gd.twohundred.jvb.components.Instructions.OPCODE_LEN;
-import static gd.twohundred.jvb.components.Instructions.OPCODE_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.DISP26_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.OPCODE_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.OPCODE_POS;
 
 public class FormatIVInstruction implements Instruction {
     private final FormatIVInstructionType type;

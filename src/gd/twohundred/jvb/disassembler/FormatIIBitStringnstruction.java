@@ -3,8 +3,8 @@ package gd.twohundred.jvb.disassembler;
 import java.util.Arrays;
 
 import static gd.twohundred.jvb.Utils.extractU;
-import static gd.twohundred.jvb.components.Instructions.REG1_LEN;
-import static gd.twohundred.jvb.components.Instructions.REG1_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG1_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG1_POS;
 
 public enum FormatIIBitStringnstruction implements Instruction {
     ANDBSU(0b01001),

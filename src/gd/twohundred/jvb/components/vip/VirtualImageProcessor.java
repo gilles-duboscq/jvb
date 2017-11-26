@@ -3,7 +3,7 @@ package gd.twohundred.jvb.components.vip;
 import gd.twohundred.jvb.BusError;
 import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.RenderedFrame;
-import gd.twohundred.jvb.components.CPU;
+import gd.twohundred.jvb.components.cpu.CPU;
 import gd.twohundred.jvb.components.SimpleInterrupt;
 import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
 import gd.twohundred.jvb.components.interfaces.Interrupt;

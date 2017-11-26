@@ -1,7 +1,7 @@
 package gd.twohundred.jvb.components.vsu;
 
 import gd.twohundred.jvb.Logger;
-import gd.twohundred.jvb.components.CPU;
+import gd.twohundred.jvb.components.cpu.CPU;
 
 import static gd.twohundred.jvb.Utils.extractU;
 import static gd.twohundred.jvb.Utils.log2;

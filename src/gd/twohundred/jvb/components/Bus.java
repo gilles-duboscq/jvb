@@ -2,7 +2,7 @@ package gd.twohundred.jvb.components;
 
 import gd.twohundred.jvb.BusError;
 import gd.twohundred.jvb.Logger;
-import gd.twohundred.jvb.components.Instructions.AccessWidth;
+import gd.twohundred.jvb.components.cpu.Instructions.AccessWidth;
 import gd.twohundred.jvb.components.interfaces.MappedMemory;
 import gd.twohundred.jvb.components.utils.MappedModules;
 import gd.twohundred.jvb.components.utils.WarningMemory;

@@ -2,7 +2,7 @@ package gd.twohundred.jvb.components.debug;
 
 import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.components.Debugger;
-import gd.twohundred.jvb.components.Instructions;
+import gd.twohundred.jvb.components.cpu.Instructions;
 import gd.twohundred.jvb.components.debug.boxes.Table;
 import gd.twohundred.jvb.components.debug.boxes.Table.Column;
 import gd.twohundred.jvb.components.debug.boxes.VerticalBoxes;

@@ -2,8 +2,7 @@ package gd.twohundred.jvb.components.vsu;
 
 import gd.twohundred.jvb.BusError;
 import gd.twohundred.jvb.Logger;
-import gd.twohundred.jvb.components.CPU;
-import gd.twohundred.jvb.components.interfaces.AudioOut;
+import gd.twohundred.jvb.components.cpu.CPU;
 import gd.twohundred.jvb.components.interfaces.ExactlyEmulable;
 import gd.twohundred.jvb.components.interfaces.WriteOnlyMemory;
 

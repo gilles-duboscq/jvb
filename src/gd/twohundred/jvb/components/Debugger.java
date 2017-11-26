@@ -3,7 +3,8 @@ package gd.twohundred.jvb.components;
 import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.TestDisplay;
 import gd.twohundred.jvb.Utils;
-import gd.twohundred.jvb.components.Instructions.AccessWidth;
+import gd.twohundred.jvb.components.cpu.CPU;
+import gd.twohundred.jvb.components.cpu.Instructions.AccessWidth;
 import gd.twohundred.jvb.components.debug.Breakpoints;
 import gd.twohundred.jvb.components.debug.CPUView;
 import gd.twohundred.jvb.components.debug.LogMessage;
@@ -36,10 +37,6 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import static java.lang.Long.max;
-import static java.lang.Long.min;
 
 public class Debugger implements ExactlyEmulable, Logger {
     private static final int DISPLAY_REFRESH_RATE_HZ = 4;

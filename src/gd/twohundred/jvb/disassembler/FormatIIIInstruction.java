@@ -4,10 +4,10 @@ import java.util.Arrays;
 
 import static gd.twohundred.jvb.Utils.extractS;
 import static gd.twohundred.jvb.Utils.extractU;
-import static gd.twohundred.jvb.components.Instructions.COND_LEN;
-import static gd.twohundred.jvb.components.Instructions.COND_POS;
-import static gd.twohundred.jvb.components.Instructions.DISP9_LEN;
-import static gd.twohundred.jvb.components.Instructions.DISP9_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.COND_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.COND_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.DISP9_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.DISP9_POS;
 
 public class FormatIIIInstruction implements Instruction {
     private final FormatIIIInstructionType type;

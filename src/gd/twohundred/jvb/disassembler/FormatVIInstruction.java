@@ -5,12 +5,12 @@ import java.util.Arrays;
 import static gd.twohundred.jvb.Utils.extractU;
 import static gd.twohundred.jvb.Utils.signExtend;
 import static gd.twohundred.jvb.Utils.topU;
-import static gd.twohundred.jvb.components.Instructions.OPCODE_LEN;
-import static gd.twohundred.jvb.components.Instructions.OPCODE_POS;
-import static gd.twohundred.jvb.components.Instructions.REG1_LEN;
-import static gd.twohundred.jvb.components.Instructions.REG1_POS;
-import static gd.twohundred.jvb.components.Instructions.REG2_LEN;
-import static gd.twohundred.jvb.components.Instructions.REG2_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.OPCODE_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.OPCODE_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG1_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG1_POS;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG2_LEN;
+import static gd.twohundred.jvb.components.cpu.Instructions.REG2_POS;
 
 public class FormatVIInstruction implements Instruction {
     private final FormatVIInstructionType type;

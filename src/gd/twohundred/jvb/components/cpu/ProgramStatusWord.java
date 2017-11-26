@@ -1,4 +1,4 @@
-package gd.twohundred.jvb.components;
+package gd.twohundred.jvb.components.cpu;
 
 import static gd.twohundred.jvb.Utils.extractU;
 import static gd.twohundred.jvb.Utils.insert;
@@ -29,7 +29,7 @@ public class ProgramStatusWord {
 
     private int psw;
 
-    enum ExecutionMode {
+    public enum ExecutionMode {
         Normal,
         Exception,
         DuplexedException,

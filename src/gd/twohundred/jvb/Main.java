@@ -1,6 +1,6 @@
 package gd.twohundred.jvb;
 
-import gd.twohundred.jvb.components.CPU;
+import gd.twohundred.jvb.components.cpu.CPU;
 import gd.twohundred.jvb.components.CartridgeRAM;
 import gd.twohundred.jvb.components.CartridgeROM;
 import gd.twohundred.jvb.components.Debugger;

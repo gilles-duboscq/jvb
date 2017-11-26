@@ -1,6 +1,6 @@
 package gd.twohundred.jvb.components.debug;
 
-import gd.twohundred.jvb.components.CPU;
+import gd.twohundred.jvb.components.cpu.CPU;
 import gd.twohundred.jvb.components.Debugger;
 import gd.twohundred.jvb.components.debug.boxes.Box;
 import gd.twohundred.jvb.components.debug.boxes.HorizontalBoxes;

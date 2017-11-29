@@ -1,7 +1,6 @@
 package gd.twohundred.jvb.components;
 
 import gd.twohundred.jvb.Logger;
-import gd.twohundred.jvb.TestDisplay;
 import gd.twohundred.jvb.Utils;
 import gd.twohundred.jvb.components.cpu.CPU;
 import gd.twohundred.jvb.components.cpu.Instructions.AccessWidth;
@@ -127,7 +126,7 @@ public class Debugger implements ExactlyEmulable, Logger {
                 size.setColumns(columns);
             }
         }
-        this.display = new TestDisplay(terminal, true);
+        this.display = new Display(terminal, true);
         originalAttributes = terminal.enterRawMode();
         prevWinchHandler = terminal.handle(Terminal.Signal.WINCH, this::resize);
         terminal.puts(InfoCmp.Capability.enter_ca_mode);

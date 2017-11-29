@@ -1,4 +1,4 @@
 Manifest-Version: 1.0
-Class-Path: jline-3.1.2.jar picocli-2.0.3.jar
+Class-Path: jline-3.5.1.jar picocli-2.0.3.jar
 Main-Class: gd.twohundred.jvb.Main
 

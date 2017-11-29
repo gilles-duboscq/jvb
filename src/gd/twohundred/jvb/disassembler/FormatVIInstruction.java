@@ -65,10 +65,10 @@ public class FormatVIInstruction implements Instruction {
                 if (disp == 0) {
                     return String.format("%-8s r%d, [r%d]", lowerType, reg2, reg1);
                 } else if (disp > 0) {
-                    return String.format("%-8s r%d, [r%d + %d]", lowerType, reg2, reg1, disp);
+                    return String.format("%-8s r%d, [r%d + %#x]", lowerType, reg2, reg1, disp);
                 } else {
                     assert disp < 0;
-                    return String.format("%-8s r%d, [r%d - %d]", lowerType, reg2, reg1, -disp);
+                    return String.format("%-8s r%d, [r%d - %#x]", lowerType, reg2, reg1, -disp);
                 }
             case CAXI:
             case ST_B:
@@ -80,10 +80,10 @@ public class FormatVIInstruction implements Instruction {
                 if (disp == 0) {
                     return String.format("%-8s [r%d], r%d", lowerType, reg1, reg2);
                 } else if (disp > 0) {
-                    return String.format("%-8s [r%d + %d], r%d", lowerType, reg1, disp, reg2);
+                    return String.format("%-8s [r%d + %#x], r%d", lowerType, reg1, disp, reg2);
                 } else {
                     assert disp < 0;
-                    return String.format("%-8s [r%d - %d], r%d", lowerType, reg1, -disp, reg2);
+                    return String.format("%-8s [r%d - %#x], r%d", lowerType, reg1, -disp, reg2);
                 }
         }
         throw new RuntimeException("shoudl not reach here");

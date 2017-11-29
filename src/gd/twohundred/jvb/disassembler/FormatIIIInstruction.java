@@ -37,7 +37,11 @@ public class FormatIIIInstruction implements Instruction {
         if (type == FormatIIIInstructionType.NOP) {
             return "nop";
         } else {
-            return String.format("%-8s %+d", type.name().toLowerCase(), disp);
+            if (disp >= 0) {
+                return String.format("%-8s +%#x", type.name().toLowerCase(), disp);
+            } else {
+                return String.format("%-8s -%#x", type.name().toLowerCase(), -disp);
+            }
         }
     }
 

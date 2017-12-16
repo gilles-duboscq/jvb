@@ -1,5 +1,8 @@
 /.idea/dictionaries/
 /.idea/uiDesigner.xml
 /.idea/workspace.xml
+/.idea/checkstyle-idea.xml
+/.idea/eclipseCodeFormatter.xml
+/.idea/kotlinc.xml
 /out/
 /trace.txt

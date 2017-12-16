@@ -397,7 +397,7 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
                     INT_DISPLAY_NOT_READY_POS);
             pendingInterrupts &= (short) ~clearedInterruptBits;
             enabledInterrupts &= (short) ~clearedInterruptBits;
-            vip.softReset();
+            vip.resetDisplay();
         }
         if (refresh) {
             logger.info(Logger.Component.VIP, "Ignoring VIP refresh");
@@ -415,12 +415,13 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         boolean reset = testBit(value, DRAWING_CONTROL_RESET_DRAWING_POS);
         interruptYPosition = (byte) extractU(value, DRAWING_CONTROL_Y_POSITION_POS, DRAWING_CONTROL_Y_POSITION_LEN);
         if (reset) {
-            pendingInterrupts &= (short) (~intBits(
+            int clearedInterruptBits = intBits(
                     INT_DRAWING_EXCEEDS_FRAME_PERIOD_POS,
                     INT_DRAWING_FINISHED_POS,
-                    INT_DISPLAY_NOT_READY_POS));
-            vip.softReset();
-            setDrawingFrameBufferPair(0, true);
+                    INT_DISPLAY_NOT_READY_POS);
+            pendingInterrupts &= (short) ~clearedInterruptBits;
+            enabledInterrupts &= (short) ~clearedInterruptBits;
+            vip.resetDrawing();
         }
 
         int affected = intBit(DRAWING_STATUS_DRAWING_ENABLED_POS);

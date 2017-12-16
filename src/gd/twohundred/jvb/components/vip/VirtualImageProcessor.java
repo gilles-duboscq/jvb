@@ -340,6 +340,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     }
 
     public void softReset() {
+        logger.debug(Logger.Component.VIP, "VIP soft reset");
         drawingState = DrawingState.Finished;
         controlRegs.setDisplayingFrameBufferPair(0, true, false); // ?
     }

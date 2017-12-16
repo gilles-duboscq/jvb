@@ -388,13 +388,15 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         boolean reset = testBit(value, DISPLAY_CONTROL_RESET_DISPLAY_POS);
 
         if (reset) {
-            pendingInterrupts &= (short) (~intBits(
+            int clearedInterruptBits = intBits(
                     INT_DRAWING_EXCEEDS_FRAME_PERIOD_POS,
                     INT_START_OF_FRAME_PROCESSING_POS,
                     INT_START_OF_DRAWING_POS,
                     INT_RIGHT_DISPLAY_FINISHED_POS,
                     INT_LEFT_DISPLAY_FINISHED_POS,
-                    INT_DISPLAY_NOT_READY_POS));
+                    INT_DISPLAY_NOT_READY_POS);
+            pendingInterrupts &= (short) ~clearedInterruptBits;
+            enabledInterrupts &= (short) ~clearedInterruptBits;
             vip.softReset();
         }
         if (refresh) {

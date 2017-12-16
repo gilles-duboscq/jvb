@@ -30,6 +30,7 @@ import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.jline.utils.Display;
 import org.jline.utils.InfoCmp;
+import org.jline.utils.NonBlockingReader;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -423,7 +424,9 @@ public class Debugger implements ExactlyEmulable, Logger {
                         return;
                     }
                 }
-                inputAction = bindingReader.readBinding(keyMap, getCurrentView().getKeyMap());
+                if (bindingReader.peekCharacter(100) != NonBlockingReader.READ_EXPIRED) {
+                    inputAction = bindingReader.readBinding(keyMap, getCurrentView().getKeyMap(), false);
+                }
             }
         }
     }

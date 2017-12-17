@@ -67,6 +67,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
 
     // Fake value
     static final int DRAWING_INIT_CYCLES = 300;
+    static final int DRAWING_BLOCK_CLEAR_CYCLES = 20;
 
     private static final int MAX_COLUMN_TIME = 0xfe;
     private static final long FOUR_COLUMN_UNIT_TIME_NS = 200;
@@ -83,7 +84,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private final RenderedFrame leftRendered = new RenderedFrame();
     private final RenderedFrame rightRendered = new RenderedFrame();
     private long displayCycles;
-    private long nextWindowCycles;
+    private long nextDrawingTickCycles;
     private long frameCounter;
     private DrawingState drawingState;
     private DisplayState displayState;
@@ -232,7 +233,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         } else {
             interrupt(VIPInterruptType.StartDrawing);
             drawingState = DrawingState.Drawing;
-            nextWindowCycles = DRAWING_INIT_CYCLES;
+            nextDrawingTickCycles = DRAWING_INIT_CYCLES;
             setCurrentYBlock(0);
             currentWindowId = DRAWING_WINDOW_COUNT - 1;
         }
@@ -258,7 +259,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     }
 
     private void tickDrawing() {
-        if (displayCycles < nextWindowCycles) {
+        if (displayCycles < nextDrawingTickCycles) {
             return;
         }
         int currentYBlock = controlRegs.getCurrentYBlock();
@@ -276,6 +277,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
             clearCurrentBlock();
             latchedClearColor = controlRegs.getClearColor();
             currentObjectGroup = 3;
+            nextDrawingTickCycles += DRAWING_BLOCK_CLEAR_CYCLES;
         }
         WindowAttributes window = getCurrentWindow();
         if (window.isStop()) {
@@ -289,7 +291,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
         }
         window.getMode().onFinished(window, this);
         currentWindowId--;
-        nextWindowCycles += window.getMode().cycles();
+        nextDrawingTickCycles += window.getMode().cycles();
     }
 
     private void endDrawing() {

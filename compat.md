@@ -29,7 +29,7 @@
 | Jack Bros (U) | Glitchy/non functional instructions screen (VSU)
 | Mario Clash (JU) | No character in game?
 | Mario Flying Demo by Frostgiant (PD) | ✓ (Seems to use uninitialized memory as a "black" char)
-| Mario's Tennis (JU) [a1] | Hangs (was: Very glitchy graphics (VIP memory corruption?))
+| Mario's Tennis (JU) [a1] | no sound?
 | Matrix, The by Cooler (PD) | Glitchy, way too fast
 | Nester's Funky Bowling (U) [a1] | Crashes when throwing the ball
 | Nester's Funky Bowling (U) | bad rom?

@@ -257,7 +257,7 @@ public class VIPView implements View {
     public VIPView(Debugger debugger) {
         this.debugger = debugger;
         windowAttributesTable = new WindowAttributesTable(debugger.getTerminal());
-        verticalBoxes = new VerticalBoxes("VIP", Arrays.asList(new VIPstatus(debugger), new FrameProgress(debugger), windowAttributesTable));
+        verticalBoxes = new VerticalBoxes("VIP", new VIPstatus(debugger), new FrameProgress(debugger), windowAttributesTable);
     }
 
     @Override

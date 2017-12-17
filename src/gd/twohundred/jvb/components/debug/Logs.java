@@ -39,7 +39,7 @@ public class Logs implements View {
         state = State.Default;
         settingsComponent = Component.values()[0];
         logBox = new LogBox(messages, terminal, levels);
-        boxes = new VerticalBoxes("Logs", Collections.singletonList(logBox));
+        boxes = new VerticalBoxes("Logs", logBox);
         logBox.getKeyMap().bind(() -> state = State.Settings, "s");
         logBox.getKeyMap().bind(logBox::trimLogs, "t");
         settingsKeyMap = new KeyMap<>();

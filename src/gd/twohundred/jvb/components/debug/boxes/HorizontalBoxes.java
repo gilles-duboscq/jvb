@@ -4,6 +4,7 @@ import gd.twohundred.jvb.components.debug.View;
 import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static java.lang.Integer.max;
@@ -13,6 +14,10 @@ public class HorizontalBoxes implements Box {
     private final List<Box> boxes;
     private final int minWidth;
     private final int minHeight;
+
+    public HorizontalBoxes(String name, Box... boxes) {
+        this(name, Arrays.asList(boxes));
+    }
 
     public HorizontalBoxes(String name, List<Box> boxes) {
         this.name = name;

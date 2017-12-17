@@ -20,7 +20,7 @@ public class OthersView implements View {
 
     public OthersView(Debugger debugger) {
         this.debugger = debugger;
-        verticalBoxes = new VerticalBoxes("Misc.", Arrays.asList(new TimerBox()));
+        verticalBoxes = new VerticalBoxes("Misc.", new TimerBox());
     }
 
     @Override

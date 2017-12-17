@@ -35,7 +35,7 @@ public class CPUView implements View {
         pausedKeyMap.bind(debugger::continueExecution, "c");
         pausedKeyMap.bind(debugger::step, "s");
         disassemblyBox = new DisassemblyBox();
-        horizontalBoxes = new HorizontalBoxes("CPU", Arrays.asList(new VerticalBoxes("Instructions", Arrays.asList(new TraceBox(), disassemblyBox)), new RegistersBox()));
+        horizontalBoxes = new HorizontalBoxes("CPU", new VerticalBoxes("Instructions", new TraceBox(), disassemblyBox), new RegistersBox());
     }
 
     @Override

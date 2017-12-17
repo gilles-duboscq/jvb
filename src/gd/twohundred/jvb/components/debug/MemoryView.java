@@ -37,7 +37,7 @@ public class MemoryView implements View {
         this.debugger = debugger;
         state = State.Idle;
         memoryBox = new MemoryBox();
-        verticalBoxes = new VerticalBoxes("Memory", Arrays.asList(memoryBox));
+        verticalBoxes = new VerticalBoxes("Memory", memoryBox);
         Terminal terminal = debugger.getTerminal();
         keyMap = new KeyMap<>();
         keyMap.bind(() -> {

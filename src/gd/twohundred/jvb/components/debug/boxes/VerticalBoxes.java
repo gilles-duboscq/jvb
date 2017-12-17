@@ -4,6 +4,7 @@ import gd.twohundred.jvb.components.debug.View;
 import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -15,6 +16,10 @@ public class VerticalBoxes implements Box {
     private final List<Box> boxes;
     private final int minWidth;
     private final int minHeight;
+
+    public VerticalBoxes(String name, Box... boxes) {
+        this(name, Arrays.asList(boxes));
+    }
 
     public VerticalBoxes(String name, List<Box> boxes) {
         this.name = name;

@@ -370,7 +370,7 @@ public class Breakpoints implements View {
         addingKeyMap.bind(() -> this.addingRead = !this.addingRead, "r");
         addingKeyMap.bind(() -> this.addingWrite = !this.addingWrite, "w");
         addressField = new AddressField(addingKeyMap, debugger.getTerminal());
-        verticalBoxes = new VerticalBoxes("Breakpoints", Arrays.asList(execBreakpointsTable, memBreakpointsTable));
+        verticalBoxes = new VerticalBoxes("Breakpoints", execBreakpointsTable, memBreakpointsTable);
     }
 
     private void addTableKeyBindings(Table table, List<? extends Breakpoint> list, Terminal terminal) {

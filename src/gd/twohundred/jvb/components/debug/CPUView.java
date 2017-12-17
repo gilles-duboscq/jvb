@@ -6,6 +6,7 @@ import gd.twohundred.jvb.components.debug.boxes.Box;
 import gd.twohundred.jvb.components.debug.boxes.HorizontalBoxes;
 import gd.twohundred.jvb.disassembler.Disassembler;
 import gd.twohundred.jvb.disassembler.Instruction;
+import gd.twohundred.jvb.disassembler.RelativeToStringInstruction;
 import org.jline.keymap.KeyMap;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Size;
@@ -90,7 +91,11 @@ public class CPUView implements View {
                 asb.append("ILLEGAL", AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
                 pc += 2;
             } else {
-                asb.append(instruction.toString());
+                if (instruction instanceof RelativeToStringInstruction) {
+                    asb.append(((RelativeToStringInstruction) instruction).toString(pc));
+                } else {
+                    asb.append(instruction.toString());
+                }
                 pc += instruction.getFormat().getLength();
             }
             if (currentPc) {

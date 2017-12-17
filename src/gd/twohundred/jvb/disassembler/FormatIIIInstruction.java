@@ -9,7 +9,7 @@ import static gd.twohundred.jvb.components.cpu.Instructions.COND_POS;
 import static gd.twohundred.jvb.components.cpu.Instructions.DISP9_LEN;
 import static gd.twohundred.jvb.components.cpu.Instructions.DISP9_POS;
 
-public class FormatIIIInstruction implements Instruction {
+public class FormatIIIInstruction implements RelativeToStringInstruction {
     private final FormatIIIInstructionType type;
     private final int disp;
 
@@ -42,6 +42,23 @@ public class FormatIIIInstruction implements Instruction {
             } else {
                 return String.format("%-8s -%#x", type.name().toLowerCase(), -disp);
             }
+        }
+    }
+
+    @Override
+    public String toString(int instructionAddress) {
+        char dir;
+        if (disp > 0) {
+            dir = '↓';
+        } else if (disp < 0) {
+            dir = '↑';
+        } else {
+            dir = '←';
+        }
+        if (type == FormatIIIInstructionType.NOP) {
+            return "nop";
+        } else {
+            return String.format("%-8s 0x%08x %c", type.name().toLowerCase(), instructionAddress + disp, dir);
         }
     }
 

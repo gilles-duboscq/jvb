@@ -38,6 +38,8 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.lang.Integer.min;
+
 public class Debugger implements ExactlyEmulable, Logger {
     private static final int DISPLAY_REFRESH_RATE_HZ = 4;
     private static final long DISPLAY_REFRESH_PERIOD = CPU.CLOCK_HZ / DISPLAY_REFRESH_RATE_HZ;
@@ -64,6 +66,7 @@ public class Debugger implements ExactlyEmulable, Logger {
     private final InputThread inputThread;
     private boolean displaying;
     private final TicksStats ticksStats;
+    private final TraceBuffer traceBuffer;
 
     public enum State {
         Running,
@@ -98,6 +101,7 @@ public class Debugger implements ExactlyEmulable, Logger {
 
     public Debugger() throws IOException {
         this.ticksStats = new TicksStats();
+        this.traceBuffer = new TraceBuffer(64);
         this.log = new ArrayList<>();
         this.levels = new EnumMap<>(Component.class);
         for (Component c : Component.values()) {
@@ -176,6 +180,7 @@ public class Debugger implements ExactlyEmulable, Logger {
         } else if (state == State.Paused || state == State.Stepping) {
             onBreak();
         }
+        this.traceBuffer.add(pc);
     }
 
     public void onRead(int address, AccessWidth width) {
@@ -318,7 +323,7 @@ public class Debugger implements ExactlyEmulable, Logger {
 
     @Override
     public void reset() {
-
+        this.traceBuffer.clear();
     }
 
     @Override
@@ -451,5 +456,48 @@ public class Debugger implements ExactlyEmulable, Logger {
     @Override
     public boolean isLevelEnabled(Component component, Level level) {
         return levels.get(component).ordinal() >= level.ordinal();
+    }
+
+    public TraceBuffer getTraceBuffer() {
+        return traceBuffer;
+    }
+
+    public static class TraceBuffer {
+        private final int[] trace;
+        private final int mask;
+        private int size;
+        private int pos;
+
+        TraceBuffer(int size) {
+            if (Integer.bitCount(size) != 1) {
+                throw new IllegalArgumentException("Expecting power-of-two sizes");
+            }
+            trace = new int[size];
+            mask = size - 1;
+        }
+
+        void add(int pc) {
+            trace[pos] = pc;
+            pos = (pos + 1) & mask;
+            if (size != mask) {
+                size++;
+            }
+        }
+
+        public int size() {
+            return size;
+        }
+
+        public int get(int i) {
+            if (i >= size) {
+                throw new IndexOutOfBoundsException(i + " (" + size + ")");
+            }
+            return trace[(pos - i - 1) & mask];
+        }
+
+        void clear() {
+            size = 0;
+            pos = 0;
+        }
     }
 }

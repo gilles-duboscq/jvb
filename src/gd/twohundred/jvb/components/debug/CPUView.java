@@ -1,9 +1,11 @@
 package gd.twohundred.jvb.components.debug;
 
+import gd.twohundred.jvb.Utils;
 import gd.twohundred.jvb.components.cpu.CPU;
 import gd.twohundred.jvb.components.Debugger;
 import gd.twohundred.jvb.components.debug.boxes.Box;
 import gd.twohundred.jvb.components.debug.boxes.HorizontalBoxes;
+import gd.twohundred.jvb.components.debug.boxes.VerticalBoxes;
 import gd.twohundred.jvb.disassembler.Disassembler;
 import gd.twohundred.jvb.disassembler.Instruction;
 import gd.twohundred.jvb.disassembler.RelativeToStringInstruction;
@@ -22,7 +24,8 @@ public class CPUView implements View {
     private final Debugger debugger;
     private final KeyMap<Runnable> runningKeyMap;
     private final KeyMap<Runnable> pausedKeyMap;
-    private final RegistersBox registersBox;
+    private final HorizontalBoxes horizontalBoxes;
+    private final DisassemblyBox disassemblyBox;
 
     public CPUView(Debugger debugger) {
         this.debugger = debugger;
@@ -31,7 +34,8 @@ public class CPUView implements View {
         runningKeyMap.bind(debugger::pause, "p");
         pausedKeyMap.bind(debugger::continueExecution, "c");
         pausedKeyMap.bind(debugger::step, "s");
-        registersBox = new RegistersBox();
+        disassemblyBox = new DisassemblyBox();
+        horizontalBoxes = new HorizontalBoxes("CPU", Arrays.asList(new VerticalBoxes("Instructions", Arrays.asList(new TraceBox(), disassemblyBox)), new RegistersBox()));
     }
 
     @Override
@@ -44,18 +48,7 @@ public class CPUView implements View {
         return "CPU";
     }
 
-    private class DisassemblyBox implements Box {
-        private int pc;
-
-        public DisassemblyBox(int startPc) {
-            this.pc = startPc;
-        }
-
-        @Override
-        public String name() {
-            return "Disassembly";
-        }
-
+    private abstract class AbstractDisassemblyBox implements Box {
         @Override
         public int minWidth() {
             return 38;
@@ -76,31 +69,62 @@ public class CPUView implements View {
             return false;
         }
 
+        protected int instruction(AttributedStringBuilder asb, int address) {
+            String pcHex = Integer.toHexString(address);
+            View.repeat(asb, 8 - pcHex.length(), '0');
+            asb.append(pcHex);
+            asb.append("  ");
+            Instruction instruction = Disassembler.disassemble(debugger.getBus(), address);
+            if (instruction == null) {
+                asb.append("ILLEGAL", AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
+                return  2;
+            } else {
+                if (instruction instanceof RelativeToStringInstruction) {
+                    asb.append(((RelativeToStringInstruction) instruction).toString(address));
+                } else {
+                    asb.append(instruction.toString());
+                }
+                return instruction.getFormat().getLength();
+            }
+        }
+    }
+
+    private class DisassemblyBox extends AbstractDisassemblyBox {
+        int pc;
+
+        @Override
+        public String name() {
+            return "Disassembly";
+        }
+
         @Override
         public void line(AttributedStringBuilder asb, int line, int width, int height) {
             boolean currentPc = debugger.getPc() == pc;
             if (currentPc) {
                 asb.style(AttributedStyle.BOLD);
             }
-            String pcHex = Integer.toHexString(pc);
-            View.repeat(asb, 8 - pcHex.length(), '0');
-            asb.append(pcHex);
-            asb.append("  ");
-            Instruction instruction = Disassembler.disassemble(debugger.getBus(), pc);
-            if (instruction == null) {
-                asb.append("ILLEGAL", AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
-                pc += 2;
-            } else {
-                if (instruction instanceof RelativeToStringInstruction) {
-                    asb.append(((RelativeToStringInstruction) instruction).toString(pc));
-                } else {
-                    asb.append(instruction.toString());
-                }
-                pc += instruction.getFormat().getLength();
-            }
+            pc += instruction(asb, pc);
             if (currentPc) {
                 asb.style(AttributedStyle.BOLD_OFF);
             }
+        }
+
+    }
+
+    private class TraceBox extends AbstractDisassemblyBox {
+        @Override
+        public String name() {
+            return "Trace";
+        }
+
+        @Override
+        public void line(AttributedStringBuilder asb, int line, int width, int height) {
+            Debugger.TraceBuffer traceBuffer = debugger.getTraceBuffer();
+            if (height - line - 1 >= traceBuffer.size()) {
+                return;
+            }
+            int pc = traceBuffer.get(height - line - 1);
+            instruction(asb, pc);
         }
     }
 
@@ -159,7 +183,8 @@ public class CPUView implements View {
                 break;
         }
         lines.add(actionsLine.toAttributedString());
-        HorizontalBoxes.horizontalBoxes(lines, width, height - 1, Arrays.asList(new DisassemblyBox(debugger.getPc()), registersBox));
+        disassemblyBox.pc = debugger.getPc();
+        horizontalBoxes.appendLines(lines, width, height - 1);
     }
 
     @Override

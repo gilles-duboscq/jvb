@@ -75,6 +75,10 @@ public class HorizontalBoxes implements Box {
         lines.add(bottom.toAttributedString());
     }
 
+    public void appendLines(List<AttributedString> lines, int width, int height) {
+        horizontalBoxes(lines, width, height, boxes);
+    }
+
     private static void line(int width, int height, List<Box> boxes, int[] widths, int line, AttributedStringBuilder asb) {
         int currentWidth = 0;
         int startLen = asb.length();

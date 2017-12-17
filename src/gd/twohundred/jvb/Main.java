@@ -28,6 +28,12 @@ public class Main {
     @CommandLine.Option(names = { "-p", "--paused" }, description = "Start the debugger in paused mode")
     private boolean pauseOnStart = false;
 
+    @CommandLine.Option(names = { "--logging" }, description = "Logging configuration: comma-separated list of <Component>:<Level>. See --list-logging.")
+    private String logging;
+
+    @CommandLine.Option(names = { "--list-logging" }, help = true, description = "List logging components and levels")
+    private boolean listLogging = false;
+
     private static final long NS_PER_CYCLES = Utils.NANOS_PER_SECOND / CPU.CLOCK_HZ;
     private static final long TARGET_MACRO_TICK_PER_SECOND = 100;
     private static final long TARGET_GRANULARITY_NS = Utils.NANOS_PER_SECOND / TARGET_MACRO_TICK_PER_SECOND;
@@ -67,7 +73,43 @@ public class Main {
         }
     }
 
+    private void setLoggingLevels(LevelLogger logger) {
+        if (logging == null) {
+            return;
+        }
+        for (String spec : logging.split(",")) {
+            int idx = spec.indexOf(':');
+            if (idx < 0) {
+                System.err.println("--logging-level should be a comma-separated list of <Component>:<Level> pairs.");
+                System.exit(2);
+            }
+            String componentString = spec.substring(0, idx);
+            String levelString = spec.substring(idx + 1);
+            Logger.Component component;
+            try {
+                component = Logger.Component.valueOf(componentString);
+            } catch (IllegalArgumentException e) {
+                System.err.printf("Unknown component in --logging-level: '%s' See --list-logging for valid values.%n", componentString);
+                System.exit(2);
+                throw new RuntimeException("should not reach here");
+            }
+            Logger.Level level;
+            try {
+                level = Logger.Level.valueOf(levelString);
+            } catch (IllegalArgumentException e) {
+                System.err.printf("Unknown level in --logging-level: '%s' See --list-logging for valid values.%n", levelString);
+                System.exit(2);
+                throw new RuntimeException("should not reach here");
+            }
+            logger.setLevel(component, level);
+        }
+    }
+
     private void run() throws IOException {
+        if (listLogging) {
+            listLogging();
+            return;
+        }
         MainWindow mainWindow = new MainWindow();
         Debugger debugger = null;
         ForwardingLogger logger = new ForwardingLogger();
@@ -83,6 +125,7 @@ public class Main {
             virtualBoy.reset();
             if (useDebugger) {
                 debugger = new Debugger();
+                setLoggingLevels(debugger);
                 logger.setDestination(debugger);
                 if (pauseOnStart) {
                     debugger.pause();
@@ -90,7 +133,9 @@ public class Main {
                 debugger.attach(virtualBoy);
                 debugger.refresh();
             } else {
-                logger.setDestination(new StdLogger());
+                StdLogger stdLogger = new StdLogger();
+                setLoggingLevels(stdLogger);
+                logger.setDestination(stdLogger);
             }
             long startT = System.nanoTime();
             long cycles = 0;
@@ -121,5 +166,16 @@ public class Main {
             }
         }
         System.exit(0);
+    }
+
+    private void listLogging() {
+        System.out.println("Components:");
+        for (Logger.Component component : Logger.Component.values()) {
+            System.out.printf(" - %s%n", component);
+        }
+        System.out.println("Levels:");
+        for (Logger.Level level : Logger.Level.values()) {
+            System.out.printf(" - %s%n", level);
+        }
     }
 }

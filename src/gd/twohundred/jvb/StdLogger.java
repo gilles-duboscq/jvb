@@ -7,7 +7,7 @@ import java.util.Map;
 
 import static gd.twohundred.jvb.Logger.Level.Error;
 
-public class StdLogger implements Logger {
+public class StdLogger implements LevelLogger {
     private final Map<Component, Level> levels = new EnumMap<>(Component.class);
 
     public StdLogger() {
@@ -32,5 +32,10 @@ public class StdLogger implements Logger {
     @Override
     public boolean isLevelEnabled(Component component, Level level) {
         return levels.get(component).ordinal() >= level.ordinal();
+    }
+
+    @Override
+    public void setLevel(Component component, Level level) {
+        levels.put(component, level);
     }
 }

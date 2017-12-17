@@ -1,5 +1,6 @@
 package gd.twohundred.jvb.components;
 
+import gd.twohundred.jvb.LevelLogger;
 import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.Utils;
 import gd.twohundred.jvb.components.cpu.CPU;
@@ -40,7 +41,7 @@ import java.util.Map;
 
 import static java.lang.Integer.min;
 
-public class Debugger implements ExactlyEmulable, Logger {
+public class Debugger implements ExactlyEmulable, LevelLogger {
     private static final int DISPLAY_REFRESH_RATE_HZ = 4;
     private static final long DISPLAY_REFRESH_PERIOD = CPU.CLOCK_HZ / DISPLAY_REFRESH_RATE_HZ;
     private static final String APP_NAME = "JVB";
@@ -143,6 +144,11 @@ public class Debugger implements ExactlyEmulable, Logger {
         keyMap = initKeyMap();
         inputThread = new InputThread();
         inputThread.start();
+    }
+
+    @Override
+    public void setLevel(Component component, Level level) {
+        levels.put(component, level);
     }
 
     private KeyMap<Runnable> initKeyMap() {

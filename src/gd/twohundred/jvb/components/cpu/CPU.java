@@ -637,6 +637,9 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                     throw new RuntimeException(String.format("Unknown opcode: 0b%s @ %08X", toBinary(opcode, OPCODE_LEN), pc));
             }
         }
+        if (this.debugger != null) {
+            this.debugger.postExec(pc);
+        }
         pc = nextPC;
         return cycles;
     }
@@ -721,7 +724,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
                 }
             }
         } else {
-            throw new RuntimeException(String.format("Bit string arithmetic: unimplemented case: %d, %d <- %d, %d : %d", destinationAddr, destinationOffset, sourceAddr, sourceOffset, length));
+            throw new RuntimeException(String.format("Bit string arithmetic: unimplemented case: %08x, %d <- %08x, %d : %d", destinationAddr, destinationOffset, sourceAddr, sourceOffset, length));
         }
         return 12 * (length / Integer.SIZE) + 36;
     }

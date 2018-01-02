@@ -39,8 +39,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.lang.Integer.min;
-
 public class Debugger implements ExactlyEmulable, LevelLogger {
     private static final int DISPLAY_REFRESH_RATE_HZ = 4;
     private static final long DISPLAY_REFRESH_PERIOD = CPU.CLOCK_HZ / DISPLAY_REFRESH_RATE_HZ;
@@ -186,6 +184,9 @@ public class Debugger implements ExactlyEmulable, LevelLogger {
         } else if (state == State.Paused || state == State.Stepping) {
             onBreak();
         }
+    }
+
+    public void postExec(int pc) {
         this.traceBuffer.add(pc);
     }
 

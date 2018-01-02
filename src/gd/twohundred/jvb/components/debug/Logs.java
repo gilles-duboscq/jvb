@@ -252,6 +252,8 @@ public class Logs implements View {
             asb.append('[');
             asb.append(Integer.toString(messageIndex));
             asb.append("][");
+            asb.append(Long.toString(message.getCycle()));
+            asb.append("][");
             asb.append(message.getLevel().name(), AttributedStyle.DEFAULT.foreground(levelColor(message.getLevel())));
             asb.append("][");
             asb.append(message.getSource().name());

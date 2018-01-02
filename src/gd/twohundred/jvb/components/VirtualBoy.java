@@ -46,6 +46,9 @@ public class VirtualBoy implements Emulable {
             vip.tickExact(actualCycles);
             vsu.tickExact(actualCycles);
             gamePad.tickExact(actualCycles);
+            if (this.debugger != null) {
+                this.debugger.tickExact(actualCycles);
+            }
             cycles += actualCycles;
             handleInterrupts();
             if (isHalted()) {
@@ -53,7 +56,7 @@ public class VirtualBoy implements Emulable {
             }
         }
         if (this.debugger != null) {
-            this.debugger.tickExact(cycles);
+            this.debugger.macroTick(cycles);
         }
         return cycles;
     }

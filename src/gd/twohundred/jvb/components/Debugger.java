@@ -1,7 +1,6 @@
 package gd.twohundred.jvb.components;
 
 import gd.twohundred.jvb.LevelLogger;
-import gd.twohundred.jvb.Logger;
 import gd.twohundred.jvb.Utils;
 import gd.twohundred.jvb.components.cpu.CPU;
 import gd.twohundred.jvb.components.cpu.Instructions.AccessWidth;
@@ -66,6 +65,7 @@ public class Debugger implements ExactlyEmulable, LevelLogger {
     private boolean displaying;
     private final TicksStats ticksStats;
     private final TraceBuffer traceBuffer;
+    private long totalCycles;
 
     public enum State {
         Running,
@@ -333,8 +333,7 @@ public class Debugger implements ExactlyEmulable, LevelLogger {
         this.traceBuffer.clear();
     }
 
-    @Override
-    public void tickExact(long cycles) {
+    public void macroTick(long cycles) {
         inputTick();
         this.ticksStats.update(cycles);
         cyclesDisplay += cycles;
@@ -343,6 +342,11 @@ public class Debugger implements ExactlyEmulable, LevelLogger {
             forceRefresh = false;
             cyclesDisplay = 0;
         }
+    }
+
+    @Override
+    public void tickExact(long cycles) {
+        totalCycles += cycles;
     }
 
     private void inputTick() {
@@ -459,7 +463,7 @@ public class Debugger implements ExactlyEmulable, LevelLogger {
     @Override
     public void log(Component component, Level level, String format, Object... args) {
         if (isLevelEnabled(component, level)) {
-            log.add(new LogMessage(level, component, String.format(format, args)));
+            log.add(new LogMessage(totalCycles, level, component, String.format(format, args)));
             markRefreshNeeded();
         }
     }

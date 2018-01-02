@@ -458,7 +458,7 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
         ledBrightness2 = (byte) 0xad;
         ledBrightness3 = (byte) 0xbe;
         ledBrightnessIdle = (byte) 0xef;
-        pendingInterrupts = (short) 0xdead;
+        pendingInterrupts = (short) 0;
         frameRepeat = 0xde & 0xf;
         backgroundPalette[0] = (byte) (0xde & PALETTE_MASK);
         backgroundPalette[1] = (byte) (0xad & PALETTE_MASK);
@@ -478,6 +478,10 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
 
         // set display ready
         displayStatus |= intBit(DISPLAY_STATUS_DISPLAY_READY_POS);
+    }
+
+    public boolean hasPendingInterrupts() {
+        return pendingInterrupts != 0;
     }
 
     public int getLedBrightness1() {
@@ -592,6 +596,10 @@ public class VIPControlRegisters implements ReadWriteMemory, Resetable {
 
     public boolean isInterruptEnabled(VIPInterruptType type) {
         return testBit(enabledInterrupts, type.getBit());
+    }
+
+    public boolean isInterruptPending(VIPInterruptType type) {
+        return testBit(pendingInterrupts, type.getBit());
     }
 
     public void addPendingInterrupt(VIPInterruptType type) {

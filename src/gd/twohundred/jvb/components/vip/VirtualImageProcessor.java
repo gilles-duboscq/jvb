@@ -97,8 +97,6 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
     private FrameBuffer currentRight = rightFb1;
     private FrameBuffer currentLeft = leftFb1;
 
-    private boolean interruptRaised;
-
     public VirtualImageProcessor(Screen screen, Logger logger) {
         this.screen = screen;
         this.logger = logger;
@@ -195,7 +193,6 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
 
     private void interrupt(VIPInterruptType type) {
         if (controlRegs.isInterruptEnabled(type)) {
-            interruptRaised = true;
             logger.debug(Logger.Component.VIP, "Raising VIP interrupt: %s", type);
             controlRegs.addPendingInterrupt(type);
         } else {
@@ -386,8 +383,7 @@ public class VirtualImageProcessor extends MappedModules implements ExactlyEmula
 
     @Override
     public Interrupt raised() {
-        if (interruptRaised) {
-            interruptRaised = false;
+        if (controlRegs.hasPendingInterrupts()) {
             return new SimpleInterrupt(Interrupt.InterruptType.VIP);
         }
         return null;

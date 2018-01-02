@@ -18,7 +18,7 @@
 | Croach, The (PD) | Nothing happens (waiting for drawing status to change while drawing is disabled?)
 | Etch-A-Sketch by Pat Daderko (PD) | ✓
 | Framebuffer Drawing Demo by Pat Daderko (PD) | Strange band at the top
-| Galactic Pinball (JU) | Sound goes wrong while playing
+| Galactic Pinball (JU) | Sound timings?
 | GLOW Demo by KR155E (PD) [a1] | ✓
 | GLOW Demo by KR155E (PD) | ✓
 | Golf (U) | Bitstring
@@ -31,8 +31,7 @@
 | Mario Flying Demo by Frostgiant (PD) | ✓ (Seems to use uninitialized memory as a "black" char)
 | Mario's Tennis (JU) [a1] | no sound?
 | Matrix, The by Cooler (PD) | Glitchy, way too fast
-| Nester's Funky Bowling (U) [a1] | Crashes when throwing the ball
-| Nester's Funky Bowling (U) | bad rom?
+| Nester's Funky Bowling (U) [a1] | Bitstring, Crashes when throwing the ball
 | OBJ Pointer Demo by Dan Bergman (PD) | ✓
 | Panic Bomber (J) | Sound does not work: wave index is never set. Writes in read-only memory.
 | Panic Bomber (U) | Sound does not work: wave index is never set. Writes in read-only memory.

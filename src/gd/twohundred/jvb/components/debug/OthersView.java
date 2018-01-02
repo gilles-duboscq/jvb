@@ -1,5 +1,6 @@
 package gd.twohundred.jvb.components.debug;
 
+import gd.twohundred.jvb.components.GamePad;
 import gd.twohundred.jvb.components.cpu.CPU;
 import gd.twohundred.jvb.components.Debugger;
 import gd.twohundred.jvb.components.HardwareTimer;
@@ -20,7 +21,7 @@ public class OthersView implements View {
 
     public OthersView(Debugger debugger) {
         this.debugger = debugger;
-        verticalBoxes = new VerticalBoxes("Misc.", new TimerBox());
+        verticalBoxes = new VerticalBoxes("Misc.", new TimerBox(), new GamePadBox());
     }
 
     @Override
@@ -93,6 +94,50 @@ public class OthersView implements View {
                     break;
                 case 4:
                     asb.append("Zero Status: ").append(timer.hasZeroStatus() ? "1" : "0");
+                    break;
+            }
+        }
+    }
+
+    private class GamePadBox implements Box {
+
+        @Override
+        public String name() {
+            return "GamePad";
+        }
+
+        @Override
+        public int minWidth() {
+            return 0;
+        }
+
+        @Override
+        public boolean fixedWidth() {
+            return false;
+        }
+
+        @Override
+        public int minHeight() {
+            return 3;
+        }
+
+        @Override
+        public boolean fixedHeight() {
+            return true;
+        }
+
+        @Override
+        public void line(AttributedStringBuilder asb, int line, int width, int height) {
+            GamePad gamePad = debugger.getGamePad();
+            switch (line) {
+                case 0:
+                    asb.append("Software read in progress: ").append(gamePad.isSoftwareReadInProgress() ? '✔' : '✗');
+                    break;
+                case 1:
+                    asb.append("Hardware read in progress: ").append(gamePad.isHardwareReadInProgress() ? '✔' : '✗');
+                    break;
+                case 2:
+                    asb.append("Interrupts: ").append(gamePad.isInterruptEnabled() ? '✔' : '✗');
                     break;
             }
         }

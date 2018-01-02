@@ -85,6 +85,8 @@ public class DefaultSwingInputProvider implements InputProvider, KeyListener, Ke
                 break;
             case KeyEvent.VK_NUMPAD0:
                 return Inputs.B;
+            case KeyEvent.VK_B:
+                return Inputs.LowBattery;
         }
         return null;
     }

@@ -23,7 +23,7 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
 
     private static final int HARDWARE_READ_CYCLES_PER_BIT = 4;
 
-    private static final int INTERRUPT_STATUS_MASK = ~intBits(Inputs.A.offset(), Inputs.B.offset(), Inputs.One.offset());
+    private static final int INTERRUPT_INPUT_MASK = ~intBits(Inputs.A.offset(), Inputs.B.offset(), Inputs.One.offset());
 
     private final InputProvider provider;
     private final Logger logger;
@@ -69,6 +69,7 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
             softwareReadBit = -1;
             softwareReadLatched = false;
             softwareReadBitArmed = false;
+            hardwareReadCycles = 0;
             logger.debug(Logger.Component.GamePad, "Start hardware read");
         } else if (clock) {
             if (softwareReadBitArmed && softwareReadBit >= 0) {
@@ -119,7 +120,7 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
 
     @Override
     public void tickExact(long cycles) {
-        if (hardwareReadBit >= 0) {
+        if (isHardwareReadInProgress()) {
             hardwareReadCycles += cycles;
             while (hardwareReadCycles >= HARDWARE_READ_CYCLES_PER_BIT) {
                 input = (short) insert(provider.read(Inputs.get(hardwareReadBit)), hardwareReadBit, input);
@@ -127,10 +128,11 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
                 hardwareReadCycles -= HARDWARE_READ_CYCLES_PER_BIT;
                 if (hardwareReadBit < 0) {
                     status &= ~intBit(CONTROL_HARDWARE_INPUT_IN_PROGRESS_POS);
-                    if (interruptEnabled && (status & INTERRUPT_STATUS_MASK) != 0) {
+                    if (interruptEnabled && (input & INTERRUPT_INPUT_MASK) != 0) {
                         interruptRaised = true;
                     }
                     hardwareReadCycles = 0;
+                    logger.debug(Logger.Component.GamePad, "Start hardware finished");
                     break;
                 }
             }
@@ -143,5 +145,17 @@ public class GamePad implements ExactlyEmulable, InterruptSource {
             return new SimpleInterrupt(Interrupt.InterruptType.GamePad);
         }
         return null;
+    }
+
+    public boolean isInterruptEnabled() {
+        return interruptEnabled;
+    }
+
+    public boolean isHardwareReadInProgress() {
+        return hardwareReadBit >= 0;
+    }
+
+    public boolean isSoftwareReadInProgress() {
+        return softwareReadBit >= 0;
     }
 }

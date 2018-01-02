@@ -147,4 +147,8 @@ public class Bus extends MappedModules {
     HardwareTimer getTimer() {
         return controlRegisters.getTimer();
     }
+
+    GamePad getGamePad() {
+        return controlRegisters.getGamePad();
+    }
 }

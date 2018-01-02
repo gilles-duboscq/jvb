@@ -256,7 +256,7 @@ public class CPU implements Emulable, Resetable, InterruptSource {
             case ECR_REG:
                 return ecr;
             default:
-                throw new RuntimeException("Unknown reading unknown system reg " + r);
+                throw new RuntimeException("Reading unknown system reg " + r);
         }
     }
 

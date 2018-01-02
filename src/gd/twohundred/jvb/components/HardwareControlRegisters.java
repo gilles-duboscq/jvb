@@ -126,4 +126,8 @@ public class HardwareControlRegisters implements Resetable, ReadWriteMemory {
     HardwareTimer getTimer() {
         return timer;
     }
+
+    GamePad getGamePad() {
+        return gamePad;
+    }
 }

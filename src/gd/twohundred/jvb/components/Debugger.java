@@ -396,6 +396,10 @@ public class Debugger implements ExactlyEmulable, LevelLogger {
         return getBus().getTimer();
     }
 
+    public GamePad getGamePad() {
+        return getBus().getGamePad();
+    }
+
     public State getState() {
         return state;
     }

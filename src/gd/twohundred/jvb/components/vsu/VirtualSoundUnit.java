@@ -12,7 +12,7 @@ import static gd.twohundred.jvb.Utils.mask;
 import static gd.twohundred.jvb.Utils.testBit;
 
 public class VirtualSoundUnit extends MappedModules implements ExactlyEmulable {
-    public static final long CYCLES_PER_OUTPUT_SAMPLE = CPU.CLOCK_HZ / AudioOut.OUTPUT_SAMPLING_HZ;
+    public static final long CYCLES_PER_OUTPUT_SAMPLE = CPU.CLOCK_HZ * 10 / AudioOut.OUTPUT_SAMPLING_DECIHZ;
 
     public static final int START = 0x01000000;
     public static final int MAPPED_SIZE = 0x01000000;

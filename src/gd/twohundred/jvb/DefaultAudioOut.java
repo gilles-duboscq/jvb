@@ -59,7 +59,7 @@ public class DefaultAudioOut implements AudioOut {
         if (outLine != null) {
             int outRate = (int) outLine.getFormat().getSampleRate();
             assert outRate != AudioSystem.NOT_SPECIFIED && outRate > 0;
-            resampler = new LinearResampler(AudioOut.OUTPUT_SAMPLING_HZ, outRate);
+            resampler = new LinearResampler(AudioOut.OUTPUT_SAMPLING_DECIHZ, outRate * 10);
             try {
                 outLine.open(outLine.getFormat());
                 outLine.start();

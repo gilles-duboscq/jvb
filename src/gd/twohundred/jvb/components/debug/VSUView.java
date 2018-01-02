@@ -115,7 +115,7 @@ public class VSUView implements View {
 
         @Override
         protected void cell(AttributedStringBuilder asb, VSUChannel channel) {
-            asb.append(channel.isEnabled() ? '✔' : ' ');
+            asb.append(channel.isEnabled() ? '✔' : '✗');
         }
     }
 
@@ -184,7 +184,7 @@ public class VSUView implements View {
 
     private class ChannelEnvelopeColumn extends VSUChannelColumn {
         public ChannelEnvelopeColumn() {
-            super("env (ms)", 7);
+            super("env (ms)", 8);
         }
 
         @Override

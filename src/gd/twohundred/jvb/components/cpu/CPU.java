@@ -1072,12 +1072,24 @@ public class CPU implements Emulable, Resetable, InterruptSource {
         this.fepc = fepc & PC_MASK;
     }
 
+    public int getFepc() {
+        return fepc;
+    }
+
     public void setFepsw(int fepsw) {
         this.fepsw = fepsw & PSW_MASK;
     }
 
+    public int getFepsw() {
+        return fepsw;
+    }
+
     public void setFecc(short fecc) {
         this.ecr = insert(fecc, ECR_FECC_POS, ECR_FECC_LEN, ecr);
+    }
+
+    public int getEcr() {
+        return ecr;
     }
 
     public void setPc(int pc) {
@@ -1088,8 +1100,16 @@ public class CPU implements Emulable, Resetable, InterruptSource {
         this.eipc = eipc & PC_MASK;
     }
 
+    public int getEipc() {
+        return eipc;
+    }
+
     public void setEipsw(int eipsw) {
         this.eipsw = eipsw & PSW_MASK;
+    }
+
+    public int getEipsw() {
+        return eipsw;
     }
 
     public void setEicc(short eicc) {

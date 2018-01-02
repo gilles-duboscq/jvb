@@ -3,6 +3,7 @@ package gd.twohundred.jvb.components.debug.boxes;
 import gd.twohundred.jvb.components.debug.View;
 import org.jline.keymap.KeyMap;
 import org.jline.terminal.Terminal;
+import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
@@ -112,15 +113,20 @@ public abstract class Table implements Box {
                 } else {
                     asb.setLength(startLen + currentWidth);
                 }
-            } else {
-                View.repeat(asb, currentWidth - (asb.length() - startLen), ' ');
+            } else if (asb.length() - startLen < currentWidth) {
+                int cellStart = startLen + currentWidth - widths[i];
+                int extraSpace = currentWidth - (asb.length() - startLen);
+                AttributedString content = asb.subSequence(cellStart, asb.length());
+                asb.setLength(cellStart);
+                View.repeat(asb, extraSpace, ' ');
+                asb.append(content);
             }
             if (i < widths.length - 1) {
                 asb.append('│');
                 currentWidth++;
             }
             if (currentWidth > width) {
-                asb.setLength(startLen +width);
+                asb.setLength(startLen + width);
                 break;
             }
         }

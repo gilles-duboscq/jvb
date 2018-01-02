@@ -136,7 +136,7 @@ public class CPUView implements View {
 
         @Override
         public int minWidth() {
-            return 15;
+            return 17;
         }
 
         @Override
@@ -156,10 +156,52 @@ public class CPUView implements View {
 
         @Override
         public void line(AttributedStringBuilder asb, int line, int width, int height) {
-            if (line < CPU.REGISTER_COUNT) {
-                new Formatter(asb).format("r%02d: %#010x", line, debugger.getCpu().getRegister(line));
+            if (line == 0) {
+                asb.append("  r00: ").append("0x00000000", AttributedStyle.DEFAULT.faint());
+            } else if (line < CPU.REGISTER_COUNT) {
+                new Formatter(asb).format("  r%02d: %#010x", line, debugger.getCpu().getRegister(line));
             } else if (line == CPU.REGISTER_COUNT) {
-                new Formatter(asb).format("pc:  %#010x", debugger.getPc());
+                new Formatter(asb).format("   pc: %#010x", debugger.getPc());
+            } else if (line == CPU.REGISTER_COUNT + 1) {
+                new Formatter(asb).format(" eipc: %#010x", debugger.getCpu().getEipc());
+            } else if (line == CPU.REGISTER_COUNT + 2) {
+                new Formatter(asb).format("eipsw: %#010x", debugger.getCpu().getEipsw());
+            } else if (line == CPU.REGISTER_COUNT + 3) {
+                new Formatter(asb).format(" fepc: %#010x", debugger.getCpu().getFepc());
+            } else if (line == CPU.REGISTER_COUNT + 4) {
+                new Formatter(asb).format("fepsw: %#010x", debugger.getCpu().getFepsw());
+            } else if (line == CPU.REGISTER_COUNT + 5) {
+                new Formatter(asb).format("  psw: %#010x", debugger.getCpu().getPsw().getValue());
+            } else if (line == CPU.REGISTER_COUNT + 6) {
+                asb.append("             Z: ").append(debugger.getCpu().getPsw().getZ() ? '✔' : '✗');
+            } else if (line == CPU.REGISTER_COUNT + 7) {
+                asb.append("             S: ").append(debugger.getCpu().getPsw().getS() ? '✔' : '✗');
+            } else if (line == CPU.REGISTER_COUNT + 8) {
+                asb.append("            OV: ").append(debugger.getCpu().getPsw().getOV() ? '✔' : '✗');
+            } else if (line == CPU.REGISTER_COUNT + 9) {
+                asb.append("            CY: ").append(debugger.getCpu().getPsw().getCY() ? '✔' : '✗');
+            } else if (line == CPU.REGISTER_COUNT + 10) {
+                asb.append("           FPR: ").append(debugger.getCpu().getPsw().getFPR() ? '✔' : '✗');
+            } else if (line == CPU.REGISTER_COUNT + 11) {
+                asb.append("           FUD: ").append(debugger.getCpu().getPsw().getFUD() ? '✔' : '✗');
+            } else if (line == CPU.REGISTER_COUNT + 12) {
+                asb.append("           FOV: ").append(debugger.getCpu().getPsw().getFOV() ? '✔' : '✗');
+            } else if (line == CPU.REGISTER_COUNT + 13) {
+                asb.append("           FZD: ").append(debugger.getCpu().getPsw().getFZD() ? '✔' : '✗');
+            } else if (line == CPU.REGISTER_COUNT + 14) {
+                asb.append("           FIV: ").append(debugger.getCpu().getPsw().getFIV() ? '✔' : '✗');
+            } else if (line == CPU.REGISTER_COUNT + 15) {
+                asb.append("           FRO: ").append(debugger.getCpu().getPsw().getFRO() ? '✔' : '✗');
+            } else if (line == CPU.REGISTER_COUNT + 16) {
+                asb.append("            ID: ").append(debugger.getCpu().getPsw().getID() ? '✔' : '✗');
+            } else if (line == CPU.REGISTER_COUNT + 17) {
+                asb.append("            AE: ").append(debugger.getCpu().getPsw().getAE() ? '✔' : '✗');
+            } else if (line == CPU.REGISTER_COUNT + 18) {
+                asb.append("            EP: ").append(debugger.getCpu().getPsw().getEP() ? '✔' : '✗');
+            } else if (line == CPU.REGISTER_COUNT + 19) {
+                asb.append("            NP: ").append(debugger.getCpu().getPsw().getNP() ? '✔' : '✗');
+            } else if (line == CPU.REGISTER_COUNT + 20) {
+                asb.append("           Int: ").append(Integer.toString(debugger.getCpu().getPsw().getInt()));
             }
         }
     }

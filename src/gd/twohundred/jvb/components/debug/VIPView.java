@@ -160,13 +160,7 @@ public class VIPView implements View {
         }
     }
 
-    private static class FrameProgress implements Box {
-        private final Debugger debugger;
-
-        private FrameProgress(Debugger debugger) {
-            this.debugger = debugger;
-        }
-
+    private class FrameProgress implements Box {
         @Override
         public String name() {
             return "Frame progress";
@@ -199,13 +193,7 @@ public class VIPView implements View {
         }
     }
 
-    private static class VIPstatus implements Box {
-        private final Debugger debugger;
-
-        private VIPstatus(Debugger debugger) {
-            this.debugger = debugger;
-        }
-
+    private class VIPstatus implements Box {
         @Override
         public String name() {
             return "Status";
@@ -254,10 +242,51 @@ public class VIPView implements View {
         }
     }
 
+    private class VIPInterruptsStatus implements Box {
+        @Override
+        public String name() {
+            return "Interrupts";
+        }
+
+        @Override
+        public int minWidth() {
+            return 0;
+        }
+
+        @Override
+        public boolean fixedWidth() {
+            return false;
+        }
+
+        @Override
+        public int minHeight() {
+            return 8;
+        }
+
+        @Override
+        public boolean fixedHeight() {
+            return true;
+        }
+
+        @Override
+        public void line(AttributedStringBuilder asb, int line, int width, int height) {
+            VIPControlRegisters.VIPInterruptType[] values = VIPControlRegisters.VIPInterruptType.values();
+            if (line < values.length) {
+                VIPControlRegisters.VIPInterruptType value = values[line];
+                boolean enabled = debugger.getVip().getControlRegs().isInterruptEnabled(value);
+                boolean pending = debugger.getVip().getControlRegs().isInterruptPending(value);
+                asb.append(value.name()).append(": ").append(enabled ? '✔' : '✗');
+                if (pending) {
+                    asb.append(" (pending)");
+                }
+            }
+        }
+    }
+
     public VIPView(Debugger debugger) {
         this.debugger = debugger;
         windowAttributesTable = new WindowAttributesTable(debugger.getTerminal());
-        verticalBoxes = new VerticalBoxes("VIP", new VIPstatus(debugger), new FrameProgress(debugger), windowAttributesTable);
+        verticalBoxes = new VerticalBoxes("VIP", new VIPstatus(), new FrameProgress(), windowAttributesTable, new VIPInterruptsStatus());
     }
 
     @Override

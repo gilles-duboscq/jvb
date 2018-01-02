@@ -79,6 +79,38 @@ public class ProgramStatusWord {
         return testBit(psw, Z_POS);
     }
 
+    public boolean getFPR() {
+        return testBit(psw, FPR_POS);
+    }
+
+    public boolean getFUD() {
+        return testBit(psw, FUD_POS);
+    }
+
+    public boolean getFOV() {
+        return testBit(psw, FOV_POS);
+    }
+
+    public boolean getFZD() {
+        return testBit(psw, FZD_POS);
+    }
+
+    public boolean getFIV() {
+        return testBit(psw, FIV_POS);
+    }
+
+    public boolean getFRO() {
+        return testBit(psw, FRO_POS);
+    }
+
+    public boolean getAE() {
+        return testBit(psw, AE_POS);
+    }
+
+    public boolean getEP() {
+        return testBit(psw, EP_POS);
+    }
+
     public int getValue() {
         return psw;
     }

@@ -81,10 +81,10 @@ public class OthersView implements View {
             HardwareTimer timer = debugger.getTimer();
             switch (line) {
                 case 0:
-                    asb.append("Enabled: ").append(timer.isTimerEnabled() ? '✔' : ' ');
+                    asb.append("Enabled: ").append(timer.isTimerEnabled() ? '✔' : '✗');
                     break;
                 case 1:
-                    asb.append("Interrupts Enabled: ").append(timer.isInterruptEnabled() ? '✔' : ' ');
+                    asb.append("Interrupts Enabled: ").append(timer.isInterruptEnabled() ? '✔' : '✗');
                     break;
                 case 2:
                     asb.append("Clock: ").append(Long.toString(CPU.CLOCK_HZ / timer.getPeriod())).append("Hz");
